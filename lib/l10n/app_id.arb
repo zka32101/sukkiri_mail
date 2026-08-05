@@ -1,0 +1,57 @@
+{
+  "@@locale": "id",
+  "appTitle": "Kotak Rapi",
+
+  "onboardingTitle": "Bebas dari email yang tak perlu kamu lihat",
+  "onboardingSubtitle": "Gabungkan Gmail, Outlook, dan lainnya jadi satu kotak masuk, lalu arsipkan promosi/notifikasi otomatis",
+  "onboardingCta": "Mulai",
+
+  "accountLinkTitle": "Hubungkan akun email",
+  "accountLinkGmail": "Hubungkan Gmail",
+  "accountLinkOutlook": "Hubungkan Outlook / Hotmail",
+  "accountLinkImap": "Email lain (Yahoo!, iCloud, dll.)",
+
+  "scanResultTitle": "Ditemukan {count} email yang tak perlu kamu lihat",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "Begini rapinya kotak masukmu nanti",
+  "scanResultCta": "Arsipkan sekarang",
+
+  "archiveCandidatesTitle": "Kandidat arsip",
+  "archiveCandidatesArchiveAll": "Arsipkan semua",
+  "archiveCandidatesPin": "Lindungi",
+
+  "dashboardTitle": "Kerapian kotak masuk",
+  "dashboardArchivedCount": "Total diarsipkan",
+  "dashboardFreedBytes": "Ruang lokal yang dibebaskan",
+  "dashboardPinnedCount": "Email terlindungi",
+
+  "ruleSettingsTitle": "Aturan",
+  "ruleSettingsCategoryTab": "Aturan kategori",
+  "ruleSettingsSenderBlockTab": "Blokir pengirim",
+  "ruleSettingsAddRule": "Tambah aturan",
+
+  "archiveRestoreTitle": "Email terarsip",
+  "archiveRestoreRestore": "Pulihkan",
+
+  "mailSearchTitle": "Cari",
+  "mailSearchHint": "Cari berdasarkan subjek atau pengirim",
+
+  "settingsTitle": "Pengaturan",
+  "settingsAccountColor": "Warna akun",
+  "settingsLinkedAccounts": "Akun terhubung",
+  "settingsPlan": "Paket",
+
+  "paywallTitle": "Kotak Rapi Pro",
+  "paywallFeatureUnlimitedAccounts": "Akun terhubung tanpa batas",
+  "paywallFeatureAutoRules": "Aturan pengarsipan otomatis",
+  "paywallFeatureUnlimitedRestore": "Pemulihan tanpa batas",
+  "paywallCta": "Upgrade ke Pro",
+
+  "commonCancel": "Batal",
+  "commonConfirm": "Konfirmasi",
+  "commonBack": "Kembali",
+  "commonPin": "Lindungi",
+  "commonUnpin": "Batalkan perlindungan"
+}

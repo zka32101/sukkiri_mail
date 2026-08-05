@@ -1,0 +1,57 @@
+{
+  "@@locale": "de",
+  "appTitle": "Klarpost",
+
+  "onboardingTitle": "Befrei dich von Mails, die du nie sehen musstest",
+  "onboardingSubtitle": "Gmail, Outlook und mehr in einem Posteingang vereinen und Werbung/Benachrichtigungen automatisch archivieren",
+  "onboardingCta": "Loslegen",
+
+  "accountLinkTitle": "E-Mail-Konto verknüpfen",
+  "accountLinkGmail": "Gmail verbinden",
+  "accountLinkOutlook": "Outlook / Hotmail verbinden",
+  "accountLinkImap": "Andere Mail (Yahoo!, iCloud usw.)",
+
+  "scanResultTitle": "{count} Mails gefunden, die du nicht sehen musst",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "So aufgeräumt wird dein Posteingang",
+  "scanResultCta": "Jetzt archivieren",
+
+  "archiveCandidatesTitle": "Archivierungsvorschläge",
+  "archiveCandidatesArchiveAll": "Alle archivieren",
+  "archiveCandidatesPin": "Schützen",
+
+  "dashboardTitle": "Klarheit im Posteingang",
+  "dashboardArchivedCount": "Insgesamt archiviert",
+  "dashboardFreedBytes": "Freigegebener Speicherplatz",
+  "dashboardPinnedCount": "Geschützte Mails",
+
+  "ruleSettingsTitle": "Regeln",
+  "ruleSettingsCategoryTab": "Kategorieregeln",
+  "ruleSettingsSenderBlockTab": "Absenderblockierung",
+  "ruleSettingsAddRule": "Regel hinzufügen",
+
+  "archiveRestoreTitle": "Archivierte Mails",
+  "archiveRestoreRestore": "Wiederherstellen",
+
+  "mailSearchTitle": "Suche",
+  "mailSearchHint": "Nach Betreff oder Absender suchen",
+
+  "settingsTitle": "Einstellungen",
+  "settingsAccountColor": "Kontofarbe",
+  "settingsLinkedAccounts": "Verknüpfte Konten",
+  "settingsPlan": "Tarif",
+
+  "paywallTitle": "Klarpost Pro",
+  "paywallFeatureUnlimitedAccounts": "Unbegrenzt verknüpfte Konten",
+  "paywallFeatureAutoRules": "Automatische Archivierungsregeln",
+  "paywallFeatureUnlimitedRestore": "Unbegrenztes Wiederherstellen",
+  "paywallCta": "Auf Pro upgraden",
+
+  "commonCancel": "Abbrechen",
+  "commonConfirm": "Bestätigen",
+  "commonBack": "Zurück",
+  "commonPin": "Schützen",
+  "commonUnpin": "Schutz aufheben"
+}

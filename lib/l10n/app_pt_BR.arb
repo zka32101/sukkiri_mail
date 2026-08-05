@@ -1,0 +1,57 @@
+{
+  "@@locale": "pt_BR",
+  "appTitle": "Caixa Leve",
+
+  "onboardingTitle": "Liberte-se dos e-mails que você nunca precisou ver",
+  "onboardingSubtitle": "Reúna Gmail, Outlook e outros em uma única caixa e arquive o ruído automaticamente",
+  "onboardingCta": "Começar",
+
+  "accountLinkTitle": "Vincular uma conta de e-mail",
+  "accountLinkGmail": "Conectar Gmail",
+  "accountLinkOutlook": "Conectar Outlook / Hotmail",
+  "accountLinkImap": "Outro e-mail (Yahoo!, iCloud, etc.)",
+
+  "scanResultTitle": "Encontramos {count} e-mails que você não precisa ver",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "É assim que sua caixa vai ficar mais leve",
+  "scanResultCta": "Arquivar agora",
+
+  "archiveCandidatesTitle": "Candidatos a arquivamento",
+  "archiveCandidatesArchiveAll": "Arquivar tudo",
+  "archiveCandidatesPin": "Proteger",
+
+  "dashboardTitle": "Leveza da caixa de entrada",
+  "dashboardArchivedCount": "Total arquivado",
+  "dashboardFreedBytes": "Espaço local liberado",
+  "dashboardPinnedCount": "E-mails protegidos",
+
+  "ruleSettingsTitle": "Regras",
+  "ruleSettingsCategoryTab": "Regras por categoria",
+  "ruleSettingsSenderBlockTab": "Bloqueio de remetente",
+  "ruleSettingsAddRule": "Adicionar regra",
+
+  "archiveRestoreTitle": "E-mails arquivados",
+  "archiveRestoreRestore": "Restaurar",
+
+  "mailSearchTitle": "Buscar",
+  "mailSearchHint": "Buscar por assunto ou remetente",
+
+  "settingsTitle": "Configurações",
+  "settingsAccountColor": "Cor da conta",
+  "settingsLinkedAccounts": "Contas vinculadas",
+  "settingsPlan": "Plano",
+
+  "paywallTitle": "Caixa Leve Pro",
+  "paywallFeatureUnlimitedAccounts": "Contas vinculadas ilimitadas",
+  "paywallFeatureAutoRules": "Regras de arquivamento automático",
+  "paywallFeatureUnlimitedRestore": "Restauração ilimitada",
+  "paywallCta": "Assinar o Pro",
+
+  "commonCancel": "Cancelar",
+  "commonConfirm": "Confirmar",
+  "commonBack": "Voltar",
+  "commonPin": "Proteger",
+  "commonUnpin": "Remover proteção"
+}

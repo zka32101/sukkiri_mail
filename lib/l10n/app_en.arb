@@ -1,0 +1,57 @@
+{
+  "@@locale": "en",
+  "appTitle": "TidyMail",
+
+  "onboardingTitle": "Get free from mail you never needed to see",
+  "onboardingSubtitle": "Bring Gmail, Outlook, and more into one inbox and auto-archive the noise",
+  "onboardingCta": "Get Started",
+
+  "accountLinkTitle": "Link a mail account",
+  "accountLinkGmail": "Connect Gmail",
+  "accountLinkOutlook": "Connect Outlook / Hotmail",
+  "accountLinkImap": "Other mail (Yahoo!, iCloud, etc.)",
+
+  "scanResultTitle": "Found {count} emails you don't need to see",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "Here's how tidy your inbox will be",
+  "scanResultCta": "Archive now",
+
+  "archiveCandidatesTitle": "Archive candidates",
+  "archiveCandidatesArchiveAll": "Archive all",
+  "archiveCandidatesPin": "Protect",
+
+  "dashboardTitle": "Inbox tidiness",
+  "dashboardArchivedCount": "Total archived",
+  "dashboardFreedBytes": "Local storage freed",
+  "dashboardPinnedCount": "Protected emails",
+
+  "ruleSettingsTitle": "Rules",
+  "ruleSettingsCategoryTab": "Category rules",
+  "ruleSettingsSenderBlockTab": "Sender block",
+  "ruleSettingsAddRule": "Add rule",
+
+  "archiveRestoreTitle": "Archived emails",
+  "archiveRestoreRestore": "Restore",
+
+  "mailSearchTitle": "Search",
+  "mailSearchHint": "Search by subject or sender",
+
+  "settingsTitle": "Settings",
+  "settingsAccountColor": "Account color",
+  "settingsLinkedAccounts": "Linked accounts",
+  "settingsPlan": "Plan",
+
+  "paywallTitle": "TidyMail Pro",
+  "paywallFeatureUnlimitedAccounts": "Unlimited linked accounts",
+  "paywallFeatureAutoRules": "Automatic archive rules",
+  "paywallFeatureUnlimitedRestore": "Unlimited restore",
+  "paywallCta": "Upgrade to Pro",
+
+  "commonCancel": "Cancel",
+  "commonConfirm": "Confirm",
+  "commonBack": "Back",
+  "commonPin": "Protect",
+  "commonUnpin": "Unprotect"
+}

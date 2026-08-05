@@ -1,0 +1,57 @@
+{
+  "@@locale": "es",
+  "appTitle": "Bandeja Ligera",
+
+  "onboardingTitle": "Libérate de los correos que nunca necesitaste ver",
+  "onboardingSubtitle": "Reúne Gmail, Outlook y más en una sola bandeja y archiva automáticamente el ruido",
+  "onboardingCta": "Empezar",
+
+  "accountLinkTitle": "Vincular una cuenta de correo",
+  "accountLinkGmail": "Conectar Gmail",
+  "accountLinkOutlook": "Conectar Outlook / Hotmail",
+  "accountLinkImap": "Otro correo (Yahoo!, iCloud, etc.)",
+
+  "scanResultTitle": "Se encontraron {count} correos que no necesitas ver",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "Así de ligera quedará tu bandeja",
+  "scanResultCta": "Archivar ahora",
+
+  "archiveCandidatesTitle": "Candidatos a archivar",
+  "archiveCandidatesArchiveAll": "Archivar todo",
+  "archiveCandidatesPin": "Proteger",
+
+  "dashboardTitle": "Nivel de orden de tu bandeja",
+  "dashboardArchivedCount": "Total archivado",
+  "dashboardFreedBytes": "Espacio local liberado",
+  "dashboardPinnedCount": "Correos protegidos",
+
+  "ruleSettingsTitle": "Reglas",
+  "ruleSettingsCategoryTab": "Reglas por categoría",
+  "ruleSettingsSenderBlockTab": "Bloqueo de remitentes",
+  "ruleSettingsAddRule": "Añadir regla",
+
+  "archiveRestoreTitle": "Correos archivados",
+  "archiveRestoreRestore": "Restaurar",
+
+  "mailSearchTitle": "Buscar",
+  "mailSearchHint": "Buscar por asunto o remitente",
+
+  "settingsTitle": "Ajustes",
+  "settingsAccountColor": "Color de cuenta",
+  "settingsLinkedAccounts": "Cuentas vinculadas",
+  "settingsPlan": "Plan",
+
+  "paywallTitle": "Bandeja Ligera Pro",
+  "paywallFeatureUnlimitedAccounts": "Cuentas vinculadas ilimitadas",
+  "paywallFeatureAutoRules": "Reglas de archivado automático",
+  "paywallFeatureUnlimitedRestore": "Restauración ilimitada",
+  "paywallCta": "Mejorar a Pro",
+
+  "commonCancel": "Cancelar",
+  "commonConfirm": "Confirmar",
+  "commonBack": "Atrás",
+  "commonPin": "Proteger",
+  "commonUnpin": "Quitar protección"
+}

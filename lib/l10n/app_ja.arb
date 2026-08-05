@@ -1,0 +1,57 @@
+{
+  "@@locale": "ja",
+  "appTitle": "スッキリメール",
+
+  "onboardingTitle": "見なくていいメールから、解放されよう",
+  "onboardingSubtitle": "Gmail・Outlook・その他のメールを1つにまとめて、営業・通知メールを自動でアーカイブ",
+  "onboardingCta": "はじめる",
+
+  "accountLinkTitle": "メールアカウントを連携",
+  "accountLinkGmail": "Gmailで連携",
+  "accountLinkOutlook": "Outlook / Hotmailで連携",
+  "accountLinkImap": "その他のメール（Yahoo!・iCloud等）",
+
+  "scanResultTitle": "{count}件の見なくていいメールを検出しました",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "受信箱がここまですっきりします",
+  "scanResultCta": "アーカイブする",
+
+  "archiveCandidatesTitle": "アーカイブ候補",
+  "archiveCandidatesArchiveAll": "すべてアーカイブ",
+  "archiveCandidatesPin": "保護する",
+
+  "dashboardTitle": "受信箱スッキリ度",
+  "dashboardArchivedCount": "累計アーカイブ件数",
+  "dashboardFreedBytes": "解放したローカル容量",
+  "dashboardPinnedCount": "保護件数",
+
+  "ruleSettingsTitle": "ルール設定",
+  "ruleSettingsCategoryTab": "カテゴリルール",
+  "ruleSettingsSenderBlockTab": "差出人ブロック",
+  "ruleSettingsAddRule": "ルールを追加",
+
+  "archiveRestoreTitle": "アーカイブ済み一覧",
+  "archiveRestoreRestore": "復元する",
+
+  "mailSearchTitle": "検索",
+  "mailSearchHint": "件名・送信者で検索",
+
+  "settingsTitle": "設定",
+  "settingsAccountColor": "アカウントカラー",
+  "settingsLinkedAccounts": "連携アカウント",
+  "settingsPlan": "プラン",
+
+  "paywallTitle": "スッキリメール Pro",
+  "paywallFeatureUnlimitedAccounts": "アカウント連携無制限",
+  "paywallFeatureAutoRules": "自動アーカイブルール",
+  "paywallFeatureUnlimitedRestore": "復元無制限",
+  "paywallCta": "Proにアップグレード",
+
+  "commonCancel": "キャンセル",
+  "commonConfirm": "確認",
+  "commonBack": "戻る",
+  "commonPin": "保護",
+  "commonUnpin": "保護解除"
+}

@@ -1,0 +1,57 @@
+{
+  "@@locale": "zh_Hant",
+  "appTitle": "清爽信箱",
+
+  "onboardingTitle": "從不必看的郵件中解放自己",
+  "onboardingSubtitle": "把Gmail、Outlook等信箱整合為一，自動封存廣告與通知郵件",
+  "onboardingCta": "開始使用",
+
+  "accountLinkTitle": "連結郵件帳號",
+  "accountLinkGmail": "連結 Gmail",
+  "accountLinkOutlook": "連結 Outlook / Hotmail",
+  "accountLinkImap": "其他信箱（Yahoo!、iCloud 等）",
+
+  "scanResultTitle": "偵測到 {count} 封不必看的郵件",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "整理後的收件匣會是這樣",
+  "scanResultCta": "立即封存",
+
+  "archiveCandidatesTitle": "封存候選郵件",
+  "archiveCandidatesArchiveAll": "全部封存",
+  "archiveCandidatesPin": "保護",
+
+  "dashboardTitle": "收件匣清爽度",
+  "dashboardArchivedCount": "累計封存件數",
+  "dashboardFreedBytes": "已釋放的本機空間",
+  "dashboardPinnedCount": "已保護件數",
+
+  "ruleSettingsTitle": "規則設定",
+  "ruleSettingsCategoryTab": "分類規則",
+  "ruleSettingsSenderBlockTab": "寄件人封鎖",
+  "ruleSettingsAddRule": "新增規則",
+
+  "archiveRestoreTitle": "已封存郵件",
+  "archiveRestoreRestore": "還原",
+
+  "mailSearchTitle": "搜尋",
+  "mailSearchHint": "以主旨或寄件人搜尋",
+
+  "settingsTitle": "設定",
+  "settingsAccountColor": "帳號顏色",
+  "settingsLinkedAccounts": "已連結帳號",
+  "settingsPlan": "方案",
+
+  "paywallTitle": "清爽信箱 Pro",
+  "paywallFeatureUnlimitedAccounts": "無限連結帳號",
+  "paywallFeatureAutoRules": "自動封存規則",
+  "paywallFeatureUnlimitedRestore": "無限次還原",
+  "paywallCta": "升級為 Pro",
+
+  "commonCancel": "取消",
+  "commonConfirm": "確認",
+  "commonBack": "返回",
+  "commonPin": "保護",
+  "commonUnpin": "取消保護"
+}

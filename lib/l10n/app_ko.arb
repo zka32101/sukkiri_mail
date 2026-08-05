@@ -1,0 +1,57 @@
+{
+  "@@locale": "ko",
+  "appTitle": "상쾌메일",
+
+  "onboardingTitle": "안 봐도 되는 메일에서 자유로워지세요",
+  "onboardingSubtitle": "Gmail, Outlook 등을 하나로 모아 광고·알림 메일을 자동으로 보관합니다",
+  "onboardingCta": "시작하기",
+
+  "accountLinkTitle": "메일 계정 연결",
+  "accountLinkGmail": "Gmail 연결",
+  "accountLinkOutlook": "Outlook / Hotmail 연결",
+  "accountLinkImap": "기타 메일 (Yahoo!, iCloud 등)",
+
+  "scanResultTitle": "안 봐도 되는 메일 {count}건을 찾았습니다",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "받은편지함이 이렇게 정리됩니다",
+  "scanResultCta": "지금 보관하기",
+
+  "archiveCandidatesTitle": "보관 후보 메일",
+  "archiveCandidatesArchiveAll": "모두 보관",
+  "archiveCandidatesPin": "보호하기",
+
+  "dashboardTitle": "받은편지함 정리도",
+  "dashboardArchivedCount": "누적 보관 건수",
+  "dashboardFreedBytes": "확보한 저장공간",
+  "dashboardPinnedCount": "보호된 메일 수",
+
+  "ruleSettingsTitle": "규칙 설정",
+  "ruleSettingsCategoryTab": "카테고리 규칙",
+  "ruleSettingsSenderBlockTab": "발신자 차단",
+  "ruleSettingsAddRule": "규칙 추가",
+
+  "archiveRestoreTitle": "보관된 메일",
+  "archiveRestoreRestore": "복원",
+
+  "mailSearchTitle": "검색",
+  "mailSearchHint": "제목이나 발신자로 검색",
+
+  "settingsTitle": "설정",
+  "settingsAccountColor": "계정 색상",
+  "settingsLinkedAccounts": "연결된 계정",
+  "settingsPlan": "요금제",
+
+  "paywallTitle": "상쾌메일 Pro",
+  "paywallFeatureUnlimitedAccounts": "계정 연결 무제한",
+  "paywallFeatureAutoRules": "자동 보관 규칙",
+  "paywallFeatureUnlimitedRestore": "복원 무제한",
+  "paywallCta": "Pro로 업그레이드",
+
+  "commonCancel": "취소",
+  "commonConfirm": "확인",
+  "commonBack": "뒤로",
+  "commonPin": "보호",
+  "commonUnpin": "보호 해제"
+}

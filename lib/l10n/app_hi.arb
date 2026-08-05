@@ -1,0 +1,57 @@
+{
+  "@@locale": "hi",
+  "appTitle": "साफ़ मेल",
+
+  "onboardingTitle": "जो मेल कभी देखने की ज़रूरत नहीं थी, उनसे आज़ाद हो जाइए",
+  "onboardingSubtitle": "Gmail, Outlook और अन्य को एक ही इनबॉक्स में लाएं और प्रचार/सूचना मेल अपने आप संग्रहित करें",
+  "onboardingCta": "शुरू करें",
+
+  "accountLinkTitle": "मेल खाता जोड़ें",
+  "accountLinkGmail": "Gmail जोड़ें",
+  "accountLinkOutlook": "Outlook / Hotmail जोड़ें",
+  "accountLinkImap": "अन्य मेल (Yahoo!, iCloud आदि)",
+
+  "scanResultTitle": "{count} ऐसी मेल मिलीं जिन्हें देखने की ज़रूरत नहीं",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "आपका इनबॉक्स अब इतना साफ़ दिखेगा",
+  "scanResultCta": "अभी संग्रहित करें",
+
+  "archiveCandidatesTitle": "संग्रहण के लिए उम्मीदवार",
+  "archiveCandidatesArchiveAll": "सभी संग्रहित करें",
+  "archiveCandidatesPin": "सुरक्षित करें",
+
+  "dashboardTitle": "इनबॉक्स की सफ़ाई",
+  "dashboardArchivedCount": "कुल संग्रहित",
+  "dashboardFreedBytes": "मुक्त हुआ स्थानीय स्थान",
+  "dashboardPinnedCount": "सुरक्षित मेल",
+
+  "ruleSettingsTitle": "नियम",
+  "ruleSettingsCategoryTab": "श्रेणी नियम",
+  "ruleSettingsSenderBlockTab": "प्रेषक अवरोध",
+  "ruleSettingsAddRule": "नियम जोड़ें",
+
+  "archiveRestoreTitle": "संग्रहित मेल",
+  "archiveRestoreRestore": "पुनर्स्थापित करें",
+
+  "mailSearchTitle": "खोजें",
+  "mailSearchHint": "विषय या प्रेषक से खोजें",
+
+  "settingsTitle": "सेटिंग्स",
+  "settingsAccountColor": "खाता रंग",
+  "settingsLinkedAccounts": "जुड़े हुए खाते",
+  "settingsPlan": "प्लान",
+
+  "paywallTitle": "साफ़ मेल Pro",
+  "paywallFeatureUnlimitedAccounts": "असीमित जुड़े खाते",
+  "paywallFeatureAutoRules": "स्वचालित संग्रहण नियम",
+  "paywallFeatureUnlimitedRestore": "असीमित पुनर्स्थापन",
+  "paywallCta": "Pro में अपग्रेड करें",
+
+  "commonCancel": "रद्द करें",
+  "commonConfirm": "पुष्टि करें",
+  "commonBack": "वापस",
+  "commonPin": "सुरक्षित करें",
+  "commonUnpin": "सुरक्षा हटाएं"
+}

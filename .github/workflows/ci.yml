@@ -1,0 +1,47 @@
+name: Sukkiri Mail CI
+
+# コスト最適化のためUbuntu上のanalyze/testのみをPR/push時の必須ゲートとする
+# (feedback_ios_cicd_cost_optimization方針: 3段階ゲートのStep1に相当)。
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+  functions-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: TypeScript build
+        run: npm run build

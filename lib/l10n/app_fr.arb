@@ -1,0 +1,57 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Boîte Zen",
+
+  "onboardingTitle": "Libérez-vous des e-mails que vous n'avez jamais eu besoin de voir",
+  "onboardingSubtitle": "Réunissez Gmail, Outlook et plus dans une seule boîte et archivez automatiquement le superflu",
+  "onboardingCta": "Commencer",
+
+  "accountLinkTitle": "Lier un compte e-mail",
+  "accountLinkGmail": "Connecter Gmail",
+  "accountLinkOutlook": "Connecter Outlook / Hotmail",
+  "accountLinkImap": "Autre messagerie (Yahoo!, iCloud, etc.)",
+
+  "scanResultTitle": "{count} e-mails que vous n'avez pas besoin de voir ont été trouvés",
+  "@scanResultTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scanResultSubtitle": "Voici à quel point votre boîte sera apaisée",
+  "scanResultCta": "Archiver maintenant",
+
+  "archiveCandidatesTitle": "Candidats à l'archivage",
+  "archiveCandidatesArchiveAll": "Tout archiver",
+  "archiveCandidatesPin": "Protéger",
+
+  "dashboardTitle": "Sérénité de la boîte de réception",
+  "dashboardArchivedCount": "Total archivé",
+  "dashboardFreedBytes": "Espace local libéré",
+  "dashboardPinnedCount": "E-mails protégés",
+
+  "ruleSettingsTitle": "Règles",
+  "ruleSettingsCategoryTab": "Règles par catégorie",
+  "ruleSettingsSenderBlockTab": "Blocage d'expéditeur",
+  "ruleSettingsAddRule": "Ajouter une règle",
+
+  "archiveRestoreTitle": "E-mails archivés",
+  "archiveRestoreRestore": "Restaurer",
+
+  "mailSearchTitle": "Recherche",
+  "mailSearchHint": "Rechercher par objet ou expéditeur",
+
+  "settingsTitle": "Paramètres",
+  "settingsAccountColor": "Couleur du compte",
+  "settingsLinkedAccounts": "Comptes liés",
+  "settingsPlan": "Formule",
+
+  "paywallTitle": "Boîte Zen Pro",
+  "paywallFeatureUnlimitedAccounts": "Comptes liés illimités",
+  "paywallFeatureAutoRules": "Règles d'archivage automatique",
+  "paywallFeatureUnlimitedRestore": "Restauration illimitée",
+  "paywallCta": "Passer à Pro",
+
+  "commonCancel": "Annuler",
+  "commonConfirm": "Confirmer",
+  "commonBack": "Retour",
+  "commonPin": "Protéger",
+  "commonUnpin": "Retirer la protection"
+}
