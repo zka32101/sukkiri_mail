@@ -65,7 +65,7 @@ jobs:
           CERT_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERT_BASE64 }}
           CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
           PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
-          KEYCHAIN_PASSWORD: temp-ci-keychain-password
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
         run: |
           CERT_PATH=$RUNNER_TEMP/distribution.p12
           PROFILE_PATH=$RUNNER_TEMP/profile.mobileprovision

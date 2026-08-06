@@ -20,27 +20,41 @@ service cloud.firestore {
     // OAuthトークン・IMAPアプリパスワードはCloud Functions（Admin SDK）経由でのみ
     // 書き込む。クライアントからの直接書き込みは禁止（アカウント作成もconnectAccount経由）。
     match /linkedAccounts/{accountId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() && resource != null && resource.data.userId == request.auth.uid;
       allow write: if false;
     }
 
     match /categoryRules/{ruleId} {
-      allow read, write: if isSignedIn() &&
-        (resource == null || resource.data.userId == request.auth.uid) &&
+      allow read: if isSignedIn() &&
+        (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() &&
         request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource != null &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['categoryName', 'senderPatterns', 'isEnabled', 'priority']);
+      allow delete: if isSignedIn() && resource != null &&
+        resource.data.userId == request.auth.uid;
     }
 
     match /senderBlockRules/{ruleId} {
-      allow read, write: if isSignedIn() &&
-        (resource == null || resource.data.userId == request.auth.uid) &&
+      allow read: if isSignedIn() &&
+        (resource == null || resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() &&
         request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource != null &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['senderEmail', 'blockedAt', 'reason', 'isActive']);
+      allow delete: if isSignedIn() && resource != null &&
+        resource.data.userId == request.auth.uid;
     }
 
     // emailMetaはCloud Functions（scanAccount等）が生成する。クライアントは
     // isPinned等の限定フィールドのみ更新可能にする（詳細はCloud Functions側で検証）。
     match /emailMeta/{emailId} {
-      allow read: if isSignedIn();
-      allow update: if isSignedIn() &&
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['isPinned', 'localCacheStatus', 'lastFetchedAt']);
       allow create, delete: if false;

@@ -18,13 +18,108 @@ const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
  * 取得後 Secret Manager に `outlook-oauth-client-id` / `outlook-oauth-client-secret`。
  */
 export class OutlookProvider implements MailProviderAdapter {
+  /**
+   * アクセストークンを取得。有効期限切れの場合は refresh token を使用して更新する。
+   */
   private async getAccessToken(accountId: string): Promise<string> {
-    const doc = await admin.firestore().collection("linkedAccounts").doc(accountId).get();
+    const doc = await admin
+      .firestore()
+      .collection("linkedAccounts")
+      .doc(accountId)
+      .get();
     const data = doc.data();
     if (!data) throw new Error("account not found");
-    // 実運用ではrefreshTokenからaccessTokenを都度更新する（@azure/msal-node の
-    // ConfidentialClientApplication#acquireTokenByRefreshToken を使用）。
-    return data.accessToken as string;
+
+    const accessToken = data.accessToken as string | undefined;
+    const refreshToken = data.refreshToken as string | undefined;
+    const expiresAt = data.tokenExpiresAt as number | undefined;
+
+    // トークン有効期限をチェック（有効期限の 5 分前に更新）
+    const now = Date.now();
+    const bufferTime = 5 * 60 * 1000; // 5分
+
+    if (expiresAt && now < expiresAt - bufferTime && accessToken) {
+      // トークンがまだ有効
+      return accessToken;
+    }
+
+    if (!refreshToken) {
+      throw new Error(
+        "refresh token not found; user must re-authenticate"
+      );
+    }
+
+    // Refresh token を使用して新しいアクセストークンを取得
+    const clientId = await getSecret("outlook-oauth-client-id");
+    const clientSecret = await getSecret("outlook-oauth-client-secret");
+
+    try {
+      const tokenRes = await fetch(
+        "https://login.microsoftonline.com/consumers/oauth2/v2.0/token",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: refreshToken,
+            grant_type: "refresh_token",
+            scope: "Mail.ReadWrite offline_access",
+          }),
+        }
+      );
+
+      if (!tokenRes.ok) {
+        throw new Error(`Token refresh failed: ${tokenRes.status}`);
+      }
+
+      const tokens = await tokenRes.json();
+      const newAccessToken = tokens.access_token as string | undefined;
+      const newRefreshToken = tokens.refresh_token as string | undefined;
+      const expiresIn = tokens.expires_in as number | undefined; // seconds
+
+      if (!newAccessToken) {
+        throw new Error("access token not returned from refresh");
+      }
+
+      // 新しいトークンを Firestore に保存
+      const updates: Record<string, unknown> = {
+        accessToken: newAccessToken,
+        tokenExpiresAt: now + ((expiresIn ?? 3600) * 1000),
+      };
+
+      if (newRefreshToken) {
+        updates.refreshToken = newRefreshToken;
+      }
+
+      await admin
+        .firestore()
+        .collection("linkedAccounts")
+        .doc(accountId)
+        .update(updates);
+
+      console.log(`[Outlook] Token refreshed for account ${accountId}`);
+      return newAccessToken;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(
+        `[Outlook] Token refresh failed for account ${accountId}:`,
+        errorMessage
+      );
+
+      // リフレッシュ失敗時は oauthStatus を "expired" に設定
+      await admin
+        .firestore()
+        .collection("linkedAccounts")
+        .doc(accountId)
+        .update({ oauthStatus: "expired" })
+        .catch(() => {
+          /* ignore */
+        });
+
+      throw new Error("oauth token expired; user must re-authenticate");
+    }
   }
 
   private async graphFetch(accountId: string, path: string, init?: RequestInit) {
@@ -79,6 +174,10 @@ export class OutlookProvider implements MailProviderAdapter {
       .get();
     const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
 
+    // token の有効期限を計算（expires_in は秒数）
+    const expiresIn = (tokens.expires_in as number) ?? 3600; // default: 1 hour
+    const tokenExpiresAt = Date.now() + expiresIn * 1000;
+
     const ref = await admin.firestore().collection("linkedAccounts").add({
       userId,
       provider: "outlook",
@@ -89,6 +188,7 @@ export class OutlookProvider implements MailProviderAdapter {
       lastScanAt: null,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
+      tokenExpiresAt,
     });
 
     return {
