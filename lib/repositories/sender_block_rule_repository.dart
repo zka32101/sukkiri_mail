@@ -5,13 +5,20 @@ import '../models/sender_block_rule.dart';
 class SenderBlockRuleRepository {
   final FirebaseFirestore _db;
 
-  SenderBlockRuleRepository({FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;
+  SenderBlockRuleRepository({FirebaseFirestore? db})
+    : _db = db ?? FirebaseFirestore.instance;
 
-  CollectionReference<Map<String, dynamic>> get _col => _db.collection('senderBlockRules');
+  CollectionReference<Map<String, dynamic>> get _col =>
+      _db.collection('senderBlockRules');
 
   Stream<List<SenderBlockRule>> watchForUser(String userId) {
-    return _col.where('userId', isEqualTo: userId).snapshots().map(
-          (snap) => snap.docs.map((d) => SenderBlockRule.fromMap(d.id, d.data())).toList(),
+    return _col
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((d) => SenderBlockRule.fromMap(d.id, d.data()))
+              .toList(),
         );
   }
 

@@ -5,18 +5,27 @@ import '../models/email_meta.dart';
 class EmailMetaRepository {
   final FirebaseFirestore _db;
 
-  EmailMetaRepository({FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;
+  EmailMetaRepository({FirebaseFirestore? db})
+    : _db = db ?? FirebaseFirestore.instance;
 
-  CollectionReference<Map<String, dynamic>> get _col => _db.collection('emailMeta');
+  CollectionReference<Map<String, dynamic>> get _col =>
+      _db.collection('emailMeta');
 
-  Stream<List<EmailMeta>> watchForAccount(String accountId, {EmailStatus? status}) {
-    Query<Map<String, dynamic>> q = _col.where('accountId', isEqualTo: accountId);
+  Stream<List<EmailMeta>> watchForAccount(
+    String accountId, {
+    EmailStatus? status,
+  }) {
+    Query<Map<String, dynamic>> q = _col.where(
+      'accountId',
+      isEqualTo: accountId,
+    );
     if (status != null) {
       q = q.where('status', isEqualTo: emailStatusToString(status));
     }
     return q.snapshots().map(
-          (snap) => snap.docs.map((d) => EmailMeta.fromMap(d.id, d.data())).toList(),
-        );
+      (snap) =>
+          snap.docs.map((d) => EmailMeta.fromMap(d.id, d.data())).toList(),
+    );
   }
 
   /// メタデータは件名・送信者・日時・カテゴリ・スニペットで常時検索可能（キャッシュ削除後も）。
@@ -24,7 +33,9 @@ class EmailMetaRepository {
     // Firestoreの部分一致検索は不可のため、簡易実装としてsnippetの前方一致で絞り込む。
     // 本番ではAlgolia等の全文検索インデックスに置き換え可能な設計にしておく。
     final snap = await _col.where('accountId', isEqualTo: accountId).get();
-    final all = snap.docs.map((d) => EmailMeta.fromMap(d.id, d.data())).toList();
+    final all = snap.docs
+        .map((d) => EmailMeta.fromMap(d.id, d.data()))
+        .toList();
     final q = query.toLowerCase();
     return all.where((m) => m.snippet.toLowerCase().contains(q)).toList();
   }
@@ -38,6 +49,8 @@ class EmailMetaRepository {
   }
 
   Future<void> setLocalCacheStatus(String emailId, LocalCacheStatus status) {
-    return _col.doc(emailId).update({'localCacheStatus': localCacheStatusToString(status)});
+    return _col.doc(emailId).update({
+      'localCacheStatus': localCacheStatusToString(status),
+    });
   }
 }

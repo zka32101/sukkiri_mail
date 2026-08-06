@@ -101,9 +101,10 @@ class LinkedAccount {
       lastScanAt: m['lastScanAt'] == null
           ? null
           : (m['lastScanAt'] is DateTime
-              ? m['lastScanAt'] as DateTime
-              : DateTime.fromMillisecondsSinceEpoch(
-                  (m['lastScanAt'] as num).toInt())),
+                ? m['lastScanAt'] as DateTime
+                : DateTime.fromMillisecondsSinceEpoch(
+                    (m['lastScanAt'] as num).toInt(),
+                  )),
     );
   }
 

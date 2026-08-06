@@ -73,7 +73,11 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
 }
 
 class _ProviderButton extends StatelessWidget {
-  const _ProviderButton({required this.icon, required this.label, required this.onPressed});
+  const _ProviderButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
 
   final IconData icon;
   final String label;

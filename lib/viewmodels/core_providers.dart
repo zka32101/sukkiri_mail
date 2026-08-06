@@ -12,24 +12,34 @@ import '../services/local_cache_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
-final userRepositoryProvider = Provider<UserRepository>((ref) => UserRepository());
+final userRepositoryProvider = Provider<UserRepository>(
+  (ref) => UserRepository(),
+);
 
-final linkedAccountRepositoryProvider =
-    Provider<LinkedAccountRepository>((ref) => LinkedAccountRepository());
+final linkedAccountRepositoryProvider = Provider<LinkedAccountRepository>(
+  (ref) => LinkedAccountRepository(),
+);
 
-final categoryRuleRepositoryProvider =
-    Provider<CategoryRuleRepository>((ref) => CategoryRuleRepository());
+final categoryRuleRepositoryProvider = Provider<CategoryRuleRepository>(
+  (ref) => CategoryRuleRepository(),
+);
 
-final senderBlockRuleRepositoryProvider =
-    Provider<SenderBlockRuleRepository>((ref) => SenderBlockRuleRepository());
+final senderBlockRuleRepositoryProvider = Provider<SenderBlockRuleRepository>(
+  (ref) => SenderBlockRuleRepository(),
+);
 
-final emailMetaRepositoryProvider =
-    Provider<EmailMetaRepository>((ref) => EmailMetaRepository());
+final emailMetaRepositoryProvider = Provider<EmailMetaRepository>(
+  (ref) => EmailMetaRepository(),
+);
 
-final archiveLogRepositoryProvider =
-    Provider<ArchiveLogRepository>((ref) => ArchiveLogRepository());
+final archiveLogRepositoryProvider = Provider<ArchiveLogRepository>(
+  (ref) => ArchiveLogRepository(),
+);
 
-final cacheEvictionLogRepositoryProvider =
-    Provider<CacheEvictionLogRepository>((ref) => CacheEvictionLogRepository());
+final cacheEvictionLogRepositoryProvider = Provider<CacheEvictionLogRepository>(
+  (ref) => CacheEvictionLogRepository(),
+);
 
-final localCacheServiceProvider = Provider<LocalCacheService>((ref) => LocalCacheService());
+final localCacheServiceProvider = Provider<LocalCacheService>(
+  (ref) => LocalCacheService(),
+);

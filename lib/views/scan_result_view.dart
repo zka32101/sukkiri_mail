@@ -55,7 +55,10 @@ class ScanResultView extends ConsumerWidget {
                           );
                         },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     child: Text(l10n.scanResultCta),
                   ),
                 ),

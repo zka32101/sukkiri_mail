@@ -10,13 +10,18 @@ import 'root_shell.dart';
 /// Aha Moment動線 Step4: 検出結果からアーカイブ候補を選択・保護し、確定する。
 /// スワイプで保護（ピン留め）＝自動アーカイブ・自動キャッシュ削除の両方から除外。
 class ArchiveCandidatesView extends ConsumerStatefulWidget {
-  const ArchiveCandidatesView({super.key, required this.account, required this.items});
+  const ArchiveCandidatesView({
+    super.key,
+    required this.account,
+    required this.items,
+  });
 
   final LinkedAccount account;
   final List<ScanResultItem> items;
 
   @override
-  ConsumerState<ArchiveCandidatesView> createState() => _ArchiveCandidatesViewState();
+  ConsumerState<ArchiveCandidatesView> createState() =>
+      _ArchiveCandidatesViewState();
 }
 
 class _ArchiveCandidatesViewState extends ConsumerState<ArchiveCandidatesView> {
@@ -75,8 +80,16 @@ class _ArchiveCandidatesViewState extends ConsumerState<ArchiveCandidatesView> {
                       }
                     });
                   },
-            title: Text(item.subject, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text(item.senderEmail, maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text(
+              item.subject,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              item.senderEmail,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             secondary: IconButton(
               icon: Icon(isPinned ? Icons.push_pin : Icons.push_pin_outlined),
               tooltip: isPinned ? l10n.commonUnpin : l10n.commonPin,
@@ -100,7 +113,10 @@ class _ArchiveCandidatesViewState extends ConsumerState<ArchiveCandidatesView> {
             onPressed: _archiving ? null : _archiveSelected,
             child: _archiving
                 ? const SizedBox(
-                    width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : Text(l10n.archiveCandidatesArchiveAll),
           ),
         ),

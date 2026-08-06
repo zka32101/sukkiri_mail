@@ -10,7 +10,7 @@ import 'mail_provider.dart';
 /// クライアントには平文で渡さない。クライアントはCallable Functions越しに命令するだけ。
 abstract class CloudFunctionsMailProvider implements MailProvider {
   CloudFunctionsMailProvider({FirebaseFunctions? functions})
-      : _functions = functions ?? FirebaseFunctions.instance;
+    : _functions = functions ?? FirebaseFunctions.instance;
 
   final FirebaseFunctions _functions;
 
@@ -35,16 +35,14 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
       'accountId': account.id,
     });
     final data = Map<String, dynamic>.from(result.data as Map);
-    final items = (data['items'] as List<dynamic>? ?? [])
-        .map((raw) {
-          final m = Map<String, dynamic>.from(raw as Map);
-          return ScanResultItem(
-            meta: EmailMeta.fromMap(m['id'] as String, m),
-            subject: m['subject'] as String? ?? '',
-            senderEmail: m['senderEmail'] as String? ?? '',
-          );
-        })
-        .toList();
+    final items = (data['items'] as List<dynamic>? ?? []).map((raw) {
+      final m = Map<String, dynamic>.from(raw as Map);
+      return ScanResultItem(
+        meta: EmailMeta.fromMap(m['id'] as String, m),
+        subject: m['subject'] as String? ?? '',
+        senderEmail: m['senderEmail'] as String? ?? '',
+      );
+    }).toList();
     return items;
   }
 
@@ -94,8 +92,8 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
     return MessageBody(
       messageId: messageId,
       html: data['html'] as String? ?? '',
-      attachmentNames:
-          (data['attachmentNames'] as List<dynamic>? ?? []).cast<String>(),
+      attachmentNames: (data['attachmentNames'] as List<dynamic>? ?? [])
+          .cast<String>(),
     );
   }
 }

@@ -12,122 +12,123 @@ class AppLocalizationsHi extends AppLocalizations {
   String get appTitle => 'साफ़ मेल';
 
   @override
-  String get onboardingTitle => 'Get free from mail you never needed to see';
+  String get onboardingTitle =>
+      'जो मेल कभी देखने की ज़रूरत नहीं थी, उनसे आज़ाद हो जाइए';
 
   @override
   String get onboardingSubtitle =>
-      'Bring Gmail, Outlook, and more into one inbox and auto-archive the noise';
+      'Gmail, Outlook और अन्य को एक ही इनबॉक्स में लाएं और प्रचार/सूचना मेल अपने आप संग्रहित करें';
 
   @override
-  String get onboardingCta => 'Get Started';
+  String get onboardingCta => 'शुरू करें';
 
   @override
-  String get accountLinkTitle => 'Link a mail account';
+  String get accountLinkTitle => 'मेल खाता जोड़ें';
 
   @override
-  String get accountLinkGmail => 'Connect Gmail';
+  String get accountLinkGmail => 'Gmail जोड़ें';
 
   @override
-  String get accountLinkOutlook => 'Connect Outlook / Hotmail';
+  String get accountLinkOutlook => 'Outlook / Hotmail जोड़ें';
 
   @override
-  String get accountLinkImap => 'Other mail (Yahoo!, iCloud, etc.)';
+  String get accountLinkImap => 'अन्य मेल (Yahoo!, iCloud आदि)';
 
   @override
   String scanResultTitle(int count) {
-    return 'Found $count emails you don\'t need to see';
+    return '$count ऐसी मेल मिलीं जिन्हें देखने की ज़रूरत नहीं';
   }
 
   @override
-  String get scanResultSubtitle => 'Here\'s how tidy your inbox will be';
+  String get scanResultSubtitle => 'आपका इनबॉक्स अब इतना साफ़ दिखेगा';
 
   @override
-  String get scanResultCta => 'Archive now';
+  String get scanResultCta => 'अभी संग्रहित करें';
 
   @override
-  String get archiveCandidatesTitle => 'Archive candidates';
+  String get archiveCandidatesTitle => 'संग्रहण के लिए उम्मीदवार';
 
   @override
-  String get archiveCandidatesArchiveAll => 'Archive all';
+  String get archiveCandidatesArchiveAll => 'सभी संग्रहित करें';
 
   @override
-  String get archiveCandidatesPin => 'Protect';
+  String get archiveCandidatesPin => 'सुरक्षित करें';
 
   @override
-  String get dashboardTitle => 'Inbox tidiness';
+  String get dashboardTitle => 'इनबॉक्स की सफ़ाई';
 
   @override
-  String get dashboardArchivedCount => 'Total archived';
+  String get dashboardArchivedCount => 'कुल संग्रहित';
 
   @override
-  String get dashboardFreedBytes => 'Local storage freed';
+  String get dashboardFreedBytes => 'मुक्त हुआ स्थानीय स्थान';
 
   @override
-  String get dashboardPinnedCount => 'Protected emails';
+  String get dashboardPinnedCount => 'सुरक्षित मेल';
 
   @override
-  String get ruleSettingsTitle => 'Rules';
+  String get ruleSettingsTitle => 'नियम';
 
   @override
-  String get ruleSettingsCategoryTab => 'Category rules';
+  String get ruleSettingsCategoryTab => 'श्रेणी नियम';
 
   @override
-  String get ruleSettingsSenderBlockTab => 'Sender block';
+  String get ruleSettingsSenderBlockTab => 'प्रेषक अवरोध';
 
   @override
-  String get ruleSettingsAddRule => 'Add rule';
+  String get ruleSettingsAddRule => 'नियम जोड़ें';
 
   @override
-  String get archiveRestoreTitle => 'Archived emails';
+  String get archiveRestoreTitle => 'संग्रहित मेल';
 
   @override
-  String get archiveRestoreRestore => 'Restore';
+  String get archiveRestoreRestore => 'पुनर्स्थापित करें';
 
   @override
-  String get mailSearchTitle => 'Search';
+  String get mailSearchTitle => 'खोजें';
 
   @override
-  String get mailSearchHint => 'Search by subject or sender';
+  String get mailSearchHint => 'विषय या प्रेषक से खोजें';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => 'सेटिंग्स';
 
   @override
-  String get settingsAccountColor => 'Account color';
+  String get settingsAccountColor => 'खाता रंग';
 
   @override
-  String get settingsLinkedAccounts => 'Linked accounts';
+  String get settingsLinkedAccounts => 'जुड़े हुए खाते';
 
   @override
-  String get settingsPlan => 'Plan';
+  String get settingsPlan => 'प्लान';
 
   @override
-  String get paywallTitle => 'TidyMail Pro';
+  String get paywallTitle => 'साफ़ मेल Pro';
 
   @override
-  String get paywallFeatureUnlimitedAccounts => 'Unlimited linked accounts';
+  String get paywallFeatureUnlimitedAccounts => 'असीमित जुड़े खाते';
 
   @override
-  String get paywallFeatureAutoRules => 'Automatic archive rules';
+  String get paywallFeatureAutoRules => 'स्वचालित संग्रहण नियम';
 
   @override
-  String get paywallFeatureUnlimitedRestore => 'Unlimited restore';
+  String get paywallFeatureUnlimitedRestore => 'असीमित पुनर्स्थापन';
 
   @override
-  String get paywallCta => 'Upgrade to Pro';
+  String get paywallCta => 'Pro में अपग्रेड करें';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => 'रद्द करें';
 
   @override
-  String get commonConfirm => 'Confirm';
+  String get commonConfirm => 'पुष्टि करें';
 
   @override
-  String get commonBack => 'Back';
+  String get commonBack => 'वापस';
 
   @override
-  String get commonPin => 'Protect';
+  String get commonPin => 'सुरक्षित करें';
 
   @override
-  String get commonUnpin => 'Unprotect';
+  String get commonUnpin => 'सुरक्षा हटाएं';
 }

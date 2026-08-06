@@ -22,7 +22,8 @@ class CacheEvictionLog {
       purgedAt: m['purgedAt'] is DateTime
           ? m['purgedAt'] as DateTime
           : DateTime.fromMillisecondsSinceEpoch(
-              (m['purgedAt'] as num?)?.toInt() ?? 0),
+              (m['purgedAt'] as num?)?.toInt() ?? 0,
+            ),
       emailCount: (m['emailCount'] as num?)?.toInt() ?? 0,
       freedBytesEstimate: (m['freedBytesEstimate'] as num?)?.toInt() ?? 0,
     );

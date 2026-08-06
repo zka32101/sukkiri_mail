@@ -5,16 +5,21 @@ import '../models/archive_log.dart';
 class ArchiveLogRepository {
   final FirebaseFirestore _db;
 
-  ArchiveLogRepository({FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;
+  ArchiveLogRepository({FirebaseFirestore? db})
+    : _db = db ?? FirebaseFirestore.instance;
 
-  CollectionReference<Map<String, dynamic>> get _col => _db.collection('archiveLogs');
+  CollectionReference<Map<String, dynamic>> get _col =>
+      _db.collection('archiveLogs');
 
   Stream<List<ArchiveLog>> watchForUser(String userId) {
     return _col
         .where('userId', isEqualTo: userId)
         .orderBy('archivedAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((d) => ArchiveLog.fromMap(d.id, d.data())).toList());
+        .map(
+          (snap) =>
+              snap.docs.map((d) => ArchiveLog.fromMap(d.id, d.data())).toList(),
+        );
   }
 
   Future<int> totalArchivedCount(String userId) async {
@@ -26,6 +31,8 @@ class ArchiveLogRepository {
   }
 
   Future<void> markRestored(String logId, DateTime restoredAt) {
-    return _col.doc(logId).update({'restoredAt': restoredAt.millisecondsSinceEpoch});
+    return _col.doc(logId).update({
+      'restoredAt': restoredAt.millisecondsSinceEpoch,
+    });
   }
 }

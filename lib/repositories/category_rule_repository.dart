@@ -5,13 +5,20 @@ import '../models/category_rule.dart';
 class CategoryRuleRepository {
   final FirebaseFirestore _db;
 
-  CategoryRuleRepository({FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;
+  CategoryRuleRepository({FirebaseFirestore? db})
+    : _db = db ?? FirebaseFirestore.instance;
 
-  CollectionReference<Map<String, dynamic>> get _col => _db.collection('categoryRules');
+  CollectionReference<Map<String, dynamic>> get _col =>
+      _db.collection('categoryRules');
 
   Stream<List<CategoryRule>> watchForUser(String userId) {
-    return _col.where('userId', isEqualTo: userId).snapshots().map(
-          (snap) => snap.docs.map((d) => CategoryRule.fromMap(d.id, d.data())).toList(),
+    return _col
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((d) => CategoryRule.fromMap(d.id, d.data()))
+              .toList(),
         );
   }
 

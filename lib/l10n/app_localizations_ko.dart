@@ -12,122 +12,122 @@ class AppLocalizationsKo extends AppLocalizations {
   String get appTitle => '상쾌메일';
 
   @override
-  String get onboardingTitle => 'Get free from mail you never needed to see';
+  String get onboardingTitle => '안 봐도 되는 메일에서 자유로워지세요';
 
   @override
   String get onboardingSubtitle =>
-      'Bring Gmail, Outlook, and more into one inbox and auto-archive the noise';
+      'Gmail, Outlook 등을 하나로 모아 광고·알림 메일을 자동으로 보관합니다';
 
   @override
-  String get onboardingCta => 'Get Started';
+  String get onboardingCta => '시작하기';
 
   @override
-  String get accountLinkTitle => 'Link a mail account';
+  String get accountLinkTitle => '메일 계정 연결';
 
   @override
-  String get accountLinkGmail => 'Connect Gmail';
+  String get accountLinkGmail => 'Gmail 연결';
 
   @override
-  String get accountLinkOutlook => 'Connect Outlook / Hotmail';
+  String get accountLinkOutlook => 'Outlook / Hotmail 연결';
 
   @override
-  String get accountLinkImap => 'Other mail (Yahoo!, iCloud, etc.)';
+  String get accountLinkImap => '기타 메일 (Yahoo!, iCloud 등)';
 
   @override
   String scanResultTitle(int count) {
-    return 'Found $count emails you don\'t need to see';
+    return '안 봐도 되는 메일 $count건을 찾았습니다';
   }
 
   @override
-  String get scanResultSubtitle => 'Here\'s how tidy your inbox will be';
+  String get scanResultSubtitle => '받은편지함이 이렇게 정리됩니다';
 
   @override
-  String get scanResultCta => 'Archive now';
+  String get scanResultCta => '지금 보관하기';
 
   @override
-  String get archiveCandidatesTitle => 'Archive candidates';
+  String get archiveCandidatesTitle => '보관 후보 메일';
 
   @override
-  String get archiveCandidatesArchiveAll => 'Archive all';
+  String get archiveCandidatesArchiveAll => '모두 보관';
 
   @override
-  String get archiveCandidatesPin => 'Protect';
+  String get archiveCandidatesPin => '보호하기';
 
   @override
-  String get dashboardTitle => 'Inbox tidiness';
+  String get dashboardTitle => '받은편지함 정리도';
 
   @override
-  String get dashboardArchivedCount => 'Total archived';
+  String get dashboardArchivedCount => '누적 보관 건수';
 
   @override
-  String get dashboardFreedBytes => 'Local storage freed';
+  String get dashboardFreedBytes => '확보한 저장공간';
 
   @override
-  String get dashboardPinnedCount => 'Protected emails';
+  String get dashboardPinnedCount => '보호된 메일 수';
 
   @override
-  String get ruleSettingsTitle => 'Rules';
+  String get ruleSettingsTitle => '규칙 설정';
 
   @override
-  String get ruleSettingsCategoryTab => 'Category rules';
+  String get ruleSettingsCategoryTab => '카테고리 규칙';
 
   @override
-  String get ruleSettingsSenderBlockTab => 'Sender block';
+  String get ruleSettingsSenderBlockTab => '발신자 차단';
 
   @override
-  String get ruleSettingsAddRule => 'Add rule';
+  String get ruleSettingsAddRule => '규칙 추가';
 
   @override
-  String get archiveRestoreTitle => 'Archived emails';
+  String get archiveRestoreTitle => '보관된 메일';
 
   @override
-  String get archiveRestoreRestore => 'Restore';
+  String get archiveRestoreRestore => '복원';
 
   @override
-  String get mailSearchTitle => 'Search';
+  String get mailSearchTitle => '검색';
 
   @override
-  String get mailSearchHint => 'Search by subject or sender';
+  String get mailSearchHint => '제목이나 발신자로 검색';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => '설정';
 
   @override
-  String get settingsAccountColor => 'Account color';
+  String get settingsAccountColor => '계정 색상';
 
   @override
-  String get settingsLinkedAccounts => 'Linked accounts';
+  String get settingsLinkedAccounts => '연결된 계정';
 
   @override
-  String get settingsPlan => 'Plan';
+  String get settingsPlan => '요금제';
 
   @override
-  String get paywallTitle => 'TidyMail Pro';
+  String get paywallTitle => '상쾌메일 Pro';
 
   @override
-  String get paywallFeatureUnlimitedAccounts => 'Unlimited linked accounts';
+  String get paywallFeatureUnlimitedAccounts => '계정 연결 무제한';
 
   @override
-  String get paywallFeatureAutoRules => 'Automatic archive rules';
+  String get paywallFeatureAutoRules => '자동 보관 규칙';
 
   @override
-  String get paywallFeatureUnlimitedRestore => 'Unlimited restore';
+  String get paywallFeatureUnlimitedRestore => '복원 무제한';
 
   @override
-  String get paywallCta => 'Upgrade to Pro';
+  String get paywallCta => 'Pro로 업그레이드';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => '취소';
 
   @override
-  String get commonConfirm => 'Confirm';
+  String get commonConfirm => '확인';
 
   @override
-  String get commonBack => 'Back';
+  String get commonBack => '뒤로';
 
   @override
-  String get commonPin => 'Protect';
+  String get commonPin => '보호';
 
   @override
-  String get commonUnpin => 'Unprotect';
+  String get commonUnpin => '보호 해제';
 }

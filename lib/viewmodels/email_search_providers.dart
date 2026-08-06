@@ -11,7 +11,9 @@ class MailSearchParams {
 
   @override
   bool operator ==(Object other) =>
-      other is MailSearchParams && other.accountId == accountId && other.query == query;
+      other is MailSearchParams &&
+      other.accountId == accountId &&
+      other.query == query;
 
   @override
   int get hashCode => Object.hash(accountId, query);
@@ -19,13 +21,20 @@ class MailSearchParams {
 
 /// メタデータは常時検索可能（本文がローカルパージ済みでも検索できる）。
 final mailSearchProvider =
-    FutureProvider.family<List<EmailMeta>, MailSearchParams>((ref, params) async {
-  if (params.query.trim().isEmpty) return [];
-  return ref.watch(emailMetaRepositoryProvider).search(params.accountId, params.query);
-});
+    FutureProvider.family<List<EmailMeta>, MailSearchParams>((
+      ref,
+      params,
+    ) async {
+      if (params.query.trim().isEmpty) return [];
+      return ref
+          .watch(emailMetaRepositoryProvider)
+          .search(params.accountId, params.query);
+    });
 
-final archivedEmailsProvider =
-    StreamProvider.family<List<EmailMeta>, String>((ref, accountId) {
+final archivedEmailsProvider = StreamProvider.family<List<EmailMeta>, String>((
+  ref,
+  accountId,
+) {
   return ref
       .watch(emailMetaRepositoryProvider)
       .watchForAccount(accountId, status: EmailStatus.archived);

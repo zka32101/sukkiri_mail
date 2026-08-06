@@ -5,9 +5,11 @@ import '../models/linked_account.dart';
 class LinkedAccountRepository {
   final FirebaseFirestore _db;
 
-  LinkedAccountRepository({FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;
+  LinkedAccountRepository({FirebaseFirestore? db})
+    : _db = db ?? FirebaseFirestore.instance;
 
-  CollectionReference<Map<String, dynamic>> get _col => _db.collection('linkedAccounts');
+  CollectionReference<Map<String, dynamic>> get _col =>
+      _db.collection('linkedAccounts');
 
   Future<List<LinkedAccount>> listForUser(String userId) async {
     final snap = await _col.where('userId', isEqualTo: userId).get();
@@ -15,8 +17,13 @@ class LinkedAccountRepository {
   }
 
   Stream<List<LinkedAccount>> watchForUser(String userId) {
-    return _col.where('userId', isEqualTo: userId).snapshots().map(
-          (snap) => snap.docs.map((d) => LinkedAccount.fromMap(d.id, d.data())).toList(),
+    return _col
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((d) => LinkedAccount.fromMap(d.id, d.data()))
+              .toList(),
         );
   }
 
@@ -30,7 +37,9 @@ class LinkedAccountRepository {
   }
 
   Future<void> updateLastScanAt(String accountId, DateTime at) {
-    return _col.doc(accountId).update({'lastScanAt': at.millisecondsSinceEpoch});
+    return _col.doc(accountId).update({
+      'lastScanAt': at.millisecondsSinceEpoch,
+    });
   }
 
   Future<void> remove(String accountId) {

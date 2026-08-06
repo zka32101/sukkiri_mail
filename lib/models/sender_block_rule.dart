@@ -44,11 +44,14 @@ class SenderBlockRule {
       userId: m['userId'] as String? ?? '',
       accountId: m['accountId'] as String?,
       pattern: m['pattern'] as String? ?? '',
-      matchType: senderMatchTypeFromString(m['matchType'] as String? ?? 'sender'),
+      matchType: senderMatchTypeFromString(
+        m['matchType'] as String? ?? 'sender',
+      ),
       createdAt: m['createdAt'] is DateTime
           ? m['createdAt'] as DateTime
           : DateTime.fromMillisecondsSinceEpoch(
-              (m['createdAt'] as num?)?.toInt() ?? 0),
+              (m['createdAt'] as num?)?.toInt() ?? 0,
+            ),
     );
   }
 

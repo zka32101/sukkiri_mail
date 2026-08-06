@@ -19,8 +19,12 @@ class TidinessStats {
 /// 「容量」訴求はローカルキャッシュ解放分のみ（サーバー側のアーカイブ件数と混同しない）。
 final tidinessStatsProvider = FutureProvider<TidinessStats>((ref) async {
   final userId = await ref.watch(currentUserIdProvider.future);
-  final archivedCount = await ref.watch(archiveLogRepositoryProvider).totalArchivedCount(userId);
-  final freedBytes = await ref.watch(cacheEvictionLogRepositoryProvider).totalFreedBytes(userId);
+  final archivedCount = await ref
+      .watch(archiveLogRepositoryProvider)
+      .totalArchivedCount(userId);
+  final freedBytes = await ref
+      .watch(cacheEvictionLogRepositoryProvider)
+      .totalFreedBytes(userId);
   // pinnedCountはアカウント横断で集計が必要なため、Cloud Functions側の集計APIに置き換え可能な
   // 設計にしておく（MVPではローカル集計プレースホルダー）。
   const pinnedCount = 0;

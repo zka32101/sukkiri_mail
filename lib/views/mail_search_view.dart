@@ -33,7 +33,10 @@ class _MailSearchViewState extends ConsumerState<MailSearchView> {
       appBar: AppBar(
         title: TextField(
           controller: _controller,
-          decoration: InputDecoration(hintText: l10n.mailSearchHint, border: InputBorder.none),
+          decoration: InputDecoration(
+            hintText: l10n.mailSearchHint,
+            border: InputBorder.none,
+          ),
           onSubmitted: (v) => setState(() => _query = v),
         ),
       ),
@@ -42,17 +45,25 @@ class _MailSearchViewState extends ConsumerState<MailSearchView> {
           : ListView(
               children: accounts.map((account) {
                 final resultsAsync = ref.watch(
-                  mailSearchProvider(MailSearchParams(accountId: account.id, query: _query)),
+                  mailSearchProvider(
+                    MailSearchParams(accountId: account.id, query: _query),
+                  ),
                 );
                 return resultsAsync.when(
                   loading: () => const LinearProgressIndicator(),
                   error: (e, _) => Text('$e'),
                   data: (metas) => Column(
                     children: metas
-                        .map((m) => ListTile(
-                              title: Text(m.snippet, maxLines: 1, overflow: TextOverflow.ellipsis),
-                              subtitle: Text(account.emailAddress),
-                            ))
+                        .map(
+                          (m) => ListTile(
+                            title: Text(
+                              m.snippet,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(account.emailAddress),
+                          ),
+                        )
                         .toList(),
                   ),
                 );

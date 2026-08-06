@@ -37,15 +37,17 @@ class ArchiveLog {
       archivedAt: m['archivedAt'] is DateTime
           ? m['archivedAt'] as DateTime
           : DateTime.fromMillisecondsSinceEpoch(
-              (m['archivedAt'] as num?)?.toInt() ?? 0),
+              (m['archivedAt'] as num?)?.toInt() ?? 0,
+            ),
       emailCount: (m['emailCount'] as num?)?.toInt() ?? 0,
       category: mailCategoryFromString(m['category'] as String? ?? 'promotion'),
       restoredAt: m['restoredAt'] == null
           ? null
           : (m['restoredAt'] is DateTime
-              ? m['restoredAt'] as DateTime
-              : DateTime.fromMillisecondsSinceEpoch(
-                  (m['restoredAt'] as num).toInt())),
+                ? m['restoredAt'] as DateTime
+                : DateTime.fromMillisecondsSinceEpoch(
+                    (m['restoredAt'] as num).toInt(),
+                  )),
     );
   }
 

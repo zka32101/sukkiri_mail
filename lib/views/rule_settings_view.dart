@@ -50,7 +50,8 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
                 items: MailCategory.values
                     .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
                     .toList(),
-                onChanged: (v) => setDialogState(() => category = v ?? category),
+                onChanged: (v) =>
+                    setDialogState(() => category = v ?? category),
               ),
               Slider(
                 value: retentionDays.toDouble(),
@@ -58,25 +59,36 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
                 max: 90,
                 divisions: 89,
                 label: '$retentionDays日',
-                onChanged: (v) => setDialogState(() => retentionDays = v.round()),
+                onChanged: (v) =>
+                    setDialogState(() => retentionDays = v.round()),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.commonCancel)),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.commonConfirm)),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.commonConfirm),
+            ),
           ],
         ),
       ),
     );
     if (result != true) return;
     final userId = await ref.read(currentUserIdProvider.future);
-    await ref.read(categoryRuleRepositoryProvider).upsert(CategoryRule(
-          id: '',
-          userId: userId,
-          category: category,
-          retentionDays: retentionDays,
-        ));
+    await ref
+        .read(categoryRuleRepositoryProvider)
+        .upsert(
+          CategoryRule(
+            id: '',
+            userId: userId,
+            category: category,
+            retentionDays: retentionDays,
+          ),
+        );
   }
 
   Future<void> _addSenderBlockRule() async {
@@ -100,26 +112,37 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
                 items: SenderMatchType.values
                     .map((t) => DropdownMenuItem(value: t, child: Text(t.name)))
                     .toList(),
-                onChanged: (v) => setDialogState(() => matchType = v ?? matchType),
+                onChanged: (v) =>
+                    setDialogState(() => matchType = v ?? matchType),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.commonCancel)),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.commonConfirm)),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.commonConfirm),
+            ),
           ],
         ),
       ),
     );
     if (result != true || controller.text.trim().isEmpty) return;
     final userId = await ref.read(currentUserIdProvider.future);
-    await ref.read(senderBlockRuleRepositoryProvider).add(SenderBlockRule(
-          id: '',
-          userId: userId,
-          pattern: controller.text.trim(),
-          matchType: matchType,
-          createdAt: DateTime.now(),
-        ));
+    await ref
+        .read(senderBlockRuleRepositoryProvider)
+        .add(
+          SenderBlockRule(
+            id: '',
+            userId: userId,
+            pattern: controller.text.trim(),
+            matchType: matchType,
+            createdAt: DateTime.now(),
+          ),
+        );
   }
 
   @override
@@ -147,10 +170,12 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
             error: (e, _) => Center(child: Text('$e')),
             data: (rules) => ListView(
               children: rules
-                  .map((r) => ListTile(
-                        title: Text(r.category.name),
-                        subtitle: Text('${r.retentionDays}日'),
-                      ))
+                  .map(
+                    (r) => ListTile(
+                      title: Text(r.category.name),
+                      subtitle: Text('${r.retentionDays}日'),
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -159,10 +184,12 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
             error: (e, _) => Center(child: Text('$e')),
             data: (rules) => ListView(
               children: rules
-                  .map((r) => ListTile(
-                        title: Text(r.pattern),
-                        subtitle: Text(r.matchType.name),
-                      ))
+                  .map(
+                    (r) => ListTile(
+                      title: Text(r.pattern),
+                      subtitle: Text(r.matchType.name),
+                    ),
+                  )
                   .toList(),
             ),
           ),

@@ -73,7 +73,10 @@ class LocalCacheService {
 
   /// パージ対象件数から、ダッシュボード表示用の推定解放容量(byte)を概算する。
   /// 実測ではなく概算のため freedBytesEstimate という名称（CacheEvictionLog側の命名と一致）。
-  int estimateFreedBytes({required int emailCount, int avgBytesPerEmail = 150 * 1024}) {
+  int estimateFreedBytes({
+    required int emailCount,
+    int avgBytesPerEmail = 150 * 1024,
+  }) {
     return emailCount * avgBytesPerEmail;
   }
 }

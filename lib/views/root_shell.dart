@@ -20,7 +20,8 @@ class RootShell extends ConsumerWidget {
     final accountsAsync = ref.watch(linkedAccountsProvider);
 
     return accountsAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
       data: (accounts) {
         if (accounts.isEmpty) {
@@ -59,11 +60,26 @@ class _MainShellState extends State<_MainShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: [
-          NavigationDestination(icon: const Icon(Icons.dashboard_outlined), label: l10n.dashboardTitle),
-          NavigationDestination(icon: const Icon(Icons.rule_outlined), label: l10n.ruleSettingsTitle),
-          NavigationDestination(icon: const Icon(Icons.archive_outlined), label: l10n.archiveRestoreTitle),
-          NavigationDestination(icon: const Icon(Icons.search_outlined), label: l10n.mailSearchTitle),
-          NavigationDestination(icon: const Icon(Icons.settings_outlined), label: l10n.settingsTitle),
+          NavigationDestination(
+            icon: const Icon(Icons.dashboard_outlined),
+            label: l10n.dashboardTitle,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.rule_outlined),
+            label: l10n.ruleSettingsTitle,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.archive_outlined),
+            label: l10n.archiveRestoreTitle,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.search_outlined),
+            label: l10n.mailSearchTitle,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            label: l10n.settingsTitle,
+          ),
         ],
       ),
     );

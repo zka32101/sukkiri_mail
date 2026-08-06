@@ -39,10 +39,16 @@ abstract class MailProvider {
   Future<List<ScanResultItem>> scan({required LinkedAccount account});
 
   /// 指定したメールをアーカイブする（サーバー側、可逆）。
-  Future<void> archive({required LinkedAccount account, required List<String> emailIds});
+  Future<void> archive({
+    required LinkedAccount account,
+    required List<String> emailIds,
+  });
 
   /// アーカイブ済みメールを受信箱に復元する。
-  Future<void> restore({required LinkedAccount account, required List<String> emailIds});
+  Future<void> restore({
+    required LinkedAccount account,
+    required List<String> emailIds,
+  });
 
   /// カテゴリ一覧を返す（プロバイダ固有の分類ラベルがあれば反映）。
   Future<List<String>> listCategories({required LinkedAccount account});

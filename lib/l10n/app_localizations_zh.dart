@@ -12,124 +12,123 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => '清爽信箱';
 
   @override
-  String get onboardingTitle => 'Get free from mail you never needed to see';
+  String get onboardingTitle => '從不必看的郵件中解放自己';
 
   @override
-  String get onboardingSubtitle =>
-      'Bring Gmail, Outlook, and more into one inbox and auto-archive the noise';
+  String get onboardingSubtitle => '把Gmail、Outlook等信箱整合為一，自動封存廣告與通知郵件';
 
   @override
-  String get onboardingCta => 'Get Started';
+  String get onboardingCta => '開始使用';
 
   @override
-  String get accountLinkTitle => 'Link a mail account';
+  String get accountLinkTitle => '連結郵件帳號';
 
   @override
-  String get accountLinkGmail => 'Connect Gmail';
+  String get accountLinkGmail => '連結 Gmail';
 
   @override
-  String get accountLinkOutlook => 'Connect Outlook / Hotmail';
+  String get accountLinkOutlook => '連結 Outlook / Hotmail';
 
   @override
-  String get accountLinkImap => 'Other mail (Yahoo!, iCloud, etc.)';
+  String get accountLinkImap => '其他信箱（Yahoo!、iCloud 等）';
 
   @override
   String scanResultTitle(int count) {
-    return 'Found $count emails you don\'t need to see';
+    return '偵測到 $count 封不必看的郵件';
   }
 
   @override
-  String get scanResultSubtitle => 'Here\'s how tidy your inbox will be';
+  String get scanResultSubtitle => '整理後的收件匣會是這樣';
 
   @override
-  String get scanResultCta => 'Archive now';
+  String get scanResultCta => '立即封存';
 
   @override
-  String get archiveCandidatesTitle => 'Archive candidates';
+  String get archiveCandidatesTitle => '封存候選郵件';
 
   @override
-  String get archiveCandidatesArchiveAll => 'Archive all';
+  String get archiveCandidatesArchiveAll => '全部封存';
 
   @override
-  String get archiveCandidatesPin => 'Protect';
+  String get archiveCandidatesPin => '保護';
 
   @override
-  String get dashboardTitle => 'Inbox tidiness';
+  String get dashboardTitle => '收件匣清爽度';
 
   @override
-  String get dashboardArchivedCount => 'Total archived';
+  String get dashboardArchivedCount => '累計封存件數';
 
   @override
-  String get dashboardFreedBytes => 'Local storage freed';
+  String get dashboardFreedBytes => '已釋放的本機空間';
 
   @override
-  String get dashboardPinnedCount => 'Protected emails';
+  String get dashboardPinnedCount => '已保護件數';
 
   @override
-  String get ruleSettingsTitle => 'Rules';
+  String get ruleSettingsTitle => '規則設定';
 
   @override
-  String get ruleSettingsCategoryTab => 'Category rules';
+  String get ruleSettingsCategoryTab => '分類規則';
 
   @override
-  String get ruleSettingsSenderBlockTab => 'Sender block';
+  String get ruleSettingsSenderBlockTab => '寄件人封鎖';
 
   @override
-  String get ruleSettingsAddRule => 'Add rule';
+  String get ruleSettingsAddRule => '新增規則';
 
   @override
-  String get archiveRestoreTitle => 'Archived emails';
+  String get archiveRestoreTitle => '已封存郵件';
 
   @override
-  String get archiveRestoreRestore => 'Restore';
+  String get archiveRestoreRestore => '還原';
 
   @override
-  String get mailSearchTitle => 'Search';
+  String get mailSearchTitle => '搜尋';
 
   @override
-  String get mailSearchHint => 'Search by subject or sender';
+  String get mailSearchHint => '以主旨或寄件人搜尋';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => '設定';
 
   @override
-  String get settingsAccountColor => 'Account color';
+  String get settingsAccountColor => '帳號顏色';
 
   @override
-  String get settingsLinkedAccounts => 'Linked accounts';
+  String get settingsLinkedAccounts => '已連結帳號';
 
   @override
-  String get settingsPlan => 'Plan';
+  String get settingsPlan => '方案';
 
   @override
-  String get paywallTitle => 'TidyMail Pro';
+  String get paywallTitle => '清爽信箱 Pro';
 
   @override
-  String get paywallFeatureUnlimitedAccounts => 'Unlimited linked accounts';
+  String get paywallFeatureUnlimitedAccounts => '無限連結帳號';
 
   @override
-  String get paywallFeatureAutoRules => 'Automatic archive rules';
+  String get paywallFeatureAutoRules => '自動封存規則';
 
   @override
-  String get paywallFeatureUnlimitedRestore => 'Unlimited restore';
+  String get paywallFeatureUnlimitedRestore => '無限次還原';
 
   @override
-  String get paywallCta => 'Upgrade to Pro';
+  String get paywallCta => '升級為 Pro';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => '取消';
 
   @override
-  String get commonConfirm => 'Confirm';
+  String get commonConfirm => '確認';
 
   @override
-  String get commonBack => 'Back';
+  String get commonBack => '返回';
 
   @override
-  String get commonPin => 'Protect';
+  String get commonPin => '保護';
 
   @override
-  String get commonUnpin => 'Unprotect';
+  String get commonUnpin => '取消保護';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -140,122 +139,121 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get appTitle => '清爽信箱';
 
   @override
-  String get onboardingTitle => 'Get free from mail you never needed to see';
+  String get onboardingTitle => '從不必看的郵件中解放自己';
 
   @override
-  String get onboardingSubtitle =>
-      'Bring Gmail, Outlook, and more into one inbox and auto-archive the noise';
+  String get onboardingSubtitle => '把Gmail、Outlook等信箱整合為一，自動封存廣告與通知郵件';
 
   @override
-  String get onboardingCta => 'Get Started';
+  String get onboardingCta => '開始使用';
 
   @override
-  String get accountLinkTitle => 'Link a mail account';
+  String get accountLinkTitle => '連結郵件帳號';
 
   @override
-  String get accountLinkGmail => 'Connect Gmail';
+  String get accountLinkGmail => '連結 Gmail';
 
   @override
-  String get accountLinkOutlook => 'Connect Outlook / Hotmail';
+  String get accountLinkOutlook => '連結 Outlook / Hotmail';
 
   @override
-  String get accountLinkImap => 'Other mail (Yahoo!, iCloud, etc.)';
+  String get accountLinkImap => '其他信箱（Yahoo!、iCloud 等）';
 
   @override
   String scanResultTitle(int count) {
-    return 'Found $count emails you don\'t need to see';
+    return '偵測到 $count 封不必看的郵件';
   }
 
   @override
-  String get scanResultSubtitle => 'Here\'s how tidy your inbox will be';
+  String get scanResultSubtitle => '整理後的收件匣會是這樣';
 
   @override
-  String get scanResultCta => 'Archive now';
+  String get scanResultCta => '立即封存';
 
   @override
-  String get archiveCandidatesTitle => 'Archive candidates';
+  String get archiveCandidatesTitle => '封存候選郵件';
 
   @override
-  String get archiveCandidatesArchiveAll => 'Archive all';
+  String get archiveCandidatesArchiveAll => '全部封存';
 
   @override
-  String get archiveCandidatesPin => 'Protect';
+  String get archiveCandidatesPin => '保護';
 
   @override
-  String get dashboardTitle => 'Inbox tidiness';
+  String get dashboardTitle => '收件匣清爽度';
 
   @override
-  String get dashboardArchivedCount => 'Total archived';
+  String get dashboardArchivedCount => '累計封存件數';
 
   @override
-  String get dashboardFreedBytes => 'Local storage freed';
+  String get dashboardFreedBytes => '已釋放的本機空間';
 
   @override
-  String get dashboardPinnedCount => 'Protected emails';
+  String get dashboardPinnedCount => '已保護件數';
 
   @override
-  String get ruleSettingsTitle => 'Rules';
+  String get ruleSettingsTitle => '規則設定';
 
   @override
-  String get ruleSettingsCategoryTab => 'Category rules';
+  String get ruleSettingsCategoryTab => '分類規則';
 
   @override
-  String get ruleSettingsSenderBlockTab => 'Sender block';
+  String get ruleSettingsSenderBlockTab => '寄件人封鎖';
 
   @override
-  String get ruleSettingsAddRule => 'Add rule';
+  String get ruleSettingsAddRule => '新增規則';
 
   @override
-  String get archiveRestoreTitle => 'Archived emails';
+  String get archiveRestoreTitle => '已封存郵件';
 
   @override
-  String get archiveRestoreRestore => 'Restore';
+  String get archiveRestoreRestore => '還原';
 
   @override
-  String get mailSearchTitle => 'Search';
+  String get mailSearchTitle => '搜尋';
 
   @override
-  String get mailSearchHint => 'Search by subject or sender';
+  String get mailSearchHint => '以主旨或寄件人搜尋';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => '設定';
 
   @override
-  String get settingsAccountColor => 'Account color';
+  String get settingsAccountColor => '帳號顏色';
 
   @override
-  String get settingsLinkedAccounts => 'Linked accounts';
+  String get settingsLinkedAccounts => '已連結帳號';
 
   @override
-  String get settingsPlan => 'Plan';
+  String get settingsPlan => '方案';
 
   @override
-  String get paywallTitle => 'TidyMail Pro';
+  String get paywallTitle => '清爽信箱 Pro';
 
   @override
-  String get paywallFeatureUnlimitedAccounts => 'Unlimited linked accounts';
+  String get paywallFeatureUnlimitedAccounts => '無限連結帳號';
 
   @override
-  String get paywallFeatureAutoRules => 'Automatic archive rules';
+  String get paywallFeatureAutoRules => '自動封存規則';
 
   @override
-  String get paywallFeatureUnlimitedRestore => 'Unlimited restore';
+  String get paywallFeatureUnlimitedRestore => '無限次還原';
 
   @override
-  String get paywallCta => 'Upgrade to Pro';
+  String get paywallCta => '升級為 Pro';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => '取消';
 
   @override
-  String get commonConfirm => 'Confirm';
+  String get commonConfirm => '確認';
 
   @override
-  String get commonBack => 'Back';
+  String get commonBack => '返回';
 
   @override
-  String get commonPin => 'Protect';
+  String get commonPin => '保護';
 
   @override
-  String get commonUnpin => 'Unprotect';
+  String get commonUnpin => '取消保護';
 }

@@ -56,21 +56,33 @@ class TidinessDashboardView extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Text(l10n.settingsLinkedAccounts, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            l10n.settingsLinkedAccounts,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           accountsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text('$e'),
             data: (accounts) => Column(
               children: accounts
-                  .map((a) => ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: AppTheme.accountColorFor(a.colorHex, brightness),
-                          child: Text(a.emailAddress.isNotEmpty ? a.emailAddress[0].toUpperCase() : '?'),
+                  .map(
+                    (a) => ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppTheme.accountColorFor(
+                          a.colorHex,
+                          brightness,
                         ),
-                        title: Text(a.emailAddress),
-                        subtitle: Text(a.provider.name),
-                      ))
+                        child: Text(
+                          a.emailAddress.isNotEmpty
+                              ? a.emailAddress[0].toUpperCase()
+                              : '?',
+                        ),
+                      ),
+                      title: Text(a.emailAddress),
+                      subtitle: Text(a.provider.name),
+                    ),
+                  )
                   .toList(),
             ),
           ),

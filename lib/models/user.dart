@@ -26,11 +26,7 @@ class AppUser {
   bool get isPro => plan == UserPlan.pro;
 
   AppUser copyWith({UserPlan? plan}) {
-    return AppUser(
-      id: id,
-      createdAt: createdAt,
-      plan: plan ?? this.plan,
-    );
+    return AppUser(id: id, createdAt: createdAt, plan: plan ?? this.plan);
   }
 
   factory AppUser.fromMap(String id, Map<String, dynamic> m) {
@@ -40,7 +36,8 @@ class AppUser {
       createdAt: m['createdAt'] is DateTime
           ? m['createdAt'] as DateTime
           : DateTime.fromMillisecondsSinceEpoch(
-              (m['createdAt'] as num?)?.toInt() ?? 0),
+              (m['createdAt'] as num?)?.toInt() ?? 0,
+            ),
     );
   }
 

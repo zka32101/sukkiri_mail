@@ -31,7 +31,9 @@ class _ArchiveRestoreViewState extends ConsumerState<ArchiveRestoreView> {
         data: (accounts) {
           if (accounts.isEmpty) return const SizedBox.shrink();
           _selectedAccount ??= accounts.first;
-          final archivedAsync = ref.watch(archivedEmailsProvider(_selectedAccount!.id));
+          final archivedAsync = ref.watch(
+            archivedEmailsProvider(_selectedAccount!.id),
+          );
           return Column(
             children: [
               if (accounts.length > 1)
@@ -41,24 +43,36 @@ class _ArchiveRestoreViewState extends ConsumerState<ArchiveRestoreView> {
                     isExpanded: true,
                     value: _selectedAccount,
                     items: accounts
-                        .map((a) => DropdownMenuItem(value: a, child: Text(a.emailAddress)))
+                        .map(
+                          (a) => DropdownMenuItem(
+                            value: a,
+                            child: Text(a.emailAddress),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) => setState(() => _selectedAccount = v),
                   ),
                 ),
               Expanded(
                 child: archivedAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (e, _) => Center(child: Text('$e')),
                   data: (metas) => ListView.builder(
                     itemCount: metas.length,
                     itemBuilder: (context, index) {
                       final meta = metas[index];
                       return ListTile(
-                        title: Text(meta.snippet, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        title: Text(
+                          meta.snippet,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         trailing: TextButton(
                           onPressed: () async {
-                            final provider = resolveMailProvider(_selectedAccount!.provider);
+                            final provider = resolveMailProvider(
+                              _selectedAccount!.provider,
+                            );
                             await provider.restore(
                               account: _selectedAccount!,
                               emailIds: [meta.id],

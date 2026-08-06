@@ -104,19 +104,22 @@ class EmailMeta {
       receivedAt: m['receivedAt'] is DateTime
           ? m['receivedAt'] as DateTime
           : DateTime.fromMillisecondsSinceEpoch(
-              (m['receivedAt'] as num?)?.toInt() ?? 0),
+              (m['receivedAt'] as num?)?.toInt() ?? 0,
+            ),
       hasAttachment: m['hasAttachment'] as bool? ?? false,
       status: emailStatusFromString(m['status'] as String? ?? 'active'),
       isPinned: m['isPinned'] as bool? ?? false,
-      localCacheStatus:
-          localCacheStatusFromString(m['localCacheStatus'] as String? ?? 'cached'),
+      localCacheStatus: localCacheStatusFromString(
+        m['localCacheStatus'] as String? ?? 'cached',
+      ),
       snippet: m['snippet'] as String? ?? '',
       lastFetchedAt: m['lastFetchedAt'] == null
           ? null
           : (m['lastFetchedAt'] is DateTime
-              ? m['lastFetchedAt'] as DateTime
-              : DateTime.fromMillisecondsSinceEpoch(
-                  (m['lastFetchedAt'] as num).toInt())),
+                ? m['lastFetchedAt'] as DateTime
+                : DateTime.fromMillisecondsSinceEpoch(
+                    (m['lastFetchedAt'] as num).toInt(),
+                  )),
     );
   }
 

@@ -5,7 +5,8 @@ import '../models/user.dart';
 class UserRepository {
   final FirebaseFirestore _db;
 
-  UserRepository({FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;
+  UserRepository({FirebaseFirestore? db})
+    : _db = db ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _col => _db.collection('users');
 

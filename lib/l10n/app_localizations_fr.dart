@@ -12,122 +12,124 @@ class AppLocalizationsFr extends AppLocalizations {
   String get appTitle => 'Boîte Zen';
 
   @override
-  String get onboardingTitle => 'Get free from mail you never needed to see';
+  String get onboardingTitle =>
+      'Libérez-vous des e-mails que vous n\'avez jamais eu besoin de voir';
 
   @override
   String get onboardingSubtitle =>
-      'Bring Gmail, Outlook, and more into one inbox and auto-archive the noise';
+      'Réunissez Gmail, Outlook et plus dans une seule boîte et archivez automatiquement le superflu';
 
   @override
-  String get onboardingCta => 'Get Started';
+  String get onboardingCta => 'Commencer';
 
   @override
-  String get accountLinkTitle => 'Link a mail account';
+  String get accountLinkTitle => 'Lier un compte e-mail';
 
   @override
-  String get accountLinkGmail => 'Connect Gmail';
+  String get accountLinkGmail => 'Connecter Gmail';
 
   @override
-  String get accountLinkOutlook => 'Connect Outlook / Hotmail';
+  String get accountLinkOutlook => 'Connecter Outlook / Hotmail';
 
   @override
-  String get accountLinkImap => 'Other mail (Yahoo!, iCloud, etc.)';
+  String get accountLinkImap => 'Autre messagerie (Yahoo!, iCloud, etc.)';
 
   @override
   String scanResultTitle(int count) {
-    return 'Found $count emails you don\'t need to see';
+    return '$count e-mails que vous n\'avez pas besoin de voir ont été trouvés';
   }
 
   @override
-  String get scanResultSubtitle => 'Here\'s how tidy your inbox will be';
+  String get scanResultSubtitle =>
+      'Voici à quel point votre boîte sera apaisée';
 
   @override
-  String get scanResultCta => 'Archive now';
+  String get scanResultCta => 'Archiver maintenant';
 
   @override
-  String get archiveCandidatesTitle => 'Archive candidates';
+  String get archiveCandidatesTitle => 'Candidats à l\'archivage';
 
   @override
-  String get archiveCandidatesArchiveAll => 'Archive all';
+  String get archiveCandidatesArchiveAll => 'Tout archiver';
 
   @override
-  String get archiveCandidatesPin => 'Protect';
+  String get archiveCandidatesPin => 'Protéger';
 
   @override
-  String get dashboardTitle => 'Inbox tidiness';
+  String get dashboardTitle => 'Sérénité de la boîte de réception';
 
   @override
-  String get dashboardArchivedCount => 'Total archived';
+  String get dashboardArchivedCount => 'Total archivé';
 
   @override
-  String get dashboardFreedBytes => 'Local storage freed';
+  String get dashboardFreedBytes => 'Espace local libéré';
 
   @override
-  String get dashboardPinnedCount => 'Protected emails';
+  String get dashboardPinnedCount => 'E-mails protégés';
 
   @override
-  String get ruleSettingsTitle => 'Rules';
+  String get ruleSettingsTitle => 'Règles';
 
   @override
-  String get ruleSettingsCategoryTab => 'Category rules';
+  String get ruleSettingsCategoryTab => 'Règles par catégorie';
 
   @override
-  String get ruleSettingsSenderBlockTab => 'Sender block';
+  String get ruleSettingsSenderBlockTab => 'Blocage d\'expéditeur';
 
   @override
-  String get ruleSettingsAddRule => 'Add rule';
+  String get ruleSettingsAddRule => 'Ajouter une règle';
 
   @override
-  String get archiveRestoreTitle => 'Archived emails';
+  String get archiveRestoreTitle => 'E-mails archivés';
 
   @override
-  String get archiveRestoreRestore => 'Restore';
+  String get archiveRestoreRestore => 'Restaurer';
 
   @override
-  String get mailSearchTitle => 'Search';
+  String get mailSearchTitle => 'Recherche';
 
   @override
-  String get mailSearchHint => 'Search by subject or sender';
+  String get mailSearchHint => 'Rechercher par objet ou expéditeur';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => 'Paramètres';
 
   @override
-  String get settingsAccountColor => 'Account color';
+  String get settingsAccountColor => 'Couleur du compte';
 
   @override
-  String get settingsLinkedAccounts => 'Linked accounts';
+  String get settingsLinkedAccounts => 'Comptes liés';
 
   @override
-  String get settingsPlan => 'Plan';
+  String get settingsPlan => 'Formule';
 
   @override
-  String get paywallTitle => 'TidyMail Pro';
+  String get paywallTitle => 'Boîte Zen Pro';
 
   @override
-  String get paywallFeatureUnlimitedAccounts => 'Unlimited linked accounts';
+  String get paywallFeatureUnlimitedAccounts => 'Comptes liés illimités';
 
   @override
-  String get paywallFeatureAutoRules => 'Automatic archive rules';
+  String get paywallFeatureAutoRules => 'Règles d\'archivage automatique';
 
   @override
-  String get paywallFeatureUnlimitedRestore => 'Unlimited restore';
+  String get paywallFeatureUnlimitedRestore => 'Restauration illimitée';
 
   @override
-  String get paywallCta => 'Upgrade to Pro';
+  String get paywallCta => 'Passer à Pro';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => 'Annuler';
 
   @override
-  String get commonConfirm => 'Confirm';
+  String get commonConfirm => 'Confirmer';
 
   @override
-  String get commonBack => 'Back';
+  String get commonBack => 'Retour';
 
   @override
-  String get commonPin => 'Protect';
+  String get commonPin => 'Protéger';
 
   @override
-  String get commonUnpin => 'Unprotect';
+  String get commonUnpin => 'Retirer la protection';
 }

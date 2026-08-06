@@ -4,7 +4,9 @@ import '../models/linked_account.dart';
 import 'auth_provider.dart';
 import 'core_providers.dart';
 
-final linkedAccountsProvider = StreamProvider<List<LinkedAccount>>((ref) async* {
+final linkedAccountsProvider = StreamProvider<List<LinkedAccount>>((
+  ref,
+) async* {
   final userId = await ref.watch(currentUserIdProvider.future);
   yield* ref.watch(linkedAccountRepositoryProvider).watchForUser(userId);
 });
