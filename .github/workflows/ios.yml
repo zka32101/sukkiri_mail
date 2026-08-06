@@ -27,19 +27,29 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
-
-      - name: Package .app as zip
+      - name: Build iOS (analysis and compile check)
         run: |
-          cd build/ios/iphoneos
-          zip -r Runner.app.zip Runner.app
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -derivedDataPath build \
+            -arch arm64 \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            PROVISIONING_PROFILE="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
+            build
+
+      - name: Package build artifacts
+        run: |
+          zip -r sukkiri-mail-ios-build.zip ios/build
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: sukkiri-mail-ios-unsigned
-          path: build/ios/iphoneos/Runner.app.zip
+          path: sukkiri-mail-ios-build.zip
           retention-days: 14
 
   build-ios-signed:
@@ -86,8 +96,21 @@ jobs:
 
       - name: Build signed IPA
         run: |
-          flutter build ipa --release \
-            --export-options-plist=ios/ExportOptions.plist
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -derivedDataPath build \
+            -allowProvisioningUpdates \
+            archive \
+            -archivePath build/Runner.xcarchive
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath ios/build/Runner.xcarchive \
+            -exportPath ios/build/ipa \
+            -exportOptionsPlist ios/ExportOptions.plist
 
       - name: Upload to TestFlight
         env:
@@ -97,13 +120,13 @@ jobs:
         run: |
           mkdir -p ~/private_keys
           echo -n "$API_KEY_BASE64" | base64 --decode -o ~/private_keys/AuthKey_$API_KEY_ID.p8
-          xcrun altool --upload-app -f build/ios/ipa/*.ipa -t ios \
+          xcrun altool --upload-app -f ios/build/ipa/*.ipa -t ios \
             --apiKey "$API_KEY_ID" --apiIssuer "$API_ISSUER_ID"
 
       - name: Upload IPA artifact (backup)
         uses: actions/upload-artifact@v4
         with:
           name: sukkiri-mail-ios-signed
-          path: build/ios/ipa/*.ipa
+          path: ios/build/ipa/*.ipa
           retention-days: 30
 
