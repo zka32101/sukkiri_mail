@@ -1,0 +1,49 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f7ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8f4ff;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="envelopeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3457C9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2a46a0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="url(#bgGradient)" rx="256"/>
+
+  <!-- Envelope body -->
+  <g transform="translate(150, 250)">
+    <!-- Envelope main body -->
+    <rect x="0" y="80" width="724" height="470" fill="white" stroke="url(#envelopeGradient)" stroke-width="8" rx="20"/>
+
+    <!-- Envelope flap -->
+    <path d="M 0 80 L 362 300 L 724 80" fill="url(#envelopeGradient)" stroke="url(#envelopeGradient)" stroke-width="4" stroke-linejoin="round"/>
+
+    <!-- Envelope divider line -->
+    <line x1="0" y1="80" x2="724" y2="80" stroke="#3457C9" stroke-width="4"/>
+  </g>
+
+  <!-- Filter/Checkmark symbol (overlay) -->
+  <g transform="translate(520, 480)">
+    <!-- Circular background -->
+    <circle cx="0" cy="0" r="100" fill="#1F8A5F" opacity="0.9"/>
+
+    <!-- Checkmark -->
+    <path d="M -40 10 L -10 40 L 50 -20"
+          stroke="white"
+          stroke-width="20"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- Optional: Subtle paper/letter marks -->
+  <g opacity="0.1" stroke="#3457C9" stroke-width="3" fill="none">
+    <line x1="250" y1="380" x2="750" y2="380"/>
+    <line x1="250" y1="450" x2="750" y2="450"/>
+    <line x1="250" y1="520" x2="700" y2="520"/>
+  </g>
+</svg>

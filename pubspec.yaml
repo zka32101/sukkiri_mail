@@ -53,6 +53,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/app_icon/
   # TODO: Lottieアニメーション素材追加時に assets/lottie/ を作成しここへ登録する
   # （空ディレクトリをpubspecに登録するとFlutterのアセットバンドル時にエラーになるため、
   # 実ファイルが揃うまでは宣言しない）
