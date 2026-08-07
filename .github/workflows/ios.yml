@@ -27,6 +27,11 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Install iOS pods
+        run: |
+          cd ios
+          pod install --repo-update
+
       - name: Build iOS (analysis and compile check)
         run: |
           cd ios
@@ -68,6 +73,11 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Install iOS pods
+        run: |
+          cd ios
+          pod install --repo-update
 
       # 証明書とProvisioning Profileを一時キーチェーンにインポートする
       - name: Import signing certificate and provisioning profile
