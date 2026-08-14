@@ -9,6 +9,22 @@
       ]
     },
     {
+      "collectionGroup": "emailMeta",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "emailMeta",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "isPinned", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "archiveLogs",
       "queryScope": "COLLECTION",
       "fields": [

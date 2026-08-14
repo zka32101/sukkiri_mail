@@ -53,4 +53,24 @@ class EmailMetaRepository {
       'localCacheStatus': localCacheStatusToString(status),
     });
   }
+
+  /// ユーザーが連携する全アカウント横断で、現在アーカイブ済みのメール件数を数える。
+  Future<int> countArchivedForUser(String userId) async {
+    final agg = await _col
+        .where('userId', isEqualTo: userId)
+        .where('status', isEqualTo: emailStatusToString(EmailStatus.archived))
+        .count()
+        .get();
+    return agg.count ?? 0;
+  }
+
+  /// ユーザーが連携する全アカウント横断で、ピン留め（保護）済みのメール件数を数える。
+  Future<int> countPinnedForUser(String userId) async {
+    final agg = await _col
+        .where('userId', isEqualTo: userId)
+        .where('isPinned', isEqualTo: true)
+        .count()
+        .get();
+    return agg.count ?? 0;
+  }
 }

@@ -20,6 +20,18 @@ function resolveProvider(provider: string): MailProviderAdapter {
   }
 }
 
+/** emailMetaのドキュメントIDを合成する（accountIdをprefixし、プロバイダ間でのID衝突を避ける）。
+ *  クライアントに渡すemailIdは常にこの合成ID（＝Firestoreドキュメント ID）を使う。 */
+function emailMetaDocId(accountId: string, itemId: string): string {
+  return `${accountId}_${itemId}`;
+}
+
+/** 合成IDからプロバイダ本来のメッセージID（Gmail/Outlook/IMAP APIへ渡す値）を取り出す。 */
+function rawProviderMessageId(accountId: string, compositeId: string): string {
+  const prefix = `${accountId}_`;
+  return compositeId.startsWith(prefix) ? compositeId.slice(prefix.length) : compositeId;
+}
+
 /** OAuth同意 or アプリパスワード検証を行い、アカウントを連携する。 */
 export const connectAccount = onCall(async (request) => {
   const uid = request.auth?.uid;
@@ -32,7 +44,8 @@ export const connectAccount = onCall(async (request) => {
   return result;
 });
 
-/** アカウントをスキャンし、カテゴリ自動判定した検出結果を返す（Aha Moment用）。 */
+/** アカウントをスキャンし、カテゴリ自動判定した検出結果を返す（Aha Moment用）。
+ *  検出結果はemailMetaへ永続化する（メール検索・アーカイブ済み一覧・ピン留めはこのコレクションを参照する）。 */
 export const scanAccount = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
@@ -41,12 +54,37 @@ export const scanAccount = onCall(async (request) => {
 
   const adapter = resolveProvider(provider);
   const items = await adapter.scan(accountId);
-  await admin
-    .firestore()
-    .collection("linkedAccounts")
-    .doc(accountId)
-    .update({ lastScanAt: Date.now() });
-  return { items };
+
+  const db = admin.firestore();
+  const batch = db.batch();
+  for (const item of items) {
+    const docRef = db.collection("emailMeta").doc(emailMetaDocId(accountId, item.id));
+    // merge: trueで既存のstatus/isPinned/localCacheStatusは上書きしない（再スキャン時に保護状態を維持）。
+    batch.set(
+      docRef,
+      {
+        userId: uid,
+        accountId,
+        category: item.category,
+        receivedAt: item.receivedAt,
+        hasAttachment: item.hasAttachment,
+        snippet: item.snippet,
+        subject: item.subject,
+        senderEmail: item.senderEmail,
+      },
+      { merge: true }
+    );
+  }
+  batch.update(db.collection("linkedAccounts").doc(accountId), { lastScanAt: Date.now() });
+  await batch.commit();
+
+  // クライアントへ返すidはFirestoreドキュメントID（合成ID）に揃える。
+  // 以降アーカイブ/復元/ピン留めはこのidをそのままemailMetaの参照に使う。
+  const responseItems = items.map((item) => ({
+    ...item,
+    id: emailMetaDocId(accountId, item.id),
+  }));
+  return { items: responseItems };
 });
 
 /** 検出結果のうち選択されたメールをアーカイブする（サーバー側、可逆）。 */
@@ -55,17 +93,39 @@ export const applyArchiveRules = onCall(async (request) => {
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
   const { provider, accountId, emailIds } = request.data ?? {};
   await assertAccountOwnership(accountId, uid);
+  // クライアントから渡されるemailIdsはemailMetaの合成ID。プロバイダAPIには本来のメッセージIDを渡す。
+  const ids: string[] = emailIds ?? [];
+  const rawIds = ids.map((id) => rawProviderMessageId(accountId, id));
 
   const adapter = resolveProvider(provider);
-  await adapter.archive(accountId, emailIds ?? []);
+  await adapter.archive(accountId, rawIds);
 
-  await admin.firestore().collection("archiveLogs").add({
-    userId: uid,
-    archivedAt: Date.now(),
-    emailCount: (emailIds ?? []).length,
-    category: "other",
-    restoredAt: null,
+  const db = admin.firestore();
+  const metaRefs = ids.map((id) => db.collection("emailMeta").doc(id));
+  const metaSnaps = metaRefs.length > 0 ? await db.getAll(...metaRefs) : [];
+
+  // emailMetaのstatusを更新し、実際のカテゴリ別にarchiveLogsを記録する（固定で"other"にしない）。
+  const countByCategory = new Map<string, number>();
+  const batch = db.batch();
+  metaSnaps.forEach((snap, i) => {
+    const category = (snap.data()?.category as string | undefined) ?? "other";
+    countByCategory.set(category, (countByCategory.get(category) ?? 0) + 1);
+    batch.set(metaRefs[i], { status: "archived" }, { merge: true });
   });
+
+  const archivedAt = Date.now();
+  for (const [category, count] of countByCategory) {
+    const logRef = db.collection("archiveLogs").doc();
+    batch.set(logRef, {
+      userId: uid,
+      archivedAt,
+      emailCount: count,
+      category,
+      restoredAt: null,
+    });
+  }
+  await batch.commit();
+
   return { ok: true };
 });
 
@@ -75,9 +135,23 @@ export const restoreEmail = onCall(async (request) => {
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
   const { provider, accountId, emailIds } = request.data ?? {};
   await assertAccountOwnership(accountId, uid);
+  const ids: string[] = emailIds ?? [];
+  const rawIds = ids.map((id) => rawProviderMessageId(accountId, id));
 
   const adapter = resolveProvider(provider);
-  await adapter.restore(accountId, emailIds ?? []);
+  await adapter.restore(accountId, rawIds);
+
+  if (ids.length > 0) {
+    const db = admin.firestore();
+    const batch = db.batch();
+    for (const id of ids) {
+      const ref = db.collection("emailMeta").doc(id);
+      // 復元後は再びアーカイブ済み一覧・ダッシュボード集計から除外されるようactiveへ戻す。
+      batch.set(ref, { status: "active" }, { merge: true });
+    }
+    await batch.commit();
+  }
+
   return { ok: true };
 });
 
@@ -89,7 +163,7 @@ export const fetchMessageBody = onCall(async (request) => {
   await assertAccountOwnership(accountId, uid);
 
   const adapter = resolveProvider(provider);
-  return adapter.fetchMessageBody(accountId, messageId);
+  return adapter.fetchMessageBody(accountId, rawProviderMessageId(accountId, messageId ?? ""));
 });
 
 async function assertAccountOwnership(accountId: string, uid: string): Promise<void> {
