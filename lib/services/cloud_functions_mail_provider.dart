@@ -17,11 +17,15 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
   String get _providerKey => mailProviderTypeToString(providerType);
 
   @override
-  Future<LinkedAccount> connect({required String userId}) async {
+  Future<LinkedAccount> connect({
+    required String userId,
+    Map<String, dynamic> params = const {},
+  }) async {
     final callable = _functions.httpsCallable('connectAccount');
     final result = await callable.call<Map<String, dynamic>>({
       'provider': _providerKey,
       'userId': userId,
+      ...params,
     });
     final data = Map<String, dynamic>.from(result.data as Map);
     return LinkedAccount.fromMap(data['id'] as String, data);

@@ -78,7 +78,9 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
       ),
     );
     if (result != true) return;
+    if (!mounted) return;
     final userId = await ref.read(currentUserIdProvider.future);
+    if (!mounted) return;
     await ref
         .read(categoryRuleRepositoryProvider)
         .upsert(
@@ -131,7 +133,9 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
       ),
     );
     if (result != true || controller.text.trim().isEmpty) return;
+    if (!mounted) return;
     final userId = await ref.read(currentUserIdProvider.future);
+    if (!mounted) return;
     await ref
         .read(senderBlockRuleRepositoryProvider)
         .add(

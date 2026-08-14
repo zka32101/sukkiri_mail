@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../models/linked_account.dart';
 import '../services/cloud_functions_mail_provider.dart';
 import '../services/mail_provider.dart';
+import '../viewmodels/core_providers.dart';
 import 'root_shell.dart';
 
 /// Aha Moment動線 Step4: 検出結果からアーカイブ候補を選択・保護し、確定する。
@@ -33,6 +34,30 @@ class _ArchiveCandidatesViewState extends ConsumerState<ArchiveCandidatesView> {
   void initState() {
     super.initState();
     _selected = widget.items.map((i) => i.meta.id).toSet();
+  }
+
+  Future<void> _togglePinned(String id, bool nextPinned) async {
+    setState(() {
+      if (nextPinned) {
+        _pinned.add(id);
+      } else {
+        _pinned.remove(id);
+      }
+    });
+    try {
+      await ref.read(emailMetaRepositoryProvider).setPinned(id, nextPinned);
+    } catch (e) {
+      if (!mounted) return;
+      // 永続化に失敗した場合はUI表示を元に戻す（保護状態の見た目と実体を一致させる）。
+      setState(() {
+        if (nextPinned) {
+          _pinned.remove(id);
+        } else {
+          _pinned.add(id);
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
 
   Future<void> _archiveSelected() async {
@@ -93,15 +118,7 @@ class _ArchiveCandidatesViewState extends ConsumerState<ArchiveCandidatesView> {
             secondary: IconButton(
               icon: Icon(isPinned ? Icons.push_pin : Icons.push_pin_outlined),
               tooltip: isPinned ? l10n.commonUnpin : l10n.commonPin,
-              onPressed: () {
-                setState(() {
-                  if (isPinned) {
-                    _pinned.remove(id);
-                  } else {
-                    _pinned.add(id);
-                  }
-                });
-              },
+              onPressed: () => _togglePinned(id, !isPinned),
             ),
           );
         },

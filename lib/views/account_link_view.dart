@@ -19,12 +19,15 @@ class AccountLinkView extends ConsumerStatefulWidget {
 class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
   bool _connecting = false;
 
-  Future<void> _connect(MailProviderType type) async {
+  Future<void> _connect(
+    MailProviderType type, {
+    Map<String, dynamic> params = const {},
+  }) async {
     setState(() => _connecting = true);
     try {
       final userId = await ref.read(currentUserIdProvider.future);
       final provider = resolveMailProvider(type);
-      final account = await provider.connect(userId: userId);
+      final account = await provider.connect(userId: userId, params: params);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => ScanResultView(account: account)),
@@ -35,6 +38,90 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
     } finally {
       if (mounted) setState(() => _connecting = false);
     }
+  }
+
+  /// Gmail/Outlookは実OAuth（クライアントID登録・リダイレクトURI設定）が未整備のため、
+  /// 誤って接続を試みて分かりにくいエラーになるのを避け、状況を明示するダイアログを出す。
+  Future<void> _showComingSoon(String providerLabel) {
+    final l10n = AppLocalizations.of(context)!;
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(providerLabel),
+        content: Text('$providerLabelとの連携は準備中です。現在は「${l10n.accountLinkImap}」からご利用いただけます。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.commonConfirm),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _connectImap() async {
+    final l10n = AppLocalizations.of(context)!;
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    final hostController = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.accountLinkImap),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'メールアドレス'),
+            ),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'アプリ専用パスワード'),
+            ),
+            TextField(
+              controller: hostController,
+              decoration: const InputDecoration(
+                labelText: 'IMAPホスト',
+                hintText: 'imap.mail.yahoo.co.jp',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.commonConfirm),
+          ),
+        ],
+      ),
+    );
+    if (result != true) return;
+    final emailAddress = emailController.text.trim();
+    final appPassword = passwordController.text;
+    final imapHost = hostController.text.trim();
+    if (emailAddress.isEmpty || appPassword.isEmpty || imapHost.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('すべての項目を入力してください')));
+      return;
+    }
+    if (!mounted) return;
+    await _connect(
+      MailProviderType.imap,
+      params: {
+        'emailAddress': emailAddress,
+        'appPassword': appPassword,
+        'imapHost': imapHost,
+      },
+    );
   }
 
   @override
@@ -51,19 +138,19 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
                   _ProviderButton(
                     icon: Icons.mail_outline,
                     label: l10n.accountLinkGmail,
-                    onPressed: () => _connect(MailProviderType.gmail),
+                    onPressed: () => _showComingSoon(l10n.accountLinkGmail),
                   ),
                   const SizedBox(height: 12),
                   _ProviderButton(
                     icon: Icons.outbox_outlined,
                     label: l10n.accountLinkOutlook,
-                    onPressed: () => _connect(MailProviderType.outlook),
+                    onPressed: () => _showComingSoon(l10n.accountLinkOutlook),
                   ),
                   const SizedBox(height: 12),
                   _ProviderButton(
                     icon: Icons.alternate_email,
                     label: l10n.accountLinkImap,
-                    onPressed: () => _connect(MailProviderType.imap),
+                    onPressed: _connectImap,
                   ),
                 ],
               ),
