@@ -71,6 +71,7 @@ export const scanAccount = onCall(async (request) => {
         snippet: item.snippet,
         subject: item.subject,
         senderEmail: item.senderEmail,
+        isUnread: item.isUnread,
       },
       { merge: true }
     );

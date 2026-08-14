@@ -30,6 +30,7 @@ dependencies:
 
   # OAuth (Gmail / Outlook)
   google_sign_in: ^6.2.2
+  url_launcher: ^6.3.0 # Outlook OAuth同意画面をブラウザで開くために使用
 
   # Local storage (端末側キャッシュ管理)
   sqflite: ^2.3.3

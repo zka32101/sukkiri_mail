@@ -83,11 +83,16 @@ export class ImapProvider implements MailProviderAdapter {
     try {
       const lock = await client.getMailboxLock("INBOX");
       try {
-        const messages = client.fetch({ seq: "1:50" }, { envelope: true, uid: true });
+        const messages = client.fetch(
+          { seq: "1:50" },
+          { envelope: true, uid: true, flags: true }
+        );
         for await (const m of messages) {
           const from = m.envelope?.from?.[0];
           const senderEmail = from?.address ?? "";
           const subject = m.envelope?.subject ?? "";
+          // IMAPの\Seenフラグが立っていなければ未読。
+          const isUnread = !m.flags?.has("\\Seen");
           items.push({
             id: String(m.uid),
             accountId,
@@ -97,6 +102,7 @@ export class ImapProvider implements MailProviderAdapter {
             snippet: subject.slice(0, 80),
             subject,
             senderEmail,
+            isUnread,
           });
         }
       } finally {

@@ -62,6 +62,10 @@ class EmailMeta {
   final LocalCacheStatus localCacheStatus;
   final String snippet; // 常時保持・数十文字。キャッシュ削除後も検索・一覧表示に使う
   final DateTime? lastFetchedAt; // オンデマンド取得の最終日時
+  final String senderEmail; // 差出人ブロックルール判定・自動キャッシュ削除の対象特定に使う
+  // 未読は経過日数によらず自動キャッシュ削除の対象外にする（LocalCacheServiceの最重要ガード）。
+  // フィールド欠落時は「未読扱い」で安全側に倒す（誤ってキャッシュを消さない）。
+  final bool isUnread;
 
   const EmailMeta({
     required this.id,
@@ -74,6 +78,8 @@ class EmailMeta {
     this.isPinned = false,
     this.localCacheStatus = LocalCacheStatus.cached,
     this.lastFetchedAt,
+    this.senderEmail = '',
+    this.isUnread = true,
   });
 
   EmailMeta copyWith({
@@ -93,6 +99,8 @@ class EmailMeta {
       isPinned: isPinned ?? this.isPinned,
       localCacheStatus: localCacheStatus ?? this.localCacheStatus,
       lastFetchedAt: lastFetchedAt ?? this.lastFetchedAt,
+      senderEmail: senderEmail,
+      isUnread: isUnread,
     );
   }
 
@@ -120,6 +128,8 @@ class EmailMeta {
                 : DateTime.fromMillisecondsSinceEpoch(
                     (m['lastFetchedAt'] as num).toInt(),
                   )),
+      senderEmail: m['senderEmail'] as String? ?? '',
+      isUnread: m['isUnread'] as bool? ?? true,
     );
   }
 
@@ -134,6 +144,8 @@ class EmailMeta {
       'localCacheStatus': localCacheStatusToString(localCacheStatus),
       'snippet': snippet,
       'lastFetchedAt': lastFetchedAt?.millisecondsSinceEpoch,
+      'senderEmail': senderEmail,
+      'isUnread': isUnread,
     };
   }
 }
