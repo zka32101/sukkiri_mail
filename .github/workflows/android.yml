@@ -14,6 +14,12 @@ name: Android CI (sukkiri_mail)
 #   ANDROID_KEY_ALIAS         … 鍵のエイリアス
 #   ANDROID_KEY_PASSWORD      … 鍵のパスワード（PKCS12形式ではストアパスワードと同一）
 # Settings > Secrets and variables > Actions から登録すること。
+#
+# ビルド成功後、GDRIVE_SERVICE_ACCOUNT_JSON が設定されていればGoogle Driveの
+# 「apk」フォルダ（マイドライブ直下、GDRIVE_APK_FOLDER_ID）へ署名付きAPK/AABを
+# 自動アップロード（同名ファイルが既にあれば内容を上書き）する。未設定の場合はスキップする。
+#   GDRIVE_SERVICE_ACCOUNT_JSON … Drive APIが有効なGCPサービスアカウントのJSON鍵（そのまま）
+# サービスアカウントのclient_emailに対して、対象フォルダの編集者権限を共有しておくこと。
 
 on:
   pull_request:
@@ -115,7 +121,69 @@ jobs:
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
 
+      # サービスアカウントのJSON鍵はこのステップ内でのみファイルに書き出し、
+      # ジョブ終了時に確実に削除する（Actionsのログにも値は出力しない）。
+      - name: Upload signed APK/AAB to Google Drive
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        env:
+          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          GDRIVE_APK_FOLDER_ID: "1iXxOO750AyuIwXNwGF-qTJLmElIldgwD"
+        run: |
+          if [ -z "$GDRIVE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "GDRIVE_SERVICE_ACCOUNT_JSON が未設定のため、Google Driveへのアップロードをスキップします。"
+            exit 0
+          fi
+          python3 -m pip install --quiet --break-system-packages google-auth google-api-python-client
+          echo "$GDRIVE_SERVICE_ACCOUNT_JSON" > /tmp/gdrive-sa.json
+          python3 - <<'PYEOF'
+          import os
+
+          from google.oauth2 import service_account
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+
+          SCOPES = ["https://www.googleapis.com/auth/drive"]
+          creds = service_account.Credentials.from_service_account_file(
+              "/tmp/gdrive-sa.json", scopes=SCOPES
+          )
+          drive = build("drive", "v3", credentials=creds)
+          folder_id = os.environ["GDRIVE_APK_FOLDER_ID"]
+
+          def upload_or_replace(local_path, drive_name, mime_type):
+              query = (
+                  f"name='{drive_name}' and '{folder_id}' in parents and trashed=false"
+              )
+              existing = (
+                  drive.files().list(q=query, fields="files(id,name)").execute()
+              )
+              media = MediaFileUpload(local_path, mimetype=mime_type, resumable=True)
+              files = existing.get("files", [])
+              if files:
+                  file_id = files[0]["id"]
+                  drive.files().update(fileId=file_id, media_body=media).execute()
+                  print(f"Updated existing Drive file: {drive_name} (id={file_id})")
+              else:
+                  metadata = {"name": drive_name, "parents": [folder_id]}
+                  created = (
+                      drive.files()
+                      .create(body=metadata, media_body=media, fields="id")
+                      .execute()
+                  )
+                  print(f"Created new Drive file: {drive_name} (id={created['id']})")
+
+          upload_or_replace(
+              "build/app/outputs/flutter-apk/app-release.apk",
+              "sukkiri-mail-release.apk",
+              "application/vnd.android.package-archive",
+          )
+          upload_or_replace(
+              "build/app/outputs/bundle/release/app-release.aab",
+              "sukkiri-mail-release.aab",
+              "application/octet-stream",
+          )
+          PYEOF
+
       # ランナーは実行ごとに破棄されるが、念のため鍵材料を明示的に削除しておく。
       - name: Clean up keystore and key.properties
         if: always()
-        run: rm -f android/app/release.jks android/key.properties
+        run: rm -f android/app/release.jks android/key.properties /tmp/gdrive-sa.json
