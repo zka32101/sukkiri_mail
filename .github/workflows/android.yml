@@ -3,14 +3,17 @@ name: Android CI (sukkiri_mail)
 # APK/AABをビルドする。Ubuntuランナーのため macOS(iOS)ほどコストが高くなく、
 # PR時の自動ビルドも許容する（ios.ymlのコスト最適化方針とは異なる）。
 #
-# 【要確認】リリース署名（keystore）は未設定のため、現状は debug 署名でビルドされる
-# （android/app/build.gradle.kts 参照）。Play Store配信用の署名付きビルドが必要になったら、
-# 1. keytool でリリース用keystoreを作成
-# 2. base64化してGitHub Secretsに登録:
-#    ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD
-# 3. android/app/build.gradle.kts の release signingConfig を追加のkeystoreへ差し替え
-# 4. 本ワークフローに署名付きビルドジョブ（ios.ymlのbuild-ios-signed相当）を追加
-# の手順が必要（iOSのTestFlightアップロードと同様、人手でのシークレット登録が前提）。
+# build-android: 常時（PR/push/手動）。key.properties が無いためdebug署名でビルドする
+# （android/app/build.gradle.kts のフォールバック挙動）。コンパイル可否の確認用。
+#
+# build-android-signed: リリース署名済みのAPK/AABをビルドする。手動実行(workflow_dispatch)限定
+# （iOSのTestFlightアップロードジョブと同様、配信物を作るジョブは自動起動しない）。
+# 以下のRepository Secretsが必要（未設定の場合はこのジョブをスキップする）:
+#   ANDROID_KEYSTORE_BASE64   … keystoreファイル(.jks)をbase64化した文字列
+#   ANDROID_KEYSTORE_PASSWORD … ストアパスワード
+#   ANDROID_KEY_ALIAS         … 鍵のエイリアス
+#   ANDROID_KEY_PASSWORD      … 鍵のパスワード（PKCS12形式ではストアパスワードと同一）
+# Settings > Secrets and variables > Actions から登録すること。
 
 on:
   pull_request:
@@ -51,3 +54,68 @@ jobs:
           name: sukkiri-mail-aab
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 14
+
+  build-android-signed:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      # keystoreとkey.propertiesはこのステップ内でのみ生成し、ジョブ終了時に確実に削除する
+      # （Actionsのログにも値は出力しない）。
+      - name: Decode keystore and write key.properties
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "ANDROID_KEYSTORE_BASE64 が未設定のため、署名付きビルドをスキップします。"
+            echo "SKIP_SIGNED_BUILD=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.jks
+          cat > android/key.properties <<EOF
+          storeFile=release.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Build signed APK
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        run: flutter build apk --release
+
+      - name: Build signed AAB
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        run: flutter build appbundle --release
+
+      - name: Upload signed APK artifact
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukkiri-mail-apk-signed
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Upload signed AAB artifact
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukkiri-mail-aab-signed
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      # ランナーは実行ごとに破棄されるが、念のため鍵材料を明示的に削除しておく。
+      - name: Clean up keystore and key.properties
+        if: always()
+        run: rm -f android/app/release.jks android/key.properties
