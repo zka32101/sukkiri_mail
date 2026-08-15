@@ -14,6 +14,8 @@ export interface ScanResultItem {
   snippet: string;
   subject: string;
   senderEmail: string;
+  // 未読メールは自動キャッシュ削除の対象外にするための判定に使う（LocalCacheServiceの最重要ガード）。
+  isUnread: boolean;
 }
 
 export interface ConnectedAccountResult {

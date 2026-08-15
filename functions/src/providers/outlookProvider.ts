@@ -16,6 +16,10 @@ const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
  *
  * 【要確認】Azure App registration（クライアントID/シークレット）はユーザー作業待ち。
  * 取得後 Secret Manager に `outlook-oauth-client-id` / `outlook-oauth-client-secret`。
+ * リダイレクトURIは `https://login.microsoftonline.com/common/oauth2/nativeclient`
+ * （Microsoft提供のネイティブアプリ向け固定URI）をAzure Portal側で登録すること。
+ * クライアント（Flutter）側は同じclient_id（非秘密）をFirebase Remote Configの
+ * `outlook_oauth_client_id` としても登録する必要がある（lib/views/account_link_view.dart参照）。
  */
 export class OutlookProvider implements MailProviderAdapter {
   /**
@@ -205,7 +209,7 @@ export class OutlookProvider implements MailProviderAdapter {
   async scan(accountId: string): Promise<ScanResultItem[]> {
     const data = await this.graphFetch(
       accountId,
-      "/me/mailFolders/inbox/messages?$top=50&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments"
+      "/me/mailFolders/inbox/messages?$top=50&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead"
     );
     const items: ScanResultItem[] = (data.value ?? []).map((m: any) => {
       const senderEmail = m.from?.emailAddress?.address ?? "";
@@ -218,6 +222,7 @@ export class OutlookProvider implements MailProviderAdapter {
         snippet: (m.bodyPreview ?? "").slice(0, 80),
         subject: m.subject ?? "",
         senderEmail,
+        isUnread: !m.isRead,
       };
     });
     return items;

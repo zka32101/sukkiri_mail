@@ -1,11 +1,20 @@
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/linked_account.dart';
 import '../services/cloud_functions_mail_provider.dart';
 import '../viewmodels/auth_provider.dart';
 import 'scan_result_view.dart';
+
+/// OutlookのOAuth認可リクエストで使うredirect_uri。Microsoftが「ネイティブ/デスクトップアプリ」
+/// 向けに提供している特別な固定エンドポイントで、遷移後にブラウザのURLへ ?code=... が付与される。
+/// Azure Portal側のアプリ登録でこのURIをリダイレクトURIとして登録しておく必要がある。
+const _outlookRedirectUri =
+    'https://login.microsoftonline.com/common/oauth2/nativeclient';
 
 /// Aha Moment動線 Step2: プロバイダ選択→OAuth同意/アプリパスワード入力。
 /// 初期実装優先順位：①Gmail（gmail.modify）②Outlook（Mail.ReadWrite）③汎用IMAP。
@@ -40,15 +49,34 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
     }
   }
 
-  /// Gmail/Outlookは実OAuth（クライアントID登録・リダイレクトURI設定）が未整備のため、
-  /// 誤って接続を試みて分かりにくいエラーになるのを避け、状況を明示するダイアログを出す。
-  Future<void> _showComingSoon(String providerLabel) {
+  /// OAuthクライアントID等、実行時に必要な（秘密ではない）公開設定値をRemote Configから取得する。
+  /// クライアントシークレットは決してクライアントへ渡さず、Cloud Functions側のSecret Managerのみで
+  /// 保持する（クライアントに必要なのはOAuth同意画面へ渡す公開のclient_idのみ）。
+  Future<String> _remoteConfigString(String key) async {
+    final remoteConfig = FirebaseRemoteConfig.instance;
+    try {
+      await remoteConfig.setConfigSettings(
+        RemoteConfigSettings(
+          fetchTimeout: const Duration(seconds: 10),
+          minimumFetchInterval: const Duration(hours: 1),
+        ),
+      );
+      await remoteConfig.fetchAndActivate();
+    } catch (_) {
+      // オフライン等で取得に失敗した場合はSDKのデフォルト/キャッシュ値にフォールバックする。
+    }
+    return remoteConfig.getString(key);
+  }
+
+  Future<void> _showNotConfigured(String providerLabel, String detail) {
     final l10n = AppLocalizations.of(context)!;
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(providerLabel),
-        content: Text('$providerLabelとの連携は準備中です。現在は「${l10n.accountLinkImap}」からご利用いただけます。'),
+        content: Text(
+          '$providerLabelとの連携は現在準備中です（$detail）。現在は「${l10n.accountLinkImap}」からご利用いただけます。',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -56,6 +84,126 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
           ),
         ],
       ),
+    );
+  }
+
+  /// GmailはGoogleSignInのネイティブOAuthフローで認可コード（serverAuthCode）を取得し、
+  /// Cloud Functions側でアクセストークンへ交換する。
+  Future<void> _connectGmail() async {
+    final l10n = AppLocalizations.of(context)!;
+    final serverClientId = await _remoteConfigString(
+      'gmail_oauth_server_client_id',
+    );
+    if (serverClientId.isEmpty) {
+      if (!mounted) return;
+      await _showNotConfigured(
+        l10n.accountLinkGmail,
+        'OAuthクライアントID未設定',
+      );
+      return;
+    }
+    try {
+      final googleSignIn = GoogleSignIn(
+        scopes: const ['https://www.googleapis.com/auth/gmail.modify'],
+        serverClientId: serverClientId,
+      );
+      final account = await googleSignIn.signIn();
+      if (account == null) return; // ユーザーがキャンセル
+      final authCode = account.serverAuthCode;
+      if (authCode == null || authCode.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Googleの認可コードを取得できませんでした')),
+        );
+        return;
+      }
+      if (!mounted) return;
+      await _connect(MailProviderType.gmail, params: {'authCode': authCode});
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  /// OutlookはMicrosoft側にネイティブSDKを導入していないため、外部ブラウザでOAuth同意画面を開き、
+  /// 完了後のリダイレクト先URL（?code=...を含む）をユーザーに貼り付けてもらう方式で認可コードを得る。
+  Future<void> _connectOutlook() async {
+    final l10n = AppLocalizations.of(context)!;
+    final clientId = await _remoteConfigString('outlook_oauth_client_id');
+    if (clientId.isEmpty) {
+      if (!mounted) return;
+      await _showNotConfigured(
+        l10n.accountLinkOutlook,
+        'OAuthクライアントID未設定',
+      );
+      return;
+    }
+
+    final authUrl = Uri.https(
+      'login.microsoftonline.com',
+      '/consumers/oauth2/v2.0/authorize',
+      {
+        'client_id': clientId,
+        'response_type': 'code',
+        'redirect_uri': _outlookRedirectUri,
+        'response_mode': 'query',
+        'scope': 'Mail.ReadWrite offline_access',
+      },
+    );
+
+    final pastedUrlController = TextEditingController();
+    if (!mounted) return;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.accountLinkOutlook),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('①下のボタンでブラウザを開き、Microsoftアカウントでログイン・許可してください。'),
+            const SizedBox(height: 8),
+            const Text('②完了後に表示されるページのURLをコピーし、下に貼り付けてください。'),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () =>
+                  launchUrl(authUrl, mode: LaunchMode.externalApplication),
+              child: const Text('ブラウザを開く'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: pastedUrlController,
+              decoration: const InputDecoration(labelText: '完了後のURL'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.commonConfirm),
+          ),
+        ],
+      ),
+    );
+    if (result != true) return;
+    final authCode = Uri.tryParse(
+      pastedUrlController.text.trim(),
+    )?.queryParameters['code'];
+    if (authCode == null || authCode.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('URLからcodeを読み取れませんでした')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    await _connect(
+      MailProviderType.outlook,
+      params: {'authCode': authCode, 'redirectUri': _outlookRedirectUri},
     );
   }
 
@@ -138,13 +286,13 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
                   _ProviderButton(
                     icon: Icons.mail_outline,
                     label: l10n.accountLinkGmail,
-                    onPressed: () => _showComingSoon(l10n.accountLinkGmail),
+                    onPressed: _connectGmail,
                   ),
                   const SizedBox(height: 12),
                   _ProviderButton(
                     icon: Icons.outbox_outlined,
                     label: l10n.accountLinkOutlook,
-                    onPressed: () => _showComingSoon(l10n.accountLinkOutlook),
+                    onPressed: _connectOutlook,
                   ),
                   const SizedBox(height: 12),
                   _ProviderButton(

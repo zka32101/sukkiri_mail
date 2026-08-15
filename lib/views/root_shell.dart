@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
 import '../viewmodels/linked_account_providers.dart';
+import '../viewmodels/local_cache_eviction_providers.dart';
 import 'archive_restore_view.dart';
 import 'mail_search_view.dart';
 import 'onboarding_view.dart';
@@ -33,18 +34,21 @@ class RootShell extends ConsumerWidget {
   }
 }
 
-class _MainShell extends StatefulWidget {
+class _MainShell extends ConsumerStatefulWidget {
   const _MainShell();
 
   @override
-  State<_MainShell> createState() => _MainShellState();
+  ConsumerState<_MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<_MainShell> {
+class _MainShellState extends ConsumerState<_MainShell> {
   int _index = 0;
 
   @override
   Widget build(BuildContext context) {
+    // メインシェルに到達するたび（アプリセッション中は初回のみ実行・以降は結果をキャッシュ）、
+    // ローカルキャッシュの自動削除（Must4）をバックグラウンドで実行する。UIはブロックしない。
+    ref.watch(localCacheEvictionSweepProvider);
     final l10n = AppLocalizations.of(context)!;
     final pages = const [
       TidinessDashboardView(),

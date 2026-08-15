@@ -16,6 +16,9 @@ import { categorizeMessage, pickNextAccountColor } from "../categorize";
  * 【要確認】OAuthクライアントID/シークレットはGoogle Cloud Console側の
  * OAuth同意画面登録（ユーザー作業）待ち。取得後 Secret Manager に
  * `gmail-oauth-client-id` / `gmail-oauth-client-secret` として登録する。
+ * クライアント（Flutter）側は同じOAuthクライアントの「Web」タイプclient_id（非秘密）を
+ * Firebase Remote Configの `gmail_oauth_server_client_id` としても登録する必要がある
+ * （GoogleSignInのserverAuthCode取得に必須。lib/views/account_link_view.dart参照）。
  */
 export class GmailProvider implements MailProviderAdapter {
   private async getClient(accountId: string) {
@@ -102,6 +105,8 @@ export class GmailProvider implements MailProviderAdapter {
       const from = headers.find((h) => h.name === "From")?.value ?? "";
       const senderEmail = (from.match(/<(.+)>/)?.[1] ?? from).trim();
       const snippet = (full.data.snippet ?? "").slice(0, 80);
+      // labelIdsはformatに関わらず常に返る。UNREADラベルの有無で未読判定する。
+      const isUnread = (full.data.labelIds ?? []).includes("UNREAD");
 
       items.push({
         id: m.id,
@@ -112,6 +117,7 @@ export class GmailProvider implements MailProviderAdapter {
         snippet,
         subject,
         senderEmail,
+        isUnread,
       });
     }
     return items;
