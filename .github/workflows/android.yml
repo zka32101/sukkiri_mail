@@ -1,0 +1,53 @@
+name: Android CI (sukkiri_mail)
+
+# APK/AABをビルドする。Ubuntuランナーのため macOS(iOS)ほどコストが高くなく、
+# PR時の自動ビルドも許容する（ios.ymlのコスト最適化方針とは異なる）。
+#
+# 【要確認】リリース署名（keystore）は未設定のため、現状は debug 署名でビルドされる
+# （android/app/build.gradle.kts 参照）。Play Store配信用の署名付きビルドが必要になったら、
+# 1. keytool でリリース用keystoreを作成
+# 2. base64化してGitHub Secretsに登録:
+#    ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD
+# 3. android/app/build.gradle.kts の release signingConfig を追加のkeystoreへ差し替え
+# 4. 本ワークフローに署名付きビルドジョブ（ios.ymlのbuild-ios-signed相当）を追加
+# の手順が必要（iOSのTestFlightアップロードと同様、人手でのシークレット登録が前提）。
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK (debug署名)
+        run: flutter build apk --release
+
+      - name: Build AAB (debug署名)
+        run: flutter build appbundle --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukkiri-mail-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukkiri-mail-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
