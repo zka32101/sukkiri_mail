@@ -5,6 +5,9 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // google-services.json（applicationIdと一致するclientエントリが必要）を読み込み、
+    // FirebaseApp.initializeApp()が実行時に参照するリソースを生成する。
+    id("com.google.gms.google-services")
 }
 
 // リリース署名情報はkey.properties（.gitignore対象、リポジトリにはコミットしない）から読み込む。
