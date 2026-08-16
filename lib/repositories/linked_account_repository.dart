@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/linked_account.dart';
+import '../services/app_firestore.dart';
 
 class LinkedAccountRepository {
   final FirebaseFirestore _db;
 
-  LinkedAccountRepository({FirebaseFirestore? db})
-    : _db = db ?? FirebaseFirestore.instance;
+  LinkedAccountRepository({FirebaseFirestore? db}) : _db = db ?? appFirestore();
 
   CollectionReference<Map<String, dynamic>> get _col =>
       _db.collection('linkedAccounts');

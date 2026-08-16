@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/cache_eviction_log.dart';
+import '../services/app_firestore.dart';
 
 class CacheEvictionLogRepository {
   final FirebaseFirestore _db;
 
   CacheEvictionLogRepository({FirebaseFirestore? db})
-    : _db = db ?? FirebaseFirestore.instance;
+    : _db = db ?? appFirestore();
 
   CollectionReference<Map<String, dynamic>> get _col =>
       _db.collection('cacheEvictionLogs');

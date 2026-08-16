@@ -4,6 +4,7 @@ import { MailProviderAdapter } from "./providers/mailProviderInterface";
 import { GmailProvider } from "./providers/gmailProvider";
 import { OutlookProvider } from "./providers/outlookProvider";
 import { ImapProvider } from "./providers/imapProvider";
+import { db as firestoreDb } from "./firestore";
 
 admin.initializeApp();
 
@@ -55,7 +56,7 @@ export const scanAccount = onCall(async (request) => {
   const adapter = resolveProvider(provider);
   const items = await adapter.scan(accountId);
 
-  const db = admin.firestore();
+  const db = firestoreDb();
   const batch = db.batch();
   for (const item of items) {
     const docRef = db.collection("emailMeta").doc(emailMetaDocId(accountId, item.id));
@@ -101,7 +102,7 @@ export const applyArchiveRules = onCall(async (request) => {
   const adapter = resolveProvider(provider);
   await adapter.archive(accountId, rawIds);
 
-  const db = admin.firestore();
+  const db = firestoreDb();
   const metaRefs = ids.map((id) => db.collection("emailMeta").doc(id));
   const metaSnaps = metaRefs.length > 0 ? await db.getAll(...metaRefs) : [];
 
@@ -143,7 +144,7 @@ export const restoreEmail = onCall(async (request) => {
   await adapter.restore(accountId, rawIds);
 
   if (ids.length > 0) {
-    const db = admin.firestore();
+    const db = firestoreDb();
     const batch = db.batch();
     for (const id of ids) {
       const ref = db.collection("emailMeta").doc(id);
@@ -168,7 +169,7 @@ export const fetchMessageBody = onCall(async (request) => {
 });
 
 async function assertAccountOwnership(accountId: string, uid: string): Promise<void> {
-  const doc = await admin.firestore().collection("linkedAccounts").doc(accountId).get();
+  const doc = await firestoreDb().collection("linkedAccounts").doc(accountId).get();
   const data = doc.data();
   if (!data || data.userId !== uid) {
     throw new HttpsError("permission-denied", "not your account");

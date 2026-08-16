@@ -1,5 +1,4 @@
 import { google } from "googleapis";
-import * as admin from "firebase-admin";
 import {
   ConnectedAccountResult,
   MailProviderAdapter,
@@ -8,6 +7,7 @@ import {
 } from "./mailProviderInterface";
 import { getSecret } from "../secrets";
 import { categorizeMessage, pickNextAccountColor } from "../categorize";
+import { db } from "../firestore";
 
 /**
  * gmail.modify（sensitive/Tier2） + gmail.labels（non-sensitive）のみ使用。
@@ -22,7 +22,7 @@ import { categorizeMessage, pickNextAccountColor } from "../categorize";
  */
 export class GmailProvider implements MailProviderAdapter {
   private async getClient(accountId: string) {
-    const doc = await admin.firestore().collection("linkedAccounts").doc(accountId).get();
+    const doc = await db().collection("linkedAccounts").doc(accountId).get();
     const data = doc.data();
     if (!data) throw new Error("account not found");
 
@@ -52,14 +52,13 @@ export class GmailProvider implements MailProviderAdapter {
     const profile = await gmail.users.getProfile({ userId: "me" });
     const emailAddress = profile.data.emailAddress ?? "";
 
-    const existing = await admin
-      .firestore()
+    const existing = await db()
       .collection("linkedAccounts")
       .where("userId", "==", userId)
       .get();
     const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
 
-    const ref = await admin.firestore().collection("linkedAccounts").add({
+    const ref = await db().collection("linkedAccounts").add({
       userId,
       provider: "gmail",
       authMethod: "oauth",

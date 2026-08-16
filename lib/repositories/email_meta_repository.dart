@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/email_meta.dart';
+import '../services/app_firestore.dart';
 
 class EmailMetaRepository {
   final FirebaseFirestore _db;
 
-  EmailMetaRepository({FirebaseFirestore? db})
-    : _db = db ?? FirebaseFirestore.instance;
+  EmailMetaRepository({FirebaseFirestore? db}) : _db = db ?? appFirestore();
 
   CollectionReference<Map<String, dynamic>> get _col =>
       _db.collection('emailMeta');
