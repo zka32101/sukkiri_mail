@@ -1,5 +1,5 @@
 import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
-import * as admin from "firebase-admin";
+import { db } from "./firestore";
 
 const client = new SecretManagerServiceClient();
 const cache = new Map<string, string>();
@@ -29,7 +29,7 @@ export async function getSecret(name: string): Promise<string> {
     cache.set(name, value);
 
     // 監査ログ（秘密の値は記録しない）
-    admin.firestore().collection("_audit").add({
+    db().collection("_audit").add({
       timestamp: new Date(),
       action: "secret_access",
       secretName: name,
@@ -41,7 +41,7 @@ export async function getSecret(name: string): Promise<string> {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     // エラーログ
-    admin.firestore().collection("_audit").add({
+    db().collection("_audit").add({
       timestamp: new Date(),
       action: "secret_access",
       secretName: name,
