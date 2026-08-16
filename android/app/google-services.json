@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "663640153690",
+    "project_id": "app1-6c108",
+    "storage_bucket": "app1-6c108.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663640153690:android:7f69297e25da0769be4263",
+        "android_client_info": {
+          "package_name": "com.yourwish.cometrueaifortune"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz8Kg7hwRbh34FbKCguiLQe0oJDkPP62Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663640153690:android:ffa90850e5aebd70be4263",
+        "android_client_info": {
+          "package_name": "com.yourwish.japanexplorer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz8Kg7hwRbh34FbKCguiLQe0oJDkPP62Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663640153690:android:3172b10eedb79283be4263",
+        "android_client_info": {
+          "package_name": "com.yourwish.sukkirimail"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz8Kg7hwRbh34FbKCguiLQe0oJDkPP62Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
