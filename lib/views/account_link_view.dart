@@ -16,6 +16,12 @@ import 'scan_result_view.dart';
 const _outlookRedirectUri =
     'https://login.microsoftonline.com/common/oauth2/nativeclient';
 
+/// GmailのOAuth「Webアプリケーション」タイプクライアントID（Google Cloud Console、
+/// プロジェクト app1-6c108 で発行）。GoogleSignInのserverAuthCode取得に必須。
+/// client_id自体は非秘密（クライアントシークレットのみCloud Functions側のSecret Managerで保持）。
+const _gmailOAuthServerClientId =
+    '663640153690-5q7jop7h1vmmgtr0i8gtsfjeg34m1dh2.apps.googleusercontent.com';
+
 /// Aha Moment動線 Step2: プロバイダ選択→OAuth同意/アプリパスワード入力。
 /// 初期実装優先順位：①Gmail（gmail.modify）②Outlook（Mail.ReadWrite）③汎用IMAP。
 class AccountLinkView extends ConsumerStatefulWidget {
@@ -90,22 +96,10 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
   /// GmailはGoogleSignInのネイティブOAuthフローで認可コード（serverAuthCode）を取得し、
   /// Cloud Functions側でアクセストークンへ交換する。
   Future<void> _connectGmail() async {
-    final l10n = AppLocalizations.of(context)!;
-    final serverClientId = await _remoteConfigString(
-      'gmail_oauth_server_client_id',
-    );
-    if (serverClientId.isEmpty) {
-      if (!mounted) return;
-      await _showNotConfigured(
-        l10n.accountLinkGmail,
-        'OAuthクライアントID未設定',
-      );
-      return;
-    }
     try {
       final googleSignIn = GoogleSignIn(
         scopes: const ['https://www.googleapis.com/auth/gmail.modify'],
-        serverClientId: serverClientId,
+        serverClientId: _gmailOAuthServerClientId,
       );
       final account = await googleSignIn.signIn();
       if (account == null) return; // ユーザーがキャンセル
