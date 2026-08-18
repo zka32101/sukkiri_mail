@@ -1,0 +1,51 @@
+name: Firebase Deploy (sukkiri_mail)
+
+# Cloud Functions・Firestoreルール/インデックスをデプロイする。
+# 配信物を作る/本番環境を変更するジョブのため、手動実行(workflow_dispatch)限定。
+#
+# 必要なRepository Secrets（未設定の場合はこのジョブが失敗する）:
+#   FIREBASE_TOKEN … `firebase login:ci` で取得したCIトークン
+#     （Google Driveの同期フォルダ外のローカル環境で、以下を実行して取得する）:
+#       npx firebase-tools login:ci
+#     ブラウザでログイン後に表示されるトークンをそのままSecretsに登録する。
+#
+# デプロイ先プロジェクトは firebase.json ではなく .firebaserc で指定する想定。
+# .firebaserc が無い場合は --project app1-6c108 を明示している。
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy Cloud Functions + Firestore rules/indexes
+        working-directory: .
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            echo "FIREBASE_TOKEN が未設定のため、デプロイをスキップします。"
+            echo "リポジトリのSettings > Secrets and variables > Actionsから登録してください。"
+            exit 1
+          fi
+          npx firebase-tools deploy \
+            --only functions,firestore:rules,firestore:indexes \
+            --project app1-6c108 \
+            --token "$FIREBASE_TOKEN" \
+            --non-interactive
