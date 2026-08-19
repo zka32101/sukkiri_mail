@@ -172,11 +172,36 @@ export class OutlookProvider implements MailProviderAdapter {
       .collection("linkedAccounts")
       .where("userId", "==", userId)
       .get();
-    const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
 
     // token の有効期限を計算（expires_in は秒数）
     const expiresIn = (tokens.expires_in as number) ?? 3600; // default: 1 hour
     const tokenExpiresAt = Date.now() + expiresIn * 1000;
+
+    // 同一ユーザーが同じOutlookアドレスを再度連携した場合は、重複ドキュメントを
+    // 作らずトークンのみ更新して既存アカウントを再利用する（トークン失効後の
+    // 再認証や、誤って同じアカウントを選び直した場合の復旧に対応）。
+    const existingSameAccount = existing.docs.find(
+      (d) => d.data().provider === "outlook" && d.data().emailAddress === emailAddress
+    );
+    if (existingSameAccount) {
+      await existingSameAccount.ref.update({
+        oauthStatus: "connected",
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        tokenExpiresAt,
+      });
+      return {
+        id: existingSameAccount.id,
+        userId,
+        provider: "outlook",
+        authMethod: "oauth",
+        emailAddress,
+        oauthStatus: "connected",
+        colorHex: existingSameAccount.data().colorHex,
+      };
+    }
+
+    const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
 
     const ref = await db().collection("linkedAccounts").add({
       userId,

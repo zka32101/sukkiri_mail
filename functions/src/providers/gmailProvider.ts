@@ -56,6 +56,30 @@ export class GmailProvider implements MailProviderAdapter {
       .collection("linkedAccounts")
       .where("userId", "==", userId)
       .get();
+
+    // 同一ユーザーが同じGmailアドレスを再度連携した場合は、重複ドキュメントを
+    // 作らずトークンのみ更新して既存アカウントを再利用する（トークン失効後の
+    // 再認証や、誤って同じアカウントを選び直した場合の復旧に対応）。
+    const existingSameAccount = existing.docs.find(
+      (d) => d.data().provider === "gmail" && d.data().emailAddress === emailAddress
+    );
+    if (existingSameAccount) {
+      await existingSameAccount.ref.update({
+        oauthStatus: "connected",
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+      });
+      return {
+        id: existingSameAccount.id,
+        userId,
+        provider: "gmail",
+        authMethod: "oauth",
+        emailAddress,
+        oauthStatus: "connected",
+        colorHex: existingSameAccount.data().colorHex,
+      };
+    }
+
     const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
 
     const ref = await db().collection("linkedAccounts").add({

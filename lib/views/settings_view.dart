@@ -12,6 +12,35 @@ import 'paywall_view.dart';
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
 
+  Future<void> _unlinkAccount(
+    BuildContext context,
+    WidgetRef ref,
+    LinkedAccount account,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('連携を解除しますか？'),
+        content: Text(
+          '${account.emailAddress} との連携を解除します。取得済みのメールデータは残りますが、'
+          'スキャンやアーカイブ操作はできなくなります。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('解除する'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(linkedAccountRepositoryProvider).remove(account.id);
+  }
+
   Future<void> _changeColor(
     BuildContext context,
     WidgetRef ref,
@@ -79,9 +108,19 @@ class SettingsView extends ConsumerWidget {
                     ),
                     title: Text(a.emailAddress),
                     subtitle: Text(a.provider.name),
-                    trailing: TextButton(
-                      onPressed: () => _changeColor(context, ref, a),
-                      child: Text(l10n.settingsAccountColor),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton(
+                          onPressed: () => _changeColor(context, ref, a),
+                          child: Text(l10n.settingsAccountColor),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.link_off),
+                          tooltip: '連携を解除',
+                          onPressed: () => _unlinkAccount(context, ref, a),
+                        ),
+                      ],
                     ),
                   ),
                 ),
