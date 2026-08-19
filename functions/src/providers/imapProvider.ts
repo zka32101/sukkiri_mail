@@ -7,6 +7,7 @@ import {
 } from "./mailProviderInterface";
 import { categorizeMessage, pickNextAccountColor } from "../categorize";
 import { db } from "../firestore";
+import { linkedAccountDocId } from "../linkedAccountId";
 
 /**
  * 標準IMAP/SMTP（Yahoo!メール・iCloud等）、アプリ専用パスワード方式。OAuth審査対象外。
@@ -48,42 +49,42 @@ export class ImapProvider implements MailProviderAdapter {
     await testClient.connect();
     await testClient.logout();
 
-    const existing = await db()
-      .collection("linkedAccounts")
-      .where("userId", "==", userId)
-      .get();
+    // userId+provider+emailAddressから決まる決定的なドキュメントIDを使うことで、
+    // 同時に複数の接続リクエストが来ても（同一ユーザーが同じアドレスを重複連携しようとしても）
+    // 重複ドキュメントが作られない。既存なら`merge: true`でアプリパスワード/ホストのみ更新、
+    // 無ければ新規作成として扱われる（読み取り→判定→書き込みのレースが原理的に発生しない）。
+    const docId = linkedAccountDocId(userId, "imap", emailAddress);
+    const ref = db().collection("linkedAccounts").doc(docId);
+    const existingSnap = await ref.get();
 
-    // 同一ユーザーが同じメールアドレスを再度連携した場合は、重複ドキュメントを
-    // 作らずアプリパスワード/ホストのみ更新して既存アカウントを再利用する
-    // （パスワード変更後の再連携や、誤って同じアカウントを選び直した場合の復旧に対応）。
-    const existingSameAccount = existing.docs.find(
-      (d) => d.data().provider === "imap" && d.data().emailAddress === emailAddress
-    );
-    if (existingSameAccount) {
-      await existingSameAccount.ref.update({ imapHost, appPassword });
-      return {
-        id: existingSameAccount.id,
-        userId,
-        provider: "imap",
-        authMethod: "app_password",
-        emailAddress,
-        imapHost,
-        colorHex: existingSameAccount.data().colorHex,
-      };
+    let colorHex: string;
+    if (existingSnap.exists) {
+      colorHex =
+        (existingSnap.data()?.colorHex as string | undefined) ??
+        pickNextAccountColor([]);
+    } else {
+      const existingForUser = await db()
+        .collection("linkedAccounts")
+        .where("userId", "==", userId)
+        .get();
+      colorHex = pickNextAccountColor(
+        existingForUser.docs.map((d) => d.data().colorHex)
+      );
     }
 
-    const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
-
-    const ref = await db().collection("linkedAccounts").add({
+    const updateData: Record<string, unknown> = {
       userId,
       provider: "imap",
       authMethod: "app_password",
       emailAddress,
       imapHost,
       colorHex,
-      lastScanAt: null,
       appPassword,
-    });
+    };
+    if (!existingSnap.exists) {
+      updateData.lastScanAt = null;
+    }
+    await ref.set(updateData, { merge: true });
 
     return {
       id: ref.id,
@@ -102,27 +103,35 @@ export class ImapProvider implements MailProviderAdapter {
     try {
       const lock = await client.getMailboxLock("INBOX");
       try {
-        const messages = client.fetch(
-          { seq: "1:50" },
-          { envelope: true, uid: true, flags: true }
-        );
-        for await (const m of messages) {
-          const from = m.envelope?.from?.[0];
-          const senderEmail = from?.address ?? "";
-          const subject = m.envelope?.subject ?? "";
-          // IMAPの\Seenフラグが立っていなければ未読。
-          const isUnread = !m.flags?.has("\\Seen");
-          items.push({
-            id: String(m.uid),
-            accountId,
-            category: categorizeMessage(subject, senderEmail),
-            receivedAt: m.envelope?.date ? new Date(m.envelope.date).getTime() : Date.now(),
-            hasAttachment: false,
-            snippet: subject.slice(0, 80),
-            subject,
-            senderEmail,
-            isUnread,
-          });
+        // シーケンス番号は古い順に1から採番されるため、固定で"1:50"を指定すると
+        // メールボックスが50件を超えている場合は常に最も古い50件しか取得できず、
+        // 新着の販促/通知メールがスキャン対象に入らなくなってしまう。
+        // メールボックスの総数（client.mailbox.exists）から直近50件の範囲を算出する。
+        const total = client.mailbox ? client.mailbox.exists : 0;
+        if (total > 0) {
+          const start = Math.max(1, total - 49);
+          const messages = client.fetch(
+            { seq: `${start}:${total}` },
+            { envelope: true, uid: true, flags: true }
+          );
+          for await (const m of messages) {
+            const from = m.envelope?.from?.[0];
+            const senderEmail = from?.address ?? "";
+            const subject = m.envelope?.subject ?? "";
+            // IMAPの\Seenフラグが立っていなければ未読。
+            const isUnread = !m.flags?.has("\\Seen");
+            items.push({
+              id: String(m.uid),
+              accountId,
+              category: categorizeMessage(subject, senderEmail),
+              receivedAt: m.envelope?.date ? new Date(m.envelope.date).getTime() : Date.now(),
+              hasAttachment: false,
+              snippet: subject.slice(0, 80),
+              subject,
+              senderEmail,
+              isUnread,
+            });
+          }
         }
       } finally {
         lock.release();
@@ -139,7 +148,11 @@ export class ImapProvider implements MailProviderAdapter {
       const lock = await client.getMailboxLock("INBOX");
       try {
         // アーカイブフォルダへ移動（可逆、恒久削除ではない）。
-        await client.messageMove(emailIds.map(Number), "Archive");
+        // emailIds は scan() が返したUID（メッセージの永続的な識別子）であり、
+        // メールボックス内の一時的な並び順にすぎないシーケンス番号ではない。
+        // { uid: true } を指定しないとimapflowはこれをシーケンス番号として扱ってしまい、
+        // ユーザーが選んだメールとは全く別のメールを誤って移動してしまう。
+        await client.messageMove(emailIds.map(Number), "Archive", { uid: true });
       } finally {
         lock.release();
       }
@@ -153,7 +166,8 @@ export class ImapProvider implements MailProviderAdapter {
     try {
       const lock = await client.getMailboxLock("Archive");
       try {
-        await client.messageMove(emailIds.map(Number), "INBOX");
+        // archive()と同様、emailIdsはUIDなので{ uid: true }を明示する。
+        await client.messageMove(emailIds.map(Number), "INBOX", { uid: true });
       } finally {
         lock.release();
       }
@@ -167,7 +181,9 @@ export class ImapProvider implements MailProviderAdapter {
     try {
       const lock = await client.getMailboxLock("INBOX");
       try {
-        const msg = await client.download(messageId);
+        // messageIdはscan()が返したUIDなので{ uid: true }を明示する
+        // （省略するとシーケンス番号として解釈され、別のメールの本文を返してしまう）。
+        const msg = await client.download(messageId, undefined, { uid: true });
         const chunks: Buffer[] = [];
         for await (const chunk of msg.content) {
           chunks.push(chunk as Buffer);

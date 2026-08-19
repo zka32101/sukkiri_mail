@@ -33,6 +33,19 @@ function rawProviderMessageId(accountId: string, compositeId: string): string {
   return compositeId.startsWith(prefix) ? compositeId.slice(prefix.length) : compositeId;
 }
 
+/** クライアントから渡されたemailMeta合成IDが、確認済みのaccountId配下のものであることを検証する。
+ *  assertAccountOwnership()でaccountId自体の所有権は確認済みだが、emailIds自体はクライアント入力
+ *  であり、他ユーザーのaccountIdをprefixに持つIDを紛れ込ませて他ユーザーのemailMetaドキュメントを
+ *  書き換えられる余地がないよう、常にこの関数で明示的に検証してから使う（IDOR対策の多層防御）。 */
+function assertOwnedEmailIds(accountId: string, ids: string[]): void {
+  const prefix = `${accountId}_`;
+  for (const id of ids) {
+    if (!id.startsWith(prefix)) {
+      throw new HttpsError("permission-denied", "emailId does not belong to accountId");
+    }
+  }
+}
+
 /** OAuth同意 or アプリパスワード検証を行い、アカウントを連携する。 */
 export const connectAccount = onCall(async (request) => {
   const uid = request.auth?.uid;
@@ -97,6 +110,7 @@ export const applyArchiveRules = onCall(async (request) => {
   await assertAccountOwnership(accountId, uid);
   // クライアントから渡されるemailIdsはemailMetaの合成ID。プロバイダAPIには本来のメッセージIDを渡す。
   const ids: string[] = emailIds ?? [];
+  assertOwnedEmailIds(accountId, ids);
   const rawIds = ids.map((id) => rawProviderMessageId(accountId, id));
 
   const adapter = resolveProvider(provider);
@@ -138,6 +152,7 @@ export const restoreEmail = onCall(async (request) => {
   const { provider, accountId, emailIds } = request.data ?? {};
   await assertAccountOwnership(accountId, uid);
   const ids: string[] = emailIds ?? [];
+  assertOwnedEmailIds(accountId, ids);
   const rawIds = ids.map((id) => rawProviderMessageId(accountId, id));
 
   const adapter = resolveProvider(provider);
@@ -163,6 +178,7 @@ export const fetchMessageBody = onCall(async (request) => {
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
   const { provider, accountId, messageId } = request.data ?? {};
   await assertAccountOwnership(accountId, uid);
+  assertOwnedEmailIds(accountId, [messageId ?? ""]);
 
   const adapter = resolveProvider(provider);
   return adapter.fetchMessageBody(accountId, rawProviderMessageId(accountId, messageId ?? ""));

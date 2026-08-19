@@ -49,7 +49,14 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > /tmp/release.jks
           keytool -list -v -keystore /tmp/release.jks -alias "$ANDROID_KEY_ALIAS" -storepass "$ANDROID_KEYSTORE_PASSWORD" \
             | grep -E "Alias name:|SHA1:|SHA256:"
-          rm -f /tmp/release.jks
+
+      # keytoolがエイリアス/パスワード誤り等で失敗すると(bash -eにより)途中で
+      # ステップが終了し、上のステップ内の`rm -f`まで到達しないまま複合化済みの
+      # keystoreがランナーに残ってしまう。build-android-signedジョブのクリーンアップ
+      # ステップと同様、常に実行されるよう独立したステップ+if: always()にする。
+      - name: Clean up decoded keystore
+        if: always()
+        run: rm -f /tmp/release.jks
 
   build-android:
     runs-on: ubuntu-latest

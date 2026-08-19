@@ -120,6 +120,17 @@ class LinkedAccount {
       'lastScanAt': lastScanAt?.millisecondsSinceEpoch,
     };
   }
+
+  // Firestoreドキュメントの同一性（id）で値等価を判定する。これが無いと、
+  // linkedAccountsProviderが新しいスナップショットのたびに毎回新規インスタンスを
+  // 生成するため（同じアカウントでも==で一致しなくなり）、DropdownButtonの選択状態や
+  // FutureProvider.family<..., LinkedAccount>のキャッシュキーが本来同じアカウントを
+  // 指しているのに一致しないという不具合を引き起こしていた。
+  @override
+  bool operator ==(Object other) => other is LinkedAccount && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 /// 登録済みアカウント一覧から、パレットの中で未使用の色を選ぶ。

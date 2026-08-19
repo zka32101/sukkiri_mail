@@ -8,6 +8,7 @@ import {
 import { getSecret } from "../secrets";
 import { categorizeMessage, pickNextAccountColor } from "../categorize";
 import { db } from "../firestore";
+import { linkedAccountDocId } from "../linkedAccountId";
 
 /**
  * gmail.modify（sensitive/Tier2） + gmail.labels（non-sensitive）のみ使用。
@@ -21,6 +22,14 @@ import { db } from "../firestore";
  * （GoogleSignInのserverAuthCode取得に必須。lib/views/account_link_view.dart参照）。
  */
 export class GmailProvider implements MailProviderAdapter {
+  /**
+   * アクセストークンを取得。有効期限切れ（または期限情報が無い）場合は
+   * refresh tokenを使って更新し、結果をFirestoreへ永続化する。
+   * googleapisライブラリの自動リフレッシュ（401時の内部リトライ）だけに頼ると、
+   * 更新後のトークンがFirestoreに書き戻されず、以降の全呼び出しで毎回401→リフレッシュを
+   * 繰り返す上、refresh token自体が失効した場合にoauthStatusが更新されず
+   * クライアントが再認証を促せない。outlookProvider.getAccessToken()と同じ方針にする。
+   */
   private async getClient(accountId: string) {
     const doc = await db().collection("linkedAccounts").doc(accountId).get();
     const data = doc.data();
@@ -29,11 +38,50 @@ export class GmailProvider implements MailProviderAdapter {
     const clientId = await getSecret("gmail-oauth-client-id");
     const clientSecret = await getSecret("gmail-oauth-client-secret");
     const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-    oauth2Client.setCredentials({
-      access_token: data.accessToken,
-      refresh_token: data.refreshToken,
-    });
-    return google.gmail({ version: "v1", auth: oauth2Client });
+
+    const accessToken = data.accessToken as string | undefined;
+    const refreshToken = data.refreshToken as string | undefined;
+    const expiresAt = data.tokenExpiresAt as number | undefined;
+    const now = Date.now();
+    const bufferTime = 5 * 60 * 1000; // 5分
+
+    if (expiresAt && now < expiresAt - bufferTime && accessToken) {
+      oauth2Client.setCredentials({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      return google.gmail({ version: "v1", auth: oauth2Client });
+    }
+
+    if (!refreshToken) {
+      throw new Error("refresh token not found; user must re-authenticate");
+    }
+
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+    try {
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      oauth2Client.setCredentials(credentials);
+      await db()
+        .collection("linkedAccounts")
+        .doc(accountId)
+        .update({
+          accessToken: credentials.access_token,
+          tokenExpiresAt: credentials.expiry_date ?? now + 3600 * 1000,
+          ...(credentials.refresh_token
+            ? { refreshToken: credentials.refresh_token }
+            : {}),
+        });
+      return google.gmail({ version: "v1", auth: oauth2Client });
+    } catch (error) {
+      await db()
+        .collection("linkedAccounts")
+        .doc(accountId)
+        .update({ oauthStatus: "expired" })
+        .catch(() => {
+          /* ignore */
+        });
+      throw new Error("oauth token expired; user must re-authenticate");
+    }
   }
 
   async connect(userId: string, params: Record<string, unknown>): Promise<ConnectedAccountResult> {
@@ -51,48 +99,46 @@ export class GmailProvider implements MailProviderAdapter {
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
     const profile = await gmail.users.getProfile({ userId: "me" });
     const emailAddress = profile.data.emailAddress ?? "";
+    const tokenExpiresAt = tokens.expiry_date ?? Date.now() + 3600 * 1000;
 
-    const existing = await db()
-      .collection("linkedAccounts")
-      .where("userId", "==", userId)
-      .get();
+    // userId+provider+emailAddressから決まる決定的なドキュメントIDを使うことで、
+    // 同時に複数の接続リクエストが来ても（同一ユーザーが同じアドレスを重複連携しようとしても）
+    // 重複ドキュメントが作られない。既存なら`merge: true`でトークンのみ更新、
+    // 無ければ新規作成として扱われる（読み取り→判定→書き込みのレースが原理的に発生しない）。
+    const docId = linkedAccountDocId(userId, "gmail", emailAddress);
+    const ref = db().collection("linkedAccounts").doc(docId);
+    const existingSnap = await ref.get();
 
-    // 同一ユーザーが同じGmailアドレスを再度連携した場合は、重複ドキュメントを
-    // 作らずトークンのみ更新して既存アカウントを再利用する（トークン失効後の
-    // 再認証や、誤って同じアカウントを選び直した場合の復旧に対応）。
-    const existingSameAccount = existing.docs.find(
-      (d) => d.data().provider === "gmail" && d.data().emailAddress === emailAddress
-    );
-    if (existingSameAccount) {
-      await existingSameAccount.ref.update({
-        oauthStatus: "connected",
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-      });
-      return {
-        id: existingSameAccount.id,
-        userId,
-        provider: "gmail",
-        authMethod: "oauth",
-        emailAddress,
-        oauthStatus: "connected",
-        colorHex: existingSameAccount.data().colorHex,
-      };
+    let colorHex: string;
+    if (existingSnap.exists) {
+      colorHex =
+        (existingSnap.data()?.colorHex as string | undefined) ??
+        pickNextAccountColor([]);
+    } else {
+      const existingForUser = await db()
+        .collection("linkedAccounts")
+        .where("userId", "==", userId)
+        .get();
+      colorHex = pickNextAccountColor(
+        existingForUser.docs.map((d) => d.data().colorHex)
+      );
     }
 
-    const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
-
-    const ref = await db().collection("linkedAccounts").add({
+    const updateData: Record<string, unknown> = {
       userId,
       provider: "gmail",
       authMethod: "oauth",
       emailAddress,
       oauthStatus: "connected",
       colorHex,
-      lastScanAt: null,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
-    });
+      tokenExpiresAt,
+    };
+    if (!existingSnap.exists) {
+      updateData.lastScanAt = null;
+    }
+    await ref.set(updateData, { merge: true });
 
     return {
       id: ref.id,

@@ -11,14 +11,19 @@ class EmailMetaRepository {
   CollectionReference<Map<String, dynamic>> get _col =>
       _db.collection('emailMeta');
 
+  /// userIdは必須。firestore.rulesのemailMeta読み取りルールは
+  /// `resource.data.userId == request.auth.uid` の一致を要求しており、
+  /// クエリ自体にuserIdの等価条件が無いと（accountIdだけで絞り込むと）
+  /// Firestoreはルールを満たすと静的に証明できずクエリ全体をpermission-deniedで
+  /// 拒否する（各ドキュメントは実際にはルールを満たしていても）。
   Stream<List<EmailMeta>> watchForAccount(
-    String accountId, {
+    String accountId,
+    String userId, {
     EmailStatus? status,
   }) {
-    Query<Map<String, dynamic>> q = _col.where(
-      'accountId',
-      isEqualTo: accountId,
-    );
+    Query<Map<String, dynamic>> q = _col
+        .where('accountId', isEqualTo: accountId)
+        .where('userId', isEqualTo: userId);
     if (status != null) {
       q = q.where('status', isEqualTo: emailStatusToString(status));
     }
@@ -29,10 +34,18 @@ class EmailMetaRepository {
   }
 
   /// メタデータは件名・送信者・日時・カテゴリ・スニペットで常時検索可能（キャッシュ削除後も）。
-  Future<List<EmailMeta>> search(String accountId, String query) async {
+  /// userIdが必要な理由はwatchForAccount()と同じ（firestore.rulesとの整合）。
+  Future<List<EmailMeta>> search(
+    String accountId,
+    String userId,
+    String query,
+  ) async {
     // Firestoreの部分一致検索は不可のため、簡易実装としてsnippetの前方一致で絞り込む。
     // 本番ではAlgolia等の全文検索インデックスに置き換え可能な設計にしておく。
-    final snap = await _col.where('accountId', isEqualTo: accountId).get();
+    final snap = await _col
+        .where('accountId', isEqualTo: accountId)
+        .where('userId', isEqualTo: userId)
+        .get();
     final all = snap.docs
         .map((d) => EmailMeta.fromMap(d.id, d.data()))
         .toList();
@@ -44,9 +57,12 @@ class EmailMetaRepository {
     return _col.doc(emailId).update({'isPinned': isPinned});
   }
 
-  Future<void> setStatus(String emailId, EmailStatus status) {
-    return _col.doc(emailId).update({'status': emailStatusToString(status)});
-  }
+  // statusの更新はCloud Functions（applyArchiveRules/restoreEmail、Admin SDK）側のみが
+  // 行う。クライアントがFirestore上のstatusフラグだけを直接書き換えられてしまうと、
+  // 実際のメールプロバイダ（Gmail/Outlook/IMAP）側のアーカイブ状態と食い違う
+  // （見た目はアーカイブ済みでも実メールはInboxに残ったまま、等）ため、意図的に
+  // クライアント用のメソッドは提供しない
+  // （firestore.rulesのupdate許可フィールドにもstatusは含まれていない）。
 
   Future<void> setLocalCacheStatus(String emailId, LocalCacheStatus status) {
     return _col.doc(emailId).update({
