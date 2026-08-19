@@ -28,6 +28,29 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ローカルにkeystoreファイルが見当たらない場合でも、Google Cloud ConsoleでAndroid用
+  # OAuthクライアントを登録するのに必要なSHA-1/SHA-256フィンガープリントを確認できるよう、
+  # Repository Secretsに登録済みのkeystoreから直接算出する。手動実行(workflow_dispatch)限定。
+  # パスワード自体はログに出力しない（keytoolの標準出力にフィンガープリントのみが載る）。
+  print-release-sha1:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decode keystore and print SHA-1/SHA-256 fingerprint
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "ANDROID_KEYSTORE_BASE64 が未設定のため、フィンガープリントを算出できません。"
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > /tmp/release.jks
+          keytool -list -v -keystore /tmp/release.jks -alias "$ANDROID_KEY_ALIAS" -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            | grep -E "Alias name:|SHA1:|SHA256:"
+          rm -f /tmp/release.jks
+
   build-android:
     runs-on: ubuntu-latest
     steps:
