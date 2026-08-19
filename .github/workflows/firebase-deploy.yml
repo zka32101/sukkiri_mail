@@ -11,6 +11,13 @@ name: Firebase Deploy (sukkiri_mail)
 #
 # デプロイ先プロジェクトは firebase.json ではなく .firebaserc で指定する想定。
 # .firebaserc が無い場合は --project app1-6c108 を明示している。
+#
+# 注意: Firebaseプロジェクト app1-6c108 は他アプリ（占いアプリ等）とも共有されている。
+# `--only functions`（無指定）でデプロイすると、ローカルに無い他アプリの関数
+# （例: analyzeFortune）まで比較対象になり、非対話モードでは削除確認ができず
+# デプロイ全体が失敗する。そのため本ワークフローでは本アプリのCloud Functions名を
+# 明示的に列挙し、他アプリの関数には一切触れないようにしている。
+# 新しい関数をfunctions/src/index.tsに追加した場合は、下のリストにも追記すること。
 
 on:
   workflow_dispatch:
@@ -44,8 +51,9 @@ jobs:
             echo "リポジトリのSettings > Secrets and variables > Actionsから登録してください。"
             exit 1
           fi
+          FUNCTIONS="functions:connectAccount,functions:scanAccount,functions:applyArchiveRules,functions:restoreEmail,functions:fetchMessageBody"
           npx firebase-tools deploy \
-            --only functions,firestore:rules,firestore:indexes \
+            --only "$FUNCTIONS,firestore:rules,firestore:indexes" \
             --project app1-6c108 \
             --token "$FIREBASE_TOKEN" \
             --non-interactive
