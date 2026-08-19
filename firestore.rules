@@ -13,8 +13,14 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isOwner(userId);
-      // planはRevenueCat Webhook経由のCloud Functionsのみが更新する想定。
-      allow write: if isOwner(userId);
+      // ensureExists()による初回作成のみクライアントから許可する。plan は必ず
+      // freeで作成し、以降の変更（Pro化）はRevenueCat Webhook経由のCloud Functions
+      // （Admin SDK、セキュリティルールをバイパスする）のみが行う想定。
+      // 以前は`allow write: if isOwner(userId)`となっており、フィールド制限が
+      // 一切無かったため、任意のユーザーが自分のplanを直接'pro'へ書き換えて
+      // 無償でPro権限を得られてしまう欠陥があった。
+      allow create: if isOwner(userId) && request.resource.data.plan == 'free';
+      allow update, delete: if false;
     }
 
     // OAuthトークン・IMAPアプリパスワードはCloud Functions（Admin SDK）経由でのみ
@@ -37,10 +43,14 @@ service cloud.firestore {
         (resource == null || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() &&
         request.resource.data.userId == request.auth.uid;
+      // 許可フィールドはCategoryRuleモデル（lib/models/category_rule.dart）の実際の
+      // フィールド名（category, retentionDays, accountId）に合わせている。以前は
+      // 存在しないフィールド名（categoryName等）が指定されており、rule編集機能を
+      // 実装した瞬間にpermission-deniedで必ず失敗する状態だった。
       allow update: if isSignedIn() && resource != null &&
         resource.data.userId == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['categoryName', 'senderPatterns', 'isEnabled', 'priority']);
+          .hasOnly(['category', 'retentionDays', 'accountId']);
       allow delete: if isSignedIn() && resource != null &&
         resource.data.userId == request.auth.uid;
     }
@@ -50,10 +60,12 @@ service cloud.firestore {
         (resource == null || resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() &&
         request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource != null &&
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['senderEmail', 'blockedAt', 'reason', 'isActive']);
+      // クライアント側に編集(update)機能は無く、追加(add)/削除(remove)のみで運用する
+      // （lib/repositories/sender_block_rule_repository.dart参照）。将来updateを
+      // 実装する際は、SenderBlockRuleモデルの実フィールド（pattern, matchType等）に
+      // 合わせて許可フィールドを明示すること（以前は存在しないフィールド名
+      // senderEmail/blockedAt等が指定された、実質使われない誤ったルールだった）。
+      allow update: if false;
       allow delete: if isSignedIn() && resource != null &&
         resource.data.userId == request.auth.uid;
     }

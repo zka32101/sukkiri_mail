@@ -7,6 +7,7 @@ import {
 import { getSecret } from "../secrets";
 import { categorizeMessage, pickNextAccountColor } from "../categorize";
 import { db } from "../firestore";
+import { linkedAccountDocId } from "../linkedAccountId";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -160,61 +161,68 @@ export class OutlookProvider implements MailProviderAdapter {
         }),
       }
     );
+    if (!tokenRes.ok) {
+      throw new Error(`Outlook token exchange failed: ${tokenRes.status} ${await tokenRes.text()}`);
+    }
     const tokens = await tokenRes.json();
+    if (!tokens.access_token) {
+      throw new Error("Outlook token exchange did not return an access token");
+    }
 
     const meRes = await fetch(`${GRAPH_BASE}/me`, {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
+    if (!meRes.ok) {
+      throw new Error(`Outlook profile fetch failed: ${meRes.status} ${await meRes.text()}`);
+    }
     const me = await meRes.json();
     const emailAddress = me.mail ?? me.userPrincipalName ?? "";
-
-    const existing = await db()
-      .collection("linkedAccounts")
-      .where("userId", "==", userId)
-      .get();
+    if (!emailAddress) {
+      throw new Error("Outlook profile did not include an email address");
+    }
 
     // token の有効期限を計算（expires_in は秒数）
     const expiresIn = (tokens.expires_in as number) ?? 3600; // default: 1 hour
     const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-    // 同一ユーザーが同じOutlookアドレスを再度連携した場合は、重複ドキュメントを
-    // 作らずトークンのみ更新して既存アカウントを再利用する（トークン失効後の
-    // 再認証や、誤って同じアカウントを選び直した場合の復旧に対応）。
-    const existingSameAccount = existing.docs.find(
-      (d) => d.data().provider === "outlook" && d.data().emailAddress === emailAddress
-    );
-    if (existingSameAccount) {
-      await existingSameAccount.ref.update({
-        oauthStatus: "connected",
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        tokenExpiresAt,
-      });
-      return {
-        id: existingSameAccount.id,
-        userId,
-        provider: "outlook",
-        authMethod: "oauth",
-        emailAddress,
-        oauthStatus: "connected",
-        colorHex: existingSameAccount.data().colorHex,
-      };
+    // userId+provider+emailAddressから決まる決定的なドキュメントIDを使うことで、
+    // 同時に複数の接続リクエストが来ても（同一ユーザーが同じアドレスを重複連携しようとしても）
+    // 重複ドキュメントが作られない。既存なら`merge: true`でトークンのみ更新、
+    // 無ければ新規作成として扱われる（読み取り→判定→書き込みのレースが原理的に発生しない）。
+    const docId = linkedAccountDocId(userId, "outlook", emailAddress);
+    const ref = db().collection("linkedAccounts").doc(docId);
+    const existingSnap = await ref.get();
+
+    let colorHex: string;
+    if (existingSnap.exists) {
+      colorHex =
+        (existingSnap.data()?.colorHex as string | undefined) ??
+        pickNextAccountColor([]);
+    } else {
+      const existingForUser = await db()
+        .collection("linkedAccounts")
+        .where("userId", "==", userId)
+        .get();
+      colorHex = pickNextAccountColor(
+        existingForUser.docs.map((d) => d.data().colorHex)
+      );
     }
 
-    const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
-
-    const ref = await db().collection("linkedAccounts").add({
+    const updateData: Record<string, unknown> = {
       userId,
       provider: "outlook",
       authMethod: "oauth",
       emailAddress,
       oauthStatus: "connected",
       colorHex,
-      lastScanAt: null,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       tokenExpiresAt,
-    });
+    };
+    if (!existingSnap.exists) {
+      updateData.lastScanAt = null;
+    }
+    await ref.set(updateData, { merge: true });
 
     return {
       id: ref.id,

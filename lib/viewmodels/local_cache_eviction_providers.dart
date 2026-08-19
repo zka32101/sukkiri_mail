@@ -30,15 +30,31 @@ final localCacheEvictionSweepProvider = FutureProvider<void>((ref) async {
       .watch(categoryRuleRepositoryProvider)
       .watchForUser(userId)
       .first;
-  final retentionDaysByCategory = <MailCategory, int>{
-    for (final r in categoryRules) r.category: r.retentionDays,
-  };
 
   final now = DateTime.now();
   var totalFreedCount = 0;
 
   for (final account in accounts) {
-    final metas = await emailMetaRepo.watchForAccount(account.id).first;
+    // CategoryRule.accountIdは「そのアカウント専用のルール」（null=全アカウント共通）を
+    // 区別するためのフィールド。以前はカテゴリ名だけでMapを作っていたため、同じカテゴリに
+    // 「全アカウント共通」ルールと「特定アカウント専用」ルールが両方存在する場合、
+    // クエリ結果の順序次第でどちらが勝つか不定になり、意図しないアカウントに誤った
+    // 保持日数（早すぎる自動削除、または遅すぎる保持）が適用され得た。
+    // 全アカウント共通ルールを先に適用し、そのアカウント専用ルールで上書きすることで、
+    // 「専用ルールが常に優先される」という意図した挙動を順序に依存せず保証する。
+    final retentionDaysByCategory = <MailCategory, int>{};
+    for (final r in categoryRules) {
+      if (r.accountId == null) {
+        retentionDaysByCategory[r.category] = r.retentionDays;
+      }
+    }
+    for (final r in categoryRules) {
+      if (r.accountId == account.id) {
+        retentionDaysByCategory[r.category] = r.retentionDays;
+      }
+    }
+
+    final metas = await emailMetaRepo.watchForAccount(account.id, userId).first;
     if (metas.isEmpty) continue;
 
     final byCategory = <MailCategory, List<EmailMeta>>{};

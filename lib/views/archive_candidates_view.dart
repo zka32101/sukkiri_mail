@@ -6,6 +6,7 @@ import '../models/linked_account.dart';
 import '../services/cloud_functions_mail_provider.dart';
 import '../services/mail_provider.dart';
 import '../viewmodels/core_providers.dart';
+import '../viewmodels/dashboard_providers.dart';
 import 'root_shell.dart';
 
 /// Aha Moment動線 Step4: 検出結果からアーカイブ候補を選択・保護し、確定する。
@@ -46,6 +47,10 @@ class _ArchiveCandidatesViewState extends ConsumerState<ArchiveCandidatesView> {
     });
     try {
       await ref.read(emailMetaRepositoryProvider).setPinned(id, nextPinned);
+      // ピン留め件数はダッシュボードの集計に影響するため、非autoDisposeで
+      // キャッシュされているtidinessStatsProviderを明示的に無効化して再取得させる
+      // （放置すると、アプリセッション中ずっとダッシュボードの数値が更新されない）。
+      ref.invalidate(tidinessStatsProvider);
     } catch (e) {
       if (!mounted) return;
       // 永続化に失敗した場合はUI表示を元に戻す（保護状態の見た目と実体を一致させる）。
@@ -67,6 +72,7 @@ class _ArchiveCandidatesViewState extends ConsumerState<ArchiveCandidatesView> {
       final ids = _selected.difference(_pinned).toList();
       if (ids.isNotEmpty) {
         await provider.archive(account: widget.account, emailIds: ids);
+        ref.invalidate(tidinessStatsProvider);
       }
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(

@@ -146,59 +146,63 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
     );
 
     final pastedUrlController = TextEditingController();
-    if (!mounted) return;
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.accountLinkOutlook),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('①下のボタンでブラウザを開き、Microsoftアカウントでログイン・許可してください。'),
-            const SizedBox(height: 8),
-            const Text('②完了後に表示されるページのURLをコピーし、下に貼り付けてください。'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () =>
-                  launchUrl(authUrl, mode: LaunchMode.externalApplication),
-              child: const Text('ブラウザを開く'),
+    try {
+      if (!mounted) return;
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.accountLinkOutlook),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('①下のボタンでブラウザを開き、Microsoftアカウントでログイン・許可してください。'),
+              const SizedBox(height: 8),
+              const Text('②完了後に表示されるページのURLをコピーし、下に貼り付けてください。'),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () =>
+                    launchUrl(authUrl, mode: LaunchMode.externalApplication),
+                child: const Text('ブラウザを開く'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pastedUrlController,
+                decoration: const InputDecoration(labelText: '完了後のURL'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.commonCancel),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: pastedUrlController,
-              decoration: const InputDecoration(labelText: '完了後のURL'),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.commonConfirm),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.commonConfirm),
-          ),
-        ],
-      ),
-    );
-    if (result != true) return;
-    final authCode = Uri.tryParse(
-      pastedUrlController.text.trim(),
-    )?.queryParameters['code'];
-    if (authCode == null || authCode.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('URLからcodeを読み取れませんでした')),
       );
-      return;
+      if (result != true) return;
+      final authCode = Uri.tryParse(
+        pastedUrlController.text.trim(),
+      )?.queryParameters['code'];
+      if (authCode == null || authCode.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('URLからcodeを読み取れませんでした')),
+        );
+        return;
+      }
+      if (!mounted) return;
+      await _connect(
+        MailProviderType.outlook,
+        params: {'authCode': authCode, 'redirectUri': _outlookRedirectUri},
+      );
+    } finally {
+      pastedUrlController.dispose();
     }
-    if (!mounted) return;
-    await _connect(
-      MailProviderType.outlook,
-      params: {'authCode': authCode, 'redirectUri': _outlookRedirectUri},
-    );
   }
 
   Future<void> _connectImap() async {
@@ -206,64 +210,70 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
     final hostController = TextEditingController();
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.accountLinkImap),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'メールアドレス'),
-            ),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'アプリ専用パスワード'),
-            ),
-            TextField(
-              controller: hostController,
-              decoration: const InputDecoration(
-                labelText: 'IMAPホスト',
-                hintText: 'imap.mail.yahoo.co.jp',
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.accountLinkImap),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'メールアドレス'),
               ),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'アプリ専用パスワード'),
+              ),
+              TextField(
+                controller: hostController,
+                decoration: const InputDecoration(
+                  labelText: 'IMAPホスト',
+                  hintText: 'imap.mail.yahoo.co.jp',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.commonConfirm),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.commonConfirm),
-          ),
-        ],
-      ),
-    );
-    if (result != true) return;
-    final emailAddress = emailController.text.trim();
-    final appPassword = passwordController.text;
-    final imapHost = hostController.text.trim();
-    if (emailAddress.isEmpty || appPassword.isEmpty || imapHost.isEmpty) {
+      );
+      if (result != true) return;
+      final emailAddress = emailController.text.trim();
+      final appPassword = passwordController.text;
+      final imapHost = hostController.text.trim();
+      if (emailAddress.isEmpty || appPassword.isEmpty || imapHost.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('すべての項目を入力してください')));
+        return;
+      }
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('すべての項目を入力してください')));
-      return;
+      await _connect(
+        MailProviderType.imap,
+        params: {
+          'emailAddress': emailAddress,
+          'appPassword': appPassword,
+          'imapHost': imapHost,
+        },
+      );
+    } finally {
+      emailController.dispose();
+      passwordController.dispose();
+      hostController.dispose();
     }
-    if (!mounted) return;
-    await _connect(
-      MailProviderType.imap,
-      params: {
-        'emailAddress': emailAddress,
-        'appPassword': appPassword,
-        'imapHost': imapHost,
-      },
-    );
   }
 
   @override
