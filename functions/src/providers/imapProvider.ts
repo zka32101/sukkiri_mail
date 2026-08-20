@@ -8,6 +8,7 @@ import {
 import { categorizeMessage, pickNextAccountColor } from "../categorize";
 import { db } from "../firestore";
 import { linkedAccountDocId } from "../linkedAccountId";
+import { assertCanAddAccount } from "../planLimits";
 
 /**
  * 標準IMAP/SMTP（Yahoo!メール・iCloud等）、アプリ専用パスワード方式。OAuth審査対象外。
@@ -67,6 +68,7 @@ export class ImapProvider implements MailProviderAdapter {
         .collection("linkedAccounts")
         .where("userId", "==", userId)
         .get();
+      await assertCanAddAccount(userId, existingForUser.docs.length);
       colorHex = pickNextAccountColor(
         existingForUser.docs.map((d) => d.data().colorHex)
       );

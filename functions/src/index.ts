@@ -8,6 +8,8 @@ import { db as firestoreDb } from "./firestore";
 
 admin.initializeApp();
 
+export { revenueCatWebhook } from "./revenueCatWebhook";
+
 function resolveProvider(provider: string): MailProviderAdapter {
   switch (provider) {
     case "gmail":

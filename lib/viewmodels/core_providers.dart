@@ -9,6 +9,7 @@ import '../repositories/sender_block_rule_repository.dart';
 import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';
 import '../services/local_cache_service.dart';
+import '../services/purchases_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
@@ -42,4 +43,10 @@ final cacheEvictionLogRepositoryProvider = Provider<CacheEvictionLogRepository>(
 
 final localCacheServiceProvider = Provider<LocalCacheService>(
   (ref) => LocalCacheService(),
+);
+
+// PurchasesServiceは内部でSDK初期化状態(_configured)を保持するため、
+// アプリセッション中は同一インスタンスを使い回す必要がある。
+final purchasesServiceProvider = Provider<PurchasesService>(
+  (ref) => PurchasesService(),
 );

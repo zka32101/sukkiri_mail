@@ -9,6 +9,7 @@ import { getSecret } from "../secrets";
 import { categorizeMessage, pickNextAccountColor } from "../categorize";
 import { db } from "../firestore";
 import { linkedAccountDocId } from "../linkedAccountId";
+import { assertCanAddAccount } from "../planLimits";
 
 /**
  * gmail.modify（sensitive/Tier2） + gmail.labels（non-sensitive）のみ使用。
@@ -119,6 +120,7 @@ export class GmailProvider implements MailProviderAdapter {
         .collection("linkedAccounts")
         .where("userId", "==", userId)
         .get();
+      await assertCanAddAccount(userId, existingForUser.docs.length);
       colorHex = pickNextAccountColor(
         existingForUser.docs.map((d) => d.data().colorHex)
       );
