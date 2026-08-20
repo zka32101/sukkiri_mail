@@ -33,10 +33,11 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
     super.dispose();
   }
 
-  Future<void> _addCategoryRule() async {
+  /// existingを渡すと編集（既存ドキュメントを更新）、省略すると新規作成になる。
+  Future<void> _editCategoryRule([CategoryRule? existing]) async {
     final l10n = AppLocalizations.of(context)!;
-    MailCategory category = MailCategory.promotion;
-    int retentionDays = 30;
+    MailCategory category = existing?.category ?? MailCategory.promotion;
+    int retentionDays = existing?.retentionDays ?? 30;
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -85,12 +86,57 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
         .read(categoryRuleRepositoryProvider)
         .upsert(
           CategoryRule(
-            id: '',
+            id: existing?.id ?? '',
             userId: userId,
             category: category,
             retentionDays: retentionDays,
+            accountId: existing?.accountId,
           ),
         );
+  }
+
+  Future<void> _deleteCategoryRule(CategoryRule rule) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ルールを削除しますか？'),
+        content: Text('「${rule.category.name}・${rule.retentionDays}日」を削除します。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('削除する'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(categoryRuleRepositoryProvider).remove(rule.id);
+  }
+
+  Future<void> _deleteSenderBlockRule(SenderBlockRule rule) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ルールを削除しますか？'),
+        content: Text('「${rule.pattern}」のブロックを解除します。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('削除する'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(senderBlockRuleRepositoryProvider).remove(rule.id);
   }
 
   Future<void> _addSenderBlockRule() async {
@@ -178,6 +224,12 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
                     (r) => ListTile(
                       title: Text(r.category.name),
                       subtitle: Text('${r.retentionDays}日'),
+                      onTap: () => _editCategoryRule(r),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: '削除',
+                        onPressed: () => _deleteCategoryRule(r),
+                      ),
                     ),
                   )
                   .toList(),
@@ -192,6 +244,13 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
                     (r) => ListTile(
                       title: Text(r.pattern),
                       subtitle: Text(r.matchType.name),
+                      // 差出人ブロックルールは編集の概念が薄い（パターン自体を変えるなら
+                      // 削除して作り直す方が分かりやすい）ため、削除のみ提供する。
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: '削除',
+                        onPressed: () => _deleteSenderBlockRule(r),
+                      ),
                     ),
                   )
                   .toList(),
@@ -202,7 +261,7 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           if (_tabController.index == 0) {
-            _addCategoryRule();
+            _editCategoryRule();
           } else {
             _addSenderBlockRule();
           }

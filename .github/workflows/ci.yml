@@ -54,7 +54,7 @@ jobs:
         # このリストを更新し忘れると、デプロイは「成功」するが実際には何も
         # 反映されない（エラーにもならない）ため、PR/push時に必ず一致を検証する。
         run: |
-          exported=$(grep -oP '(?<=^export const )\w+(?=\s*=\s*onCall)' functions/src/index.ts | sort)
+          exported=$(grep -oP '(?<=^export const )\w+(?=\s*=\s*onCall)|(?<=^export \{ )\w+(?= \} from)' functions/src/index.ts | sort)
           deployed=$(grep -oP '(?<=functions:)\w+' .github/workflows/firebase-deploy.yml | sort)
           if [ "$exported" != "$deployed" ]; then
             echo "::error::functions/src/index.tsのexport済み関数と、firebase-deploy.ymlの" \

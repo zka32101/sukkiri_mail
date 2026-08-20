@@ -8,6 +8,7 @@ import { getSecret } from "../secrets";
 import { categorizeMessage, pickNextAccountColor } from "../categorize";
 import { db } from "../firestore";
 import { linkedAccountDocId } from "../linkedAccountId";
+import { assertCanAddAccount } from "../planLimits";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -203,6 +204,7 @@ export class OutlookProvider implements MailProviderAdapter {
         .collection("linkedAccounts")
         .where("userId", "==", userId)
         .get();
+      await assertCanAddAccount(userId, existingForUser.docs.length);
       colorHex = pickNextAccountColor(
         existingForUser.docs.map((d) => d.data().colorHex)
       );

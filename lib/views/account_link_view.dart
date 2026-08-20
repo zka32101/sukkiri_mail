@@ -8,7 +8,14 @@ import '../l10n/app_localizations.dart';
 import '../models/linked_account.dart';
 import '../services/cloud_functions_mail_provider.dart';
 import '../viewmodels/auth_provider.dart';
+import '../viewmodels/linked_account_providers.dart';
+import 'paywall_view.dart';
 import 'scan_result_view.dart';
+
+/// 無料プランで連携できるメールアカウント数の上限。真の防衛線はCloud Functions側
+/// （functions/src/planLimits.ts）にあり、ここはOAuth同意画面を開く前に無駄足を
+/// 防ぐためのUX向けの事前チェックに過ぎない（Cloud Functions側の値と一致させること）。
+const _freePlanAccountLimit = 2;
 
 /// OutlookのOAuth認可リクエストで使うredirect_uri。Microsoftが「ネイティブ/デスクトップアプリ」
 /// 向けに提供している特別な固定エンドポイントで、遷移後にブラウザのURLへ ?code=... が付与される。
@@ -74,6 +81,42 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
     return remoteConfig.getString(key);
   }
 
+  /// 無料プランのアカウント数上限に達している場合はアップグレード誘導ダイアログを出し、
+  /// falseを返す（呼び出し側はOAuth同意画面等を開かずに処理を中断する）。
+  Future<bool> _checkAccountLimitOrShowUpgrade() async {
+    final accounts = await ref.read(linkedAccountsProvider.future);
+    final appUser = await ref.read(currentAppUserProvider.future);
+    if (appUser.isPro || accounts.length < _freePlanAccountLimit) return true;
+
+    if (!mounted) return false;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('アカウント数の上限に達しました'),
+        content: Text(
+          '無料プランで連携できるメールアカウントは$_freePlanAccountLimitつまでです。'
+          'Proにアップグレードすると無制限に連携できます。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const PaywallView()));
+            },
+            child: const Text('Proを見る'),
+          ),
+        ],
+      ),
+    );
+    return false;
+  }
+
   Future<void> _showNotConfigured(String providerLabel, String detail) {
     final l10n = AppLocalizations.of(context)!;
     return showDialog<void>(
@@ -96,6 +139,7 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
   /// GmailはGoogleSignInのネイティブOAuthフローで認可コード（serverAuthCode）を取得し、
   /// Cloud Functions側でアクセストークンへ交換する。
   Future<void> _connectGmail() async {
+    if (!await _checkAccountLimitOrShowUpgrade()) return;
     try {
       final googleSignIn = GoogleSignIn(
         scopes: const ['https://www.googleapis.com/auth/gmail.modify'],
@@ -122,6 +166,8 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
   /// OutlookはMicrosoft側にネイティブSDKを導入していないため、外部ブラウザでOAuth同意画面を開き、
   /// 完了後のリダイレクト先URL（?code=...を含む）をユーザーに貼り付けてもらう方式で認可コードを得る。
   Future<void> _connectOutlook() async {
+    if (!await _checkAccountLimitOrShowUpgrade()) return;
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     final clientId = await _remoteConfigString('outlook_oauth_client_id');
     if (clientId.isEmpty) {
@@ -206,6 +252,8 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
   }
 
   Future<void> _connectImap() async {
+    if (!await _checkAccountLimitOrShowUpgrade()) return;
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
