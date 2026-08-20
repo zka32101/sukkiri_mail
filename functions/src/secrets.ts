@@ -2,14 +2,28 @@ import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 import { db } from "./firestore";
 
 const client = new SecretManagerServiceClient();
-const cache = new Map<string, string>();
+
+interface CachedSecret {
+  value: string;
+  fetchedAt: number;
+}
+const cache = new Map<string, CachedSecret>();
+
+// シークレットローテーション（漏洩時の値変更等）を、温まったCloud Functionsインスタンスが
+// キャッシュを永久に保持し続けることで無効化してしまわないよう、TTL付きキャッシュにする。
+// 呼び出し頻度に対してSecret Managerへの負荷・レイテンシを抑えつつ、
+// ローテーション後は最大でもこの時間内に新しい値へ切り替わることを保証する。
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15分
 
 /**
  * Secret Manager からOAuthクライアントシークレット等を取得する。
  * OAuthトークン・IMAPアプリパスワードはクライアントに平文で渡さない原則をここで担保する。
  */
 export async function getSecret(name: string): Promise<string> {
-  if (cache.has(name)) return cache.get(name) as string;
+  const cached = cache.get(name);
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+    return cached.value;
+  }
 
   try {
     const projectId = process.env.GCLOUD_PROJECT;
@@ -26,7 +40,7 @@ export async function getSecret(name: string): Promise<string> {
       throw new Error(`Secret "${name}" returned empty value`);
     }
 
-    cache.set(name, value);
+    cache.set(name, { value, fetchedAt: Date.now() });
 
     // 監査ログ（秘密の値は記録しない）
     db().collection("_audit").add({
