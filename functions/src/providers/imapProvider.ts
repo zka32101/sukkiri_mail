@@ -5,10 +5,9 @@ import {
   MessageBodyResult,
   ScanResultItem,
 } from "./mailProviderInterface";
-import { categorizeMessage, pickNextAccountColor } from "../categorize";
+import { categorizeMessage } from "../categorize";
 import { db } from "../firestore";
-import { linkedAccountDocId } from "../linkedAccountId";
-import { assertCanAddAccount } from "../planLimits";
+import { upsertLinkedAccount } from "../linkedAccountUpsert";
 
 /**
  * 標準IMAP/SMTP（Yahoo!メール・iCloud等）、アプリ専用パスワード方式。OAuth審査対象外。
@@ -50,43 +49,22 @@ export class ImapProvider implements MailProviderAdapter {
     await testClient.connect();
     await testClient.logout();
 
-    // userId+provider+emailAddressから決まる決定的なドキュメントIDを使うことで、
-    // 同時に複数の接続リクエストが来ても（同一ユーザーが同じアドレスを重複連携しようとしても）
-    // 重複ドキュメントが作られない。既存なら`merge: true`でアプリパスワード/ホストのみ更新、
-    // 無ければ新規作成として扱われる（読み取り→判定→書き込みのレースが原理的に発生しない）。
-    const docId = linkedAccountDocId(userId, "imap", emailAddress);
-    const ref = db().collection("linkedAccounts").doc(docId);
-    const existingSnap = await ref.get();
-
-    let colorHex: string;
-    if (existingSnap.exists) {
-      colorHex =
-        (existingSnap.data()?.colorHex as string | undefined) ??
-        pickNextAccountColor([]);
-    } else {
-      const existingForUser = await db()
-        .collection("linkedAccounts")
-        .where("userId", "==", userId)
-        .get();
-      await assertCanAddAccount(userId, existingForUser.docs.length);
-      colorHex = pickNextAccountColor(
-        existingForUser.docs.map((d) => d.data().colorHex)
-      );
-    }
-
-    const updateData: Record<string, unknown> = {
+    // トランザクション内で「既存なら再利用・新規なら無料プラン上限チェック→
+    // カラー割当→書き込み」をアトミックに行う（詳細はlinkedAccountUpsert.ts参照）。
+    const { ref, colorHex } = await upsertLinkedAccount(
       userId,
-      provider: "imap",
-      authMethod: "app_password",
+      "imap",
       emailAddress,
-      imapHost,
-      colorHex,
-      appPassword,
-    };
-    if (!existingSnap.exists) {
-      updateData.lastScanAt = null;
-    }
-    await ref.set(updateData, { merge: true });
+      (isNew) => ({
+        userId,
+        provider: "imap",
+        authMethod: "app_password",
+        emailAddress,
+        imapHost,
+        appPassword,
+        ...(isNew ? { lastScanAt: null } : {}),
+      })
+    );
 
     return {
       id: ref.id,

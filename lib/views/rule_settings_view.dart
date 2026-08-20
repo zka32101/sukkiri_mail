@@ -114,6 +114,7 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
       ),
     );
     if (confirmed != true) return;
+    if (!mounted) return;
     await ref.read(categoryRuleRepositoryProvider).remove(rule.id);
   }
 
@@ -136,6 +137,7 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
       ),
     );
     if (confirmed != true) return;
+    if (!mounted) return;
     await ref.read(senderBlockRuleRepositoryProvider).remove(rule.id);
   }
 

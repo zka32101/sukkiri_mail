@@ -6,10 +6,9 @@ import {
   ScanResultItem,
 } from "./mailProviderInterface";
 import { getSecret } from "../secrets";
-import { categorizeMessage, pickNextAccountColor } from "../categorize";
+import { categorizeMessage } from "../categorize";
 import { db } from "../firestore";
-import { linkedAccountDocId } from "../linkedAccountId";
-import { assertCanAddAccount } from "../planLimits";
+import { upsertLinkedAccount } from "../linkedAccountUpsert";
 
 /**
  * gmail.modify（sensitive/Tier2） + gmail.labels（non-sensitive）のみ使用。
@@ -102,45 +101,24 @@ export class GmailProvider implements MailProviderAdapter {
     const emailAddress = profile.data.emailAddress ?? "";
     const tokenExpiresAt = tokens.expiry_date ?? Date.now() + 3600 * 1000;
 
-    // userId+provider+emailAddressから決まる決定的なドキュメントIDを使うことで、
-    // 同時に複数の接続リクエストが来ても（同一ユーザーが同じアドレスを重複連携しようとしても）
-    // 重複ドキュメントが作られない。既存なら`merge: true`でトークンのみ更新、
-    // 無ければ新規作成として扱われる（読み取り→判定→書き込みのレースが原理的に発生しない）。
-    const docId = linkedAccountDocId(userId, "gmail", emailAddress);
-    const ref = db().collection("linkedAccounts").doc(docId);
-    const existingSnap = await ref.get();
-
-    let colorHex: string;
-    if (existingSnap.exists) {
-      colorHex =
-        (existingSnap.data()?.colorHex as string | undefined) ??
-        pickNextAccountColor([]);
-    } else {
-      const existingForUser = await db()
-        .collection("linkedAccounts")
-        .where("userId", "==", userId)
-        .get();
-      await assertCanAddAccount(userId, existingForUser.docs.length);
-      colorHex = pickNextAccountColor(
-        existingForUser.docs.map((d) => d.data().colorHex)
-      );
-    }
-
-    const updateData: Record<string, unknown> = {
+    // トランザクション内で「既存なら再利用・新規なら無料プラン上限チェック→
+    // カラー割当→書き込み」をアトミックに行う（詳細はlinkedAccountUpsert.ts参照）。
+    const { ref, colorHex } = await upsertLinkedAccount(
       userId,
-      provider: "gmail",
-      authMethod: "oauth",
+      "gmail",
       emailAddress,
-      oauthStatus: "connected",
-      colorHex,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      tokenExpiresAt,
-    };
-    if (!existingSnap.exists) {
-      updateData.lastScanAt = null;
-    }
-    await ref.set(updateData, { merge: true });
+      (isNew) => ({
+        userId,
+        provider: "gmail",
+        authMethod: "oauth",
+        emailAddress,
+        oauthStatus: "connected",
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        tokenExpiresAt,
+        ...(isNew ? { lastScanAt: null } : {}),
+      })
+    );
 
     return {
       id: ref.id,
