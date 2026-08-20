@@ -45,3 +45,25 @@ jobs:
 
       - name: TypeScript build
         run: npm run build
+
+      - name: Verify firebase-deploy.yml functions allowlist is in sync
+        working-directory: .
+        # firebase-deploy.ymlは、このFirebaseプロジェクトを共有する他アプリの関数を
+        # 誤って削除しないよう、デプロイ対象のCloud Functions名を手動で列挙している
+        # （詳細はfirebase-deploy.ymlのコメント参照）。関数を追加/削除したのに
+        # このリストを更新し忘れると、デプロイは「成功」するが実際には何も
+        # 反映されない（エラーにもならない）ため、PR/push時に必ず一致を検証する。
+        run: |
+          exported=$(grep -oP '(?<=^export const )\w+(?=\s*=\s*onCall)' functions/src/index.ts | sort)
+          deployed=$(grep -oP '(?<=functions:)\w+' .github/workflows/firebase-deploy.yml | sort)
+          if [ "$exported" != "$deployed" ]; then
+            echo "::error::functions/src/index.tsのexport済み関数と、firebase-deploy.ymlの" \
+                 "デプロイ対象関数リストが一致していません。関数を追加/削除した場合は" \
+                 "firebase-deploy.ymlのFUNCTIONS変数も更新してください。"
+            echo "--- functions/src/index.ts で export されている関数 ---"
+            echo "$exported"
+            echo "--- firebase-deploy.yml のデプロイ対象関数 ---"
+            echo "$deployed"
+            exit 1
+          fi
+          echo "OK: 一致を確認しました。"

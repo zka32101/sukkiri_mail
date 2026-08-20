@@ -47,7 +47,12 @@ jobs:
             exit 1
           fi
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > /tmp/release.jks
-          keytool -list -v -keystore /tmp/release.jks -alias "$ANDROID_KEY_ALIAS" -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+          # -storepass "$VAR" だとパスワードがプロセスの起動引数としてそのまま渡り、
+          # 同一ランナー上の他プロセスからは`ps`/`/proc/<pid>/cmdline`で見えてしまう
+          # （GitHub Actionsのログマスキングはstdoutに出力された値しか隠せない）。
+          # -storepass:env はkeytoolに環境変数名だけを渡し、値自体は起動引数に
+          # 現れないため、この経路での露出を避けられる。
+          keytool -list -v -keystore /tmp/release.jks -alias "$ANDROID_KEY_ALIAS" -storepass:env ANDROID_KEYSTORE_PASSWORD \
             | grep -E "Alias name:|SHA1:|SHA256:"
 
       # keytoolがエイリアス/パスワード誤り等で失敗すると(bash -eにより)途中で
