@@ -38,7 +38,12 @@ class SettingsView extends ConsumerWidget {
       ),
     );
     if (confirmed != true) return;
-    await ref.read(linkedAccountRepositoryProvider).remove(account.id);
+    try {
+      await ref.read(linkedAccountRepositoryProvider).remove(account.id);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
 
   Future<void> _changeColor(
@@ -74,9 +79,14 @@ class SettingsView extends ConsumerWidget {
       ),
     );
     if (picked == null) return;
-    await ref
-        .read(linkedAccountRepositoryProvider)
-        .updateColor(account.id, picked);
+    try {
+      await ref
+          .read(linkedAccountRepositoryProvider)
+          .updateColor(account.id, picked);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
 
   @override

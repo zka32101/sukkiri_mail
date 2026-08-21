@@ -1,8 +1,13 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/cache_eviction_log.dart';
 import '../models/category_rule.dart';
 import '../models/email_meta.dart';
+import '../models/linked_account.dart';
+import '../models/sender_block_rule.dart';
+import '../repositories/email_meta_repository.dart';
+import '../services/local_cache_service.dart';
 import 'auth_provider.dart';
 import 'core_providers.dart';
 import 'linked_account_providers.dart';
@@ -34,63 +39,26 @@ final localCacheEvictionSweepProvider = FutureProvider<void>((ref) async {
   final now = DateTime.now();
   var totalFreedCount = 0;
 
+  // 1件のアカウント・1件のメールでの失敗が、他の全アカウント・全メールの処理を
+  // 巻き添えにして中断させないよう、アカウント単位・メール単位でtry/catchする。
+  // このProviderは非autoDisposeでroot_shell.dartから一度だけwatchされ、
+  // エラー結果はアプリセッション中ずっとキャッシュされて再試行されないため、
+  // 一時的なネットワーク不調等で丸ごと失敗させないことが特に重要
+  // （以前は1件のFirestore書き込み失敗が残り全アカウントの処理を中断させていた）。
   for (final account in accounts) {
-    // CategoryRule.accountIdは「そのアカウント専用のルール」（null=全アカウント共通）を
-    // 区別するためのフィールド。以前はカテゴリ名だけでMapを作っていたため、同じカテゴリに
-    // 「全アカウント共通」ルールと「特定アカウント専用」ルールが両方存在する場合、
-    // クエリ結果の順序次第でどちらが勝つか不定になり、意図しないアカウントに誤った
-    // 保持日数（早すぎる自動削除、または遅すぎる保持）が適用され得た。
-    // 全アカウント共通ルールを先に適用し、そのアカウント専用ルールで上書きすることで、
-    // 「専用ルールが常に優先される」という意図した挙動を順序に依存せず保証する。
-    final retentionDaysByCategory = <MailCategory, int>{};
-    for (final r in categoryRules) {
-      if (r.accountId == null) {
-        retentionDaysByCategory[r.category] = r.retentionDays;
-      }
-    }
-    for (final r in categoryRules) {
-      if (r.accountId == account.id) {
-        retentionDaysByCategory[r.category] = r.retentionDays;
-      }
-    }
-
-    final metas = await emailMetaRepo.watchForAccount(account.id, userId).first;
-    if (metas.isEmpty) continue;
-
-    final byCategory = <MailCategory, List<EmailMeta>>{};
-    for (final meta in metas) {
-      byCategory.putIfAbsent(meta.category, () => []).add(meta);
-    }
-    final senderEmailByMetaId = {
-      for (final meta in metas) meta.id: meta.senderEmail,
-    };
-    final unreadMetaIds = metas
-        .where((meta) => meta.isUnread)
-        .map((meta) => meta.id)
-        .toSet();
-
-    final changed = <EmailMeta>[];
-    for (final entry in byCategory.entries) {
-      // カテゴリ別ルールが未設定の場合はデフォルト30日を適用する。
-      final retentionDays = retentionDaysByCategory[entry.key] ?? 30;
-      changed.addAll(
-        service.planEviction(
-          metas: entry.value,
-          senderEmailByMetaId: senderEmailByMetaId,
-          blockRules: blockRules,
-          retentionDays: retentionDays,
-          now: now,
-          unreadMetaIds: unreadMetaIds,
-        ),
+    try {
+      totalFreedCount += await _sweepAccount(
+        account: account,
+        userId: userId,
+        emailMetaRepo: emailMetaRepo,
+        service: service,
+        categoryRules: categoryRules,
+        blockRules: blockRules,
+        now: now,
       );
+    } catch (e) {
+      debugPrint('[localCacheEvictionSweep] account=${account.id} failed: $e');
     }
-
-    for (final meta in changed) {
-      await emailMetaRepo.setLocalCacheStatus(meta.id, meta.localCacheStatus);
-    }
-    totalFreedCount += changed
-        .where((meta) => meta.localCacheStatus != LocalCacheStatus.cached)
-        .length;
   }
 
   if (totalFreedCount > 0) {
@@ -108,3 +76,79 @@ final localCacheEvictionSweepProvider = FutureProvider<void>((ref) async {
         );
   }
 });
+
+/// 1アカウント分のキャッシュ削除スイープを行い、実際に解放（cached以外へ変更）できた
+/// メール件数を返す。1件のFirestore書き込みが失敗しても、そのメールをスキップして
+/// 残りのメールの処理を続ける（呼び出し元でアカウント単位のtry/catchも行っているが、
+/// メール単位でも独立させることで、たまたま1件だけ失敗した場合に同一アカウント内の
+/// 残りのメールまで巻き添えで未処理にならないようにする）。
+Future<int> _sweepAccount({
+  required LinkedAccount account,
+  required String userId,
+  required EmailMetaRepository emailMetaRepo,
+  required LocalCacheService service,
+  required List<CategoryRule> categoryRules,
+  required List<SenderBlockRule> blockRules,
+  required DateTime now,
+}) async {
+  // CategoryRule.accountIdは「そのアカウント専用のルール」（null=全アカウント共通）を
+  // 区別するためのフィールド。全アカウント共通ルールを先に適用し、そのアカウント専用
+  // ルールで上書きすることで、「専用ルールが常に優先される」という意図した挙動を
+  // クエリ結果の順序に依存せず保証する。
+  final retentionDaysByCategory = <MailCategory, int>{};
+  for (final r in categoryRules) {
+    if (r.accountId == null) {
+      retentionDaysByCategory[r.category] = r.retentionDays;
+    }
+  }
+  for (final r in categoryRules) {
+    if (r.accountId == account.id) {
+      retentionDaysByCategory[r.category] = r.retentionDays;
+    }
+  }
+
+  final metas = await emailMetaRepo.watchForAccount(account.id, userId).first;
+  if (metas.isEmpty) return 0;
+
+  final byCategory = <MailCategory, List<EmailMeta>>{};
+  for (final meta in metas) {
+    byCategory.putIfAbsent(meta.category, () => []).add(meta);
+  }
+  final senderEmailByMetaId = {
+    for (final meta in metas) meta.id: meta.senderEmail,
+  };
+  final unreadMetaIds = metas
+      .where((meta) => meta.isUnread)
+      .map((meta) => meta.id)
+      .toSet();
+
+  final changed = <EmailMeta>[];
+  for (final entry in byCategory.entries) {
+    // カテゴリ別ルールが未設定の場合はデフォルト30日を適用する。
+    final retentionDays = retentionDaysByCategory[entry.key] ?? 30;
+    changed.addAll(
+      service.planEviction(
+        metas: entry.value,
+        senderEmailByMetaId: senderEmailByMetaId,
+        blockRules: blockRules,
+        retentionDays: retentionDays,
+        now: now,
+        unreadMetaIds: unreadMetaIds,
+      ),
+    );
+  }
+
+  var freedCount = 0;
+  for (final meta in changed) {
+    try {
+      await emailMetaRepo.setLocalCacheStatus(meta.id, meta.localCacheStatus);
+      if (meta.localCacheStatus != LocalCacheStatus.cached) freedCount++;
+    } catch (e) {
+      // この1件は次回のスイープで再評価される。他のメールの処理は継続する。
+      debugPrint(
+        '[localCacheEvictionSweep] emailMeta=${meta.id} update failed: $e',
+      );
+    }
+  }
+  return freedCount;
+}
