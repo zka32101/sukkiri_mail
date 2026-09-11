@@ -8,7 +8,12 @@ import { getSecret } from "../secrets";
 import { categorizeMessage } from "../categorize";
 import { db } from "../firestore";
 import { upsertLinkedAccount } from "../linkedAccountUpsert";
-import { LinkedAccountDoc } from "../types";
+import {
+  LinkedAccountDoc,
+  MicrosoftTokenResponse,
+  MicrosoftUserProfile,
+  MicrosoftGraphMessage,
+} from "../types";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -76,10 +81,8 @@ export class OutlookProvider implements MailProviderAdapter {
         throw new Error(`Token refresh failed: ${tokenRes.status}`);
       }
 
-      const tokens = await tokenRes.json();
-      const newAccessToken = tokens.access_token as string | undefined;
-      const newRefreshToken = tokens.refresh_token as string | undefined;
-      const expiresIn = tokens.expires_in as number | undefined; // seconds
+      const tokens = (await tokenRes.json()) as MicrosoftTokenResponse;
+      const { access_token: newAccessToken, refresh_token: newRefreshToken, expires_in: expiresIn } = tokens;
 
       if (!newAccessToken) {
         throw new Error("access token not returned from refresh");
@@ -100,7 +103,7 @@ export class OutlookProvider implements MailProviderAdapter {
         .doc(accountId)
         .update(updates);
 
-      console.log(`[Outlook] Token refreshed for account ${accountId}`);
+      console.info(`[Outlook] Token refreshed for account ${accountId}`);
       return newAccessToken;
     } catch (error) {
       const errorMessage =
@@ -163,7 +166,7 @@ export class OutlookProvider implements MailProviderAdapter {
     if (!tokenRes.ok) {
       throw new Error(`Outlook token exchange failed: ${tokenRes.status} ${await tokenRes.text()}`);
     }
-    const tokens = await tokenRes.json();
+    const tokens = (await tokenRes.json()) as MicrosoftTokenResponse;
     if (!tokens.access_token) {
       throw new Error("Outlook token exchange did not return an access token");
     }
@@ -174,14 +177,14 @@ export class OutlookProvider implements MailProviderAdapter {
     if (!meRes.ok) {
       throw new Error(`Outlook profile fetch failed: ${meRes.status} ${await meRes.text()}`);
     }
-    const me = await meRes.json();
+    const me = (await meRes.json()) as MicrosoftUserProfile;
     const emailAddress = me.mail ?? me.userPrincipalName ?? "";
     if (!emailAddress) {
       throw new Error("Outlook profile did not include an email address");
     }
 
     // token の有効期限を計算（expires_in は秒数）
-    const expiresIn = (tokens.expires_in as number) ?? 3600; // default: 1 hour
+    const expiresIn = tokens.expires_in ?? 3600; // default: 1 hour
     const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
     // トランザクション内で「既存なら再利用・新規なら無料プラン上限チェック→
@@ -218,8 +221,8 @@ export class OutlookProvider implements MailProviderAdapter {
     const data = await this.graphFetch(
       accountId,
       "/me/mailFolders/inbox/messages?$top=50&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead"
-    );
-    const items: ScanResultItem[] = (data.value ?? []).map((m: any) => {
+    ) as { value: MicrosoftGraphMessage[] };
+    const items: ScanResultItem[] = (data.value ?? []).map((m) => {
       const senderEmail = m.from?.emailAddress?.address ?? "";
       return {
         id: m.id,
@@ -256,13 +259,13 @@ export class OutlookProvider implements MailProviderAdapter {
   }
 
   async fetchMessageBody(accountId: string, messageId: string): Promise<MessageBodyResult> {
-    const data = await this.graphFetch(
+    const data = (await this.graphFetch(
       accountId,
       `/me/messages/${messageId}?$select=body,attachments`
-    );
+    )) as Pick<MicrosoftGraphMessage, "body" | "attachments">;
     return {
       html: data.body?.content ?? "",
-      attachmentNames: (data.attachments ?? []).map((a: any) => a.name),
+      attachmentNames: (data.attachments ?? []).map((a) => a.name),
     };
   }
 }

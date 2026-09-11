@@ -2,6 +2,7 @@ import { db } from "./firestore";
 import { linkedAccountDocId } from "./linkedAccountId";
 import { pickNextAccountColor } from "./categorize";
 import { assertCanAddAccount } from "./planLimits";
+import { LinkedAccountDoc } from "./types";
 
 export interface LinkedAccountUpsertResult {
   ref: FirebaseFirestore.DocumentReference;
@@ -55,7 +56,7 @@ export async function upsertLinkedAccount(
       );
       await assertCanAddAccount(userId, existingForUserSnap.docs.length);
       colorHex = pickNextAccountColor(
-        existingForUserSnap.docs.map((d) => d.data().colorHex)
+        existingForUserSnap.docs.map((d) => (d.data() as LinkedAccountDoc).colorHex)
       );
     }
 

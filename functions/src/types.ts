@@ -19,6 +19,7 @@ export interface LinkedAccountDoc {
   // IMAP fields
   imapHost?: string;
   imapUsername?: string;
+  appPassword?: string;
   colorHex: string;
   lastScanAt?: number;
   createdAt?: number;
@@ -154,4 +155,117 @@ export function isDisconnectAccountRequest(data: unknown): data is DisconnectAcc
     data !== null &&
     "accountId" in data
   );
+}
+
+// ============================================================================
+// External API Response Types
+// ============================================================================
+
+/** Microsoft Graph OAuth Token Response */
+export interface MicrosoftTokenResponse {
+  access_token: string;
+  refresh_token?: string;
+  expires_in: number;
+  token_type: string;
+  scope?: string;
+}
+
+/** Microsoft Graph User Profile */
+export interface MicrosoftUserProfile {
+  id: string;
+  userPrincipalName: string;
+  mail?: string;
+  displayName?: string;
+}
+
+/** Microsoft Graph Message */
+export interface MicrosoftGraphMessage {
+  id: string;
+  subject: string;
+  from?: {
+    emailAddress?: {
+      address: string;
+      name?: string;
+    };
+  };
+  receivedDateTime: string;
+  hasAttachments: boolean;
+  bodyPreview: string;
+  isRead: boolean;
+  body?: {
+    contentType: "text" | "html";
+    content: string;
+  };
+  attachments?: MicrosoftGraphAttachment[];
+}
+
+/** Microsoft Graph Attachment */
+export interface MicrosoftGraphAttachment {
+  id: string;
+  name: string;
+  contentType: string;
+  size: number;
+}
+
+/** RevenueCat Webhook Event */
+export interface RevenueCatEventData {
+  type?: string;
+  app_user_id?: string;
+  original_app_user_id?: string;
+  entitlement_ids?: string[];
+  transferred_from?: string[];
+  transferred_to?: string[];
+}
+
+/** Gmail OAuth Token Response */
+export interface GmailTokenResponse {
+  access_token: string;
+  expires_in: number;
+  refresh_token?: string;
+  scope: string;
+  token_type: string;
+}
+
+/** Gmail Profile */
+export interface GmailProfile {
+  emailAddress: string;
+  messagesTotal: number;
+  threadsTotal: number;
+  historyId: string;
+}
+
+/** Gmail Message */
+export interface GmailMessage {
+  id: string;
+  threadId: string;
+  labelIds?: string[];
+  snippet: string;
+  payload?: {
+    partId: string;
+    mimeType: string;
+    filename: string;
+    headers?: Array<{
+      name: string;
+      value: string;
+    }>;
+    body?: {
+      size: number;
+      data?: string;
+    };
+    parts?: unknown[];
+  };
+  sizeEstimate: number;
+  historyId: string;
+  internalDate: string;
+}
+
+/** IMAP Mail Message */
+export interface ImapMailMessage {
+  seq: number;
+  uid: number;
+  flags: string[];
+  headers: Record<string, string | string[]>;
+  source: Buffer;
+  text?: string;
+  html?: string;
 }
