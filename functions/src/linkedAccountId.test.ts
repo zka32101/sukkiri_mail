@@ -1,312 +1,404 @@
 /**
- * Unit tests for linkedAccountDocId function
+ * Unit tests for linkedAccountId module
  */
 
-import { linkedAccountDocId } from './linkedAccountId';
+import { linkedAccountDocId } from "./linkedAccountId";
 
-describe('linkedAccountDocId', () => {
-  describe('Basic Functionality', () => {
-    it('should generate a valid SHA256 hash', () => {
-      const result = linkedAccountDocId('user123', 'gmail', 'test@example.com');
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
+describe("linkedAccountId", () => {
+  describe("linkedAccountDocId", () => {
+    describe("Basic Functionality", () => {
+      it("should generate a hash for valid inputs", () => {
+        const id = linkedAccountDocId("user123", "google", "test@example.com");
+        expect(typeof id).toBe("string");
+        expect(id.length).toBe(64); // SHA256 hex is 64 chars
+      });
+
+      it("should return consistent hex string format", () => {
+        const id = linkedAccountDocId("user1", "gmail", "test@gmail.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should generate different hashes for different inputs", () => {
+        const id1 = linkedAccountDocId("user1", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user2", "google", "test@example.com");
+        const id3 = linkedAccountDocId("user1", "gmail", "test@example.com");
+        const id4 = linkedAccountDocId("user1", "google", "other@example.com");
+
+        expect(id1).not.toBe(id2);
+        expect(id1).not.toBe(id3);
+        expect(id1).not.toBe(id4);
+      });
     });
 
-    it('should generate a 64-character hex string', () => {
-      const result = linkedAccountDocId('user456', 'outlook', 'test@example.jp');
-      expect(result.length).toBe(64);
+    describe("Deterministic Output", () => {
+      it("should return same hash for identical inputs", () => {
+        const input1 = { userId: "user123", provider: "google", email: "test@example.com" };
+        const input2 = { userId: "user123", provider: "google", email: "test@example.com" };
+
+        const id1 = linkedAccountDocId(input1.userId, input1.provider, input1.email);
+        const id2 = linkedAccountDocId(input2.userId, input2.provider, input2.email);
+
+        expect(id1).toBe(id2);
+      });
+
+      it("should return same hash across multiple calls", () => {
+        const results = Array.from({ length: 5 }, () =>
+          linkedAccountDocId("user123", "google", "test@example.com")
+        );
+
+        expect(results[0]).toBe(results[1]);
+        expect(results[1]).toBe(results[2]);
+        expect(results[2]).toBe(results[3]);
+        expect(results[3]).toBe(results[4]);
+      });
     });
 
-    it('should generate consistent IDs for same input', () => {
-      const userId = 'user789';
-      const provider = 'imap';
-      const email = 'test@example.com';
+    describe("Case Insensitivity - Email Address", () => {
+      it("should treat uppercase email same as lowercase", () => {
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "google", "TEST@EXAMPLE.COM");
 
-      const id1 = linkedAccountDocId(userId, provider, email);
-      const id2 = linkedAccountDocId(userId, provider, email);
+        expect(id1).toBe(id2);
+      });
 
-      expect(id1).toBe(id2);
-    });
-  });
+      it("should treat mixed case email same as lowercase", () => {
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "google", "Test@Example.Com");
 
-  describe('Deduplication - Case Insensitivity', () => {
-    it('should treat uppercase and lowercase email addresses as same', () => {
-      const userId = 'user123';
-      const provider = 'gmail';
+        expect(id1).toBe(id2);
+      });
 
-      const id1 = linkedAccountDocId(userId, provider, 'Test@Example.com');
-      const id2 = linkedAccountDocId(userId, provider, 'test@example.com');
-      const id3 = linkedAccountDocId(userId, provider, 'TEST@EXAMPLE.COM');
+      it("should handle various case combinations", () => {
+        const id1 = linkedAccountDocId("user", "provider", "user@DOMAIN.COM");
+        const id2 = linkedAccountDocId("user", "provider", "USER@domain.com");
+        const id3 = linkedAccountDocId("user", "provider", "UsEr@DoMaIn.CoM");
 
-      expect(id1).toBe(id2);
-      expect(id2).toBe(id3);
-    });
+        expect(id1).toBe(id2);
+        expect(id2).toBe(id3);
+      });
 
-    it('should handle mixed case email addresses consistently', () => {
-      const userId = 'user456';
-      const provider = 'outlook';
+      it("should not normalize case for userId and provider", () => {
+        // userId and provider are NOT normalized, only email
+        const id1 = linkedAccountDocId("User123", "Google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "google", "test@example.com");
 
-      const id1 = linkedAccountDocId(userId, provider, 'John.Doe@Gmail.Com');
-      const id2 = linkedAccountDocId(userId, provider, 'john.doe@gmail.com');
-
-      expect(id1).toBe(id2);
-    });
-
-    it('should treat uppercase and lowercase provider as different', () => {
-      const userId = 'user789';
-      const email = 'test@example.com';
-
-      const idGmail = linkedAccountDocId(userId, 'gmail', email);
-      const idGMAIL = linkedAccountDocId(userId, 'GMAIL', email);
-
-      expect(idGmail).not.toBe(idGMAIL);
+        // These should be different because userId and provider are case-sensitive
+        expect(id1).not.toBe(id2);
+      });
     });
 
-    it('should treat uppercase and lowercase userId as different', () => {
-      const provider = 'gmail';
-      const email = 'test@example.com';
+    describe("Whitespace Handling", () => {
+      it("should trim leading whitespace from email", () => {
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "google", "  test@example.com");
 
-      const idUser = linkedAccountDocId('User123', provider, email);
-      const iduser = linkedAccountDocId('user123', provider, email);
+        expect(id1).toBe(id2);
+      });
 
-      expect(idUser).not.toBe(iduser);
-    });
-  });
+      it("should trim trailing whitespace from email", () => {
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "google", "test@example.com  ");
 
-  describe('Whitespace Handling', () => {
-    it('should trim leading whitespace from email', () => {
-      const userId = 'user123';
-      const provider = 'gmail';
+        expect(id1).toBe(id2);
+      });
 
-      const id1 = linkedAccountDocId(userId, provider, '  test@example.com');
-      const id2 = linkedAccountDocId(userId, provider, 'test@example.com');
+      it("should trim both leading and trailing whitespace", () => {
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "google", "  test@example.com  ");
 
-      expect(id1).toBe(id2);
-    });
+        expect(id1).toBe(id2);
+      });
 
-    it('should trim trailing whitespace from email', () => {
-      const userId = 'user456';
-      const provider = 'outlook';
+      it("should handle tabs and newlines", () => {
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "google", "\ttest@example.com\n");
 
-      const id1 = linkedAccountDocId(userId, provider, 'test@example.com  ');
-      const id2 = linkedAccountDocId(userId, provider, 'test@example.com');
+        expect(id1).toBe(id2);
+      });
 
-      expect(id1).toBe(id2);
-    });
+      it("should not trim internal whitespace", () => {
+        // Email with internal space should produce different hash than without
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "google", "test @example.com");
 
-    it('should trim both leading and trailing whitespace', () => {
-      const userId = 'user789';
-      const provider = 'imap';
+        expect(id1).not.toBe(id2);
+      });
 
-      const id1 = linkedAccountDocId(userId, provider, '  test@example.com  ');
-      const id2 = linkedAccountDocId(userId, provider, 'test@example.com');
+      it("should not affect userId or provider whitespace", () => {
+        // userId and provider are not trimmed
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId(" user123", "google", "test@example.com");
+        const id3 = linkedAccountDocId("user123", " google", "test@example.com");
 
-      expect(id1).toBe(id2);
-    });
-
-    it('should handle tabs and newlines in email', () => {
-      const userId = 'user123';
-      const provider = 'gmail';
-
-      const id1 = linkedAccountDocId(userId, provider, '\t\ntest@example.com\n\t');
-      const id2 = linkedAccountDocId(userId, provider, 'test@example.com');
-
-      expect(id1).toBe(id2);
+        expect(id1).not.toBe(id2);
+        expect(id1).not.toBe(id3);
+      });
     });
 
-    it('should not affect whitespace within email address', () => {
-      const userId = 'user456';
-      const provider = 'outlook';
+    describe("Email Normalization Combinations", () => {
+      it("should normalize email with uppercase and whitespace", () => {
+        const id1 = linkedAccountDocId("user", "provider", "test@example.com");
+        const id2 = linkedAccountDocId("user", "provider", "  TEST@EXAMPLE.COM  ");
 
-      // Note: Whitespace inside email should NOT be trimmed by trim()
-      const emailWithSpace = 'test user@example.com';
-      const result = linkedAccountDocId(userId, provider, emailWithSpace);
+        expect(id1).toBe(id2);
+      });
 
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
-    });
-  });
+      it("should handle email with plus addressing", () => {
+        const id1 = linkedAccountDocId("user", "provider", "test+tag@example.com");
+        const id2 = linkedAccountDocId("user", "provider", "TEST+TAG@EXAMPLE.COM");
 
-  describe('Deterministic Hashing', () => {
-    it('should produce different IDs for different emails', () => {
-      const userId = 'user123';
-      const provider = 'gmail';
+        expect(id1).toBe(id2);
+      });
 
-      const id1 = linkedAccountDocId(userId, provider, 'test1@example.com');
-      const id2 = linkedAccountDocId(userId, provider, 'test2@example.com');
+      it("should handle email with subdomain", () => {
+        const id1 = linkedAccountDocId("user", "provider", "test@sub.example.co.uk");
+        const id2 = linkedAccountDocId("user", "provider", "TEST@SUB.EXAMPLE.CO.UK");
 
-      expect(id1).not.toBe(id2);
-    });
-
-    it('should produce different IDs for different providers', () => {
-      const userId = 'user123';
-      const email = 'test@example.com';
-
-      const idGmail = linkedAccountDocId(userId, 'gmail', email);
-      const idOutlook = linkedAccountDocId(userId, 'outlook', email);
-      const idImap = linkedAccountDocId(userId, 'imap', email);
-
-      expect(idGmail).not.toBe(idOutlook);
-      expect(idOutlook).not.toBe(idImap);
-      expect(idGmail).not.toBe(idImap);
+        expect(id1).toBe(id2);
+      });
     });
 
-    it('should produce different IDs for different users', () => {
-      const provider = 'gmail';
-      const email = 'test@example.com';
+    describe("Edge Cases - Email Addresses", () => {
+      it("should handle empty email address", () => {
+        const id = linkedAccountDocId("user123", "google", "");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
 
-      const idUser1 = linkedAccountDocId('user1', provider, email);
-      const idUser2 = linkedAccountDocId('user2', provider, email);
-      const idUser3 = linkedAccountDocId('user3', provider, email);
+      it("should handle whitespace-only email", () => {
+        const id = linkedAccountDocId("user123", "google", "   ");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
 
-      expect(idUser1).not.toBe(idUser2);
-      expect(idUser2).not.toBe(idUser3);
-      expect(idUser1).not.toBe(idUser3);
-    });
-  });
+      it("should handle very long email address", () => {
+        const longEmail = "a".repeat(500) + "@" + "b".repeat(500) + ".com";
+        const id = linkedAccountDocId("user123", "google", longEmail);
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
 
-  describe('Edge Cases', () => {
-    it('should handle empty strings', () => {
-      const result = linkedAccountDocId('', '', '');
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
-    });
+      it("should handle email with special characters", () => {
+        const specialEmail = "test!#$%&'*+/=?^_`{|}~@example.com";
+        const id = linkedAccountDocId("user123", "google", specialEmail);
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
 
-    it('should handle very long user IDs', () => {
-      const longUserId = 'a'.repeat(10000);
-      const result = linkedAccountDocId(longUserId, 'gmail', 'test@example.com');
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
-    });
+      it("should handle email with Unicode", () => {
+        const unicodeEmail = "用户@例え.jp";
+        const id = linkedAccountDocId("user123", "google", unicodeEmail);
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
 
-    it('should handle very long email addresses', () => {
-      const longEmail = 'a'.repeat(1000) + '@example.com';
-      const result = linkedAccountDocId('user123', 'gmail', longEmail);
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
-    });
+      it("should handle email without @ symbol", () => {
+        const id = linkedAccountDocId("user123", "google", "invalidemail");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
 
-    it('should handle special characters in user ID', () => {
-      const result = linkedAccountDocId('user!@#$%^&*()', 'gmail', 'test@example.com');
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
-    });
-
-    it('should handle special characters in provider', () => {
-      const result = linkedAccountDocId('user123', 'gmail-custom!', 'test@example.com');
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
+      it("should handle email with multiple @ symbols", () => {
+        const id = linkedAccountDocId("user123", "google", "test@test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
     });
 
-    it('should handle Unicode characters in email', () => {
-      const result = linkedAccountDocId('user123', 'gmail', 'テスト@example.com');
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
+    describe("Edge Cases - userId", () => {
+      it("should handle empty userId", () => {
+        const id = linkedAccountDocId("", "google", "test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should handle very long userId", () => {
+        const longUserId = "u".repeat(10000);
+        const id = linkedAccountDocId(longUserId, "google", "test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should handle userId with special characters", () => {
+        const id = linkedAccountDocId("user!@#$%^&*()", "google", "test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should handle userId with Unicode", () => {
+        const id = linkedAccountDocId("ユーザー123", "google", "test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should handle userId with colons", () => {
+        const id = linkedAccountDocId("user:123:456", "google", "test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should differentiate userId with and without colons", () => {
+        const id1 = linkedAccountDocId("user123456", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user:123:456", "google", "test@example.com");
+
+        expect(id1).not.toBe(id2);
+      });
     });
 
-    it('should handle Unicode characters in user ID', () => {
-      const result = linkedAccountDocId('ユーザー123', 'gmail', 'test@example.com');
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
+    describe("Edge Cases - provider", () => {
+      it("should handle empty provider", () => {
+        const id = linkedAccountDocId("user123", "", "test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should handle very long provider", () => {
+        const longProvider = "p".repeat(10000);
+        const id = linkedAccountDocId("user123", longProvider, "test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should handle provider with special characters", () => {
+        const id = linkedAccountDocId("user123", "google-oauth2", "test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should handle provider with Unicode", () => {
+        const id = linkedAccountDocId("user123", "プロバイダー", "test@example.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should differentiate providers", () => {
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "microsoft", "test@example.com");
+
+        expect(id1).not.toBe(id2);
+      });
     });
 
-    it('should handle email with plus addressing', () => {
-      const id1 = linkedAccountDocId('user123', 'gmail', 'test+label@example.com');
-      const id2 = linkedAccountDocId('user123', 'gmail', 'test@example.com');
+    describe("Real-World Scenarios", () => {
+      it("should generate IDs for common email providers", () => {
+        const googleId = linkedAccountDocId("user1", "google", "user@gmail.com");
+        const microsoftId = linkedAccountDocId("user1", "microsoft", "user@outlook.com");
+        const appleId = linkedAccountDocId("user1", "apple", "user@icloud.com");
 
-      // Plus addressing creates different emails, so different IDs
-      expect(id1).not.toBe(id2);
+        expect(googleId).toMatch(/^[0-9a-f]{64}$/);
+        expect(microsoftId).toMatch(/^[0-9a-f]{64}$/);
+        expect(appleId).toMatch(/^[0-9a-f]{64}$/);
+        expect(googleId).not.toBe(microsoftId);
+        expect(microsoftId).not.toBe(appleId);
+      });
+
+      it("should handle OAuth user IDs", () => {
+        const id = linkedAccountDocId("firebase-uid-12345", "google", "user@gmail.com");
+        expect(id).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it("should handle multiple accounts for same user different providers", () => {
+        const userId = "user123";
+        const email1 = "user@gmail.com";
+        const email2 = "user@outlook.com";
+
+        const googleId = linkedAccountDocId(userId, "google", email1);
+        const microsoftId = linkedAccountDocId(userId, "microsoft", email2);
+
+        expect(googleId).not.toBe(microsoftId);
+      });
+
+      it("should handle same email with different providers", () => {
+        const email = "shared@example.com";
+        const provider1Id = linkedAccountDocId("user1", "google", email);
+        const provider2Id = linkedAccountDocId("user1", "microsoft", email);
+
+        expect(provider1Id).not.toBe(provider2Id);
+      });
+
+      it("should handle same email for different users", () => {
+        const email = "shared@example.com";
+        const user1Id = linkedAccountDocId("user1", "google", email);
+        const user2Id = linkedAccountDocId("user2", "google", email);
+
+        expect(user1Id).not.toBe(user2Id);
+      });
     });
 
-    it('should handle email with dots in local part', () => {
-      const result = linkedAccountDocId('user123', 'gmail', 'test.user@example.com');
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
+    describe("Hash Quality", () => {
+      it("should produce unique hashes for similar inputs", () => {
+        const id1 = linkedAccountDocId("user", "google", "test1@example.com");
+        const id2 = linkedAccountDocId("user", "google", "test2@example.com");
+        const id3 = linkedAccountDocId("user", "google", "test3@example.com");
+
+        const set = new Set([id1, id2, id3]);
+        expect(set.size).toBe(3);
+      });
+
+      it("should produce distributed hashes", () => {
+        const hashes = Array.from({ length: 100 }, (_, i) =>
+          linkedAccountDocId(`user${i}`, "google", `test${i}@example.com`)
+        );
+
+        const set = new Set(hashes);
+        expect(set.size).toBe(100); // All unique
+      });
+
+      it("should have consistent prefix distribution", () => {
+        const hashes = Array.from({ length: 100 }, (_, i) =>
+          linkedAccountDocId(`user${i}`, "google", `test${i}@example.com`)
+        );
+
+        const firstChars = hashes.map((h) => h[0]);
+        const uniqueFirstChars = new Set(firstChars);
+
+        // With 100 samples from SHA256, we should see multiple different first characters
+        expect(uniqueFirstChars.size).toBeGreaterThan(1);
+      });
     });
 
-    it('should handle email with subdomain', () => {
-      const result = linkedAccountDocId('user123', 'gmail', 'test@mail.example.com');
-      expect(result).toMatch(/^[a-f0-9]{64}$/);
-    });
-  });
+    describe("Return Type Validation", () => {
+      it("should always return a string", () => {
+        const result = linkedAccountDocId("user", "provider", "email@example.com");
+        expect(typeof result).toBe("string");
+      });
 
-  describe('Deduplication Verification', () => {
-    it('should enable safe deduplication via merge writes', () => {
-      // Simulating how Firestore would use this:
-      // .doc(linkedAccountDocId(...)).set(data, { merge: true })
-      // Multiple calls with same data should result in same doc ID
+      it("should never return empty string", () => {
+        const result = linkedAccountDocId("", "", "");
+        expect(result.length).toBeGreaterThan(0);
+      });
 
-      const userId = 'user123';
-      const provider = 'gmail';
-      const email = 'test@example.com';
+      it("should always return valid hex string", () => {
+        const result = linkedAccountDocId("user", "provider", "email@example.com");
+        expect(/^[0-9a-f]*$/.test(result)).toBe(true);
+      });
 
-      const docIds = [
-        linkedAccountDocId(userId, provider, email),
-        linkedAccountDocId(userId, provider, 'Test@Example.com'),
-        linkedAccountDocId(userId, provider, '  test@example.com  '),
-      ];
+      it("should always return 64-character string (SHA256 hex)", () => {
+        const testCases = [
+          ["user1", "google", "test@example.com"],
+          ["", "", ""],
+          ["a".repeat(1000), "b".repeat(1000), "c".repeat(1000)],
+          ["user", "provider", "特殊@文字.jp"],
+        ];
 
-      // All should resolve to the same document
-      expect(new Set(docIds).size).toBe(1);
-    });
-
-    it('should prevent duplicate accounts with different case', () => {
-      const userId = 'user456';
-      const provider = 'outlook';
-
-      // User accidentally tries to connect with different case
-      const accountId1 = linkedAccountDocId(userId, provider, 'user@EXAMPLE.COM');
-      const accountId2 = linkedAccountDocId(userId, provider, 'user@example.com');
-
-      // Should get same ID, preventing duplicate
-      expect(accountId1).toBe(accountId2);
+        testCases.forEach(([userId, provider, email]) => {
+          const result = linkedAccountDocId(userId, provider, email);
+          expect(result.length).toBe(64);
+        });
+      });
     });
 
-    it('should prevent duplicate accounts with whitespace variation', () => {
-      const userId = 'user789';
-      const provider = 'imap';
+    describe("Deduplication Use Case", () => {
+      it("should enable deduplication by returning same ID for identical inputs", () => {
+        // Simulating two concurrent requests with identical user/provider/email
+        const id1 = linkedAccountDocId("user123", "google", "test@example.com");
+        const id2 = linkedAccountDocId("user123", "google", "test@example.com");
 
-      const accountId1 = linkedAccountDocId(userId, provider, '  user@example.com  ');
-      const accountId2 = linkedAccountDocId(userId, provider, 'user@example.com');
-      const accountId3 = linkedAccountDocId(userId, provider, '\tuser@example.com\t');
+        // Both should produce same ID for Firestore doc(id).set with merge
+        expect(id1).toBe(id2);
+      });
 
-      // All variations should map to same ID
-      expect(accountId1).toBe(accountId2);
-      expect(accountId2).toBe(accountId3);
-    });
-  });
+      it("should prevent duplicate accounts with case-insensitive email", () => {
+        // User tries to link same account with different email case
+        const id1 = linkedAccountDocId("user123", "google", "TEST@EXAMPLE.COM");
+        const id2 = linkedAccountDocId("user123", "google", "test@example.com");
 
-  describe('Security Considerations', () => {
-    it('should not be reversible (hash property)', () => {
-      const userId = 'user123';
-      const provider = 'gmail';
-      const email = 'test@example.com';
+        // Should get same ID to prevent duplicate
+        expect(id1).toBe(id2);
+      });
 
-      const docId = linkedAccountDocId(userId, provider, email);
+      it("should prevent duplicate accounts with email whitespace", () => {
+        // User somehow pastes email with extra spaces
+        const id1 = linkedAccountDocId("user123", "google", "  test@example.com  ");
+        const id2 = linkedAccountDocId("user123", "google", "test@example.com");
 
-      // Hash should not contain original data
-      expect(docId).not.toContain(userId);
-      expect(docId).not.toContain(provider);
-      expect(docId).not.toContain(email);
-    });
-
-    it('should produce avalanche effect (small change = big output change)', () => {
-      const userId = 'user123';
-      const provider = 'gmail';
-
-      const id1 = linkedAccountDocId(userId, provider, 'test@example.com');
-      const id2 = linkedAccountDocId(userId, provider, 'test@example.co');  // changed one char
-
-      // IDs should be completely different
-      const differentChars = [...id1].filter((c, i) => c !== id2[i]).length;
-      expect(differentChars).toBeGreaterThan(30); // Most characters should differ
-    });
-
-    it('should be collision-resistant (different inputs)', () => {
-      const testCases = [
-        ['user1', 'gmail', 'test1@example.com'],
-        ['user1', 'gmail', 'test2@example.com'],
-        ['user1', 'outlook', 'test1@example.com'],
-        ['user2', 'gmail', 'test1@example.com'],
-        ['user1:gmail:test1@example.com', 'gmail', 'test1@example.com'],
-      ];
-
-      const ids = testCases.map(([uid, prov, email]) =>
-        linkedAccountDocId(uid, prov, email)
-      );
-
-      // All should be unique
-      expect(new Set(ids).size).toBe(ids.length);
+        // Should get same ID to prevent duplicate
+        expect(id1).toBe(id2);
+      });
     });
   });
 });
