@@ -2,11 +2,26 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
 import 'package:sukkiri_mail/models/linked_account.dart';
 import 'package:sukkiri_mail/services/cloud_functions_mail_provider.dart';
+import 'package:sukkiri_mail/services/local_cache_service.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+
+// Mock classes
+class MockFirebaseFunctions extends Mock implements FirebaseFunctions {}
+class MockLocalCacheService extends Mock implements LocalCacheService {}
 
 // Create a concrete implementation for testing
 class TestMailProvider extends CloudFunctionsMailProvider {
+  TestMailProvider({
+    required MockFirebaseFunctions mockFunctions,
+    required MockLocalCacheService mockCacheService,
+  }) : super(
+    functions: mockFunctions,
+    cacheService: mockCacheService,
+  );
+
   @override
   MailProviderType get providerType => MailProviderType.gmail;
 
@@ -19,9 +34,16 @@ class TestMailProvider extends CloudFunctionsMailProvider {
 void main() {
   group('CloudFunctionsMailProvider - Decompression', () {
     late TestMailProvider provider;
+    late MockFirebaseFunctions mockFunctions;
+    late MockLocalCacheService mockCacheService;
 
     setUp(() {
-      provider = TestMailProvider();
+      mockFunctions = MockFirebaseFunctions();
+      mockCacheService = MockLocalCacheService();
+      provider = TestMailProvider(
+        mockFunctions: mockFunctions,
+        mockCacheService: mockCacheService,
+      );
     });
 
     test('should return original HTML when isCompressed is false', () {
