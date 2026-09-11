@@ -1,5 +1,7 @@
 import '../models/email_meta.dart';
+import '../models/message_cache.dart';
 import '../models/sender_block_rule.dart';
+import 'message_cache_db.dart';
 
 /// 端末ローカルの本文/添付キャッシュ管理（クライアント側のみで完結、サーバーAPI呼び出し不要）。
 ///
@@ -9,7 +11,14 @@ import '../models/sender_block_rule.dart';
 ///   ③時間経過による自動パージ（未読でない・保護されていない・経過日数）
 ///
 /// メタデータ・スニペットはどの状態でも常に保持し検索可能（この判定の対象外）。
+///
+/// 別途、メール本文（24時間TTL）と添付ファイルリスト（7日TTL）をSQLiteに保存。
+/// fetchMessageBody() 呼び出し前にキャッシュを確認、有効なら API 呼び出しをスキップ。
 class LocalCacheService {
+  final MessageCacheDb _db;
+
+  LocalCacheService({MessageCacheDb? cacheDb})
+      : _db = cacheDb ?? MessageCacheDb();
   /// 1件のメールについて、次に取るべき localCacheStatus を決定する。
   /// [isUnread] が true の間は自動パージ対象にしない（未読メールは経過日数によらず保持）。
   LocalCacheStatus determineStatus({
@@ -78,5 +87,59 @@ class LocalCacheService {
     int avgBytesPerEmail = 150 * 1024,
   }) {
     return emailCount * avgBytesPerEmail;
+  }
+
+  /// メール本文をキャッシュに保存（24時間TTL）。
+  /// Cloud Functions の fetchMessageBody() 呼び出し後、本文を保存する。
+  Future<void> cacheMessageBody({
+    required String messageId,
+    required String accountId,
+    required String html,
+    required List<String> attachmentNames,
+    required bool isCompressed,
+    int? originalSize,
+    int? compressedSize,
+  }) async {
+    final cache = MessageBodyCache(
+      messageId: messageId,
+      accountId: accountId,
+      html: html,
+      attachmentNames: attachmentNames,
+      cachedAt: DateTime.now(),
+      isCompressed: isCompressed,
+      originalSize: originalSize,
+      compressedSize: compressedSize,
+    );
+    await _db.cacheMessageBody(cache);
+  }
+
+  /// メール本文をキャッシュから取得。
+  /// 有効（24時間以内）なキャッシュがあれば返す。期限切れなら削除して null を返す。
+  /// fetchMessageBody() 前に呼び出して、キャッシュヒット時は Cloud Functions 呼び出しをスキップ。
+  Future<MessageBodyCache?> getMessageBodyCache(
+    String messageId,
+    String accountId,
+  ) async {
+    return await _db.getMessageBodyCache(messageId, accountId);
+  }
+
+  /// 期限切れ（24時間以上前）のメール本文キャッシュを一括削除。
+  /// バックグラウンドタスクや定期クリーンアップで呼び出す。
+  /// 戻り値: 削除されたキャッシュ件数。
+  Future<int> cleanupExpiredMessageCaches() async {
+    return await _db.deleteExpiredMessageBodyCaches();
+  }
+
+  /// 全メール本文キャッシュを削除。
+  /// アプリ設定リセットやログアウト時に使用。
+  Future<int> clearAllMessageCaches() async {
+    return await _db.deleteAllMessageCaches();
+  }
+
+  /// キャッシュサイズ統計を取得。
+  /// キャッシュ件数とストレージ使用量（byte）を返す。
+  /// ダッシュボード画面で「キャッシュサイズ」と「解放可能容量」を表示する場合に使用。
+  Future<Map<String, int>> getMessageCacheStats() async {
+    return await _db.getCacheStats();
   }
 }
