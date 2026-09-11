@@ -8,6 +8,7 @@ import { getSecret } from "../secrets";
 import { categorizeMessage } from "../categorize";
 import { db } from "../firestore";
 import { upsertLinkedAccount } from "../linkedAccountUpsert";
+import { LinkedAccountDoc } from "../types";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -31,12 +32,10 @@ export class OutlookProvider implements MailProviderAdapter {
       .collection("linkedAccounts")
       .doc(accountId)
       .get();
-    const data = doc.data();
+    const data = doc.data() as LinkedAccountDoc | undefined;
     if (!data) throw new Error("account not found");
 
-    const accessToken = data.accessToken as string | undefined;
-    const refreshToken = data.refreshToken as string | undefined;
-    const expiresAt = data.tokenExpiresAt as number | undefined;
+    const { accessToken, refreshToken, tokenExpiresAt: expiresAt } = data;
 
     // トークン有効期限をチェック（有効期限の 5 分前に更新）
     const now = Date.now();

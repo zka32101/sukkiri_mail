@@ -2,6 +2,61 @@
  * Cloud Functions request parameter types for type safety
  */
 
+// ============================================================================
+// Firestore Document Types
+// ============================================================================
+
+/** LinkedAccount document in Firestore */
+export interface LinkedAccountDoc {
+  userId: string;
+  provider: "gmail" | "outlook" | "imap";
+  authMethod: "oauth" | "app_password";
+  emailAddress: string;
+  // OAuth fields
+  accessToken?: string;
+  refreshToken?: string;
+  tokenExpiresAt?: number;
+  // IMAP fields
+  imapHost?: string;
+  imapUsername?: string;
+  colorHex: string;
+  lastScanAt?: number;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
+/** EmailMeta document in Firestore */
+export interface EmailMetaDoc {
+  userId: string;
+  accountId: string;
+  category: "promotion" | "notification" | "invoice" | "other";
+  receivedAt: number;
+  hasAttachment: boolean;
+  snippet: string;
+  subject: string;
+  senderEmail: string;
+  isUnread: boolean;
+  status?: "active" | "archived";
+  isPinned?: boolean;
+  localCacheStatus?: "cached" | "uncached";
+  createdAt?: number;
+  updatedAt?: number;
+}
+
+/** ArchiveLog document in Firestore */
+export interface ArchiveLogDoc {
+  userId: string;
+  archivedAt: number;
+  emailCount: number;
+  category: string;
+  restoredAt: number | null;
+  createdAt?: number;
+}
+
+// ============================================================================
+// Cloud Functions Request Types
+// ============================================================================
+
 /** connectAccount function request parameters */
 export interface ConnectAccountRequest {
   provider: string;

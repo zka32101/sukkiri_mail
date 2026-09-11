@@ -54,7 +54,7 @@ function isProEntitlementEvent(event: RevenueCatEvent): boolean {
 
 async function setPlan(uid: string, plan: "pro" | "free"): Promise<void> {
   await db().collection("users").doc(uid).set({ plan }, { merge: true });
-  console.log(`[RevenueCat webhook] uid=${uid} plan=${plan}`);
+  console.info(`[RevenueCat webhook] uid=${uid} plan=${plan}`);
 }
 
 /**
