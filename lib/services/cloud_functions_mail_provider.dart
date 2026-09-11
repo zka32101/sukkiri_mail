@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/category_rule.dart';
 import '../models/email_meta.dart';
@@ -25,6 +29,26 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
   final LocalCacheService _cacheService;
 
   String get _providerKey => mailProviderTypeToString(providerType);
+
+  /// Decompresses gzip-compressed HTML that was base64-encoded by Cloud Functions.
+  /// Returns original decompressed HTML string, or the input string if not compressed.
+  @visibleForTesting
+  String decompressHtml(String html, bool isCompressed) {
+    if (!isCompressed) return html;
+
+    try {
+      // Decode base64
+      final bytes = base64Decode(html);
+      // Decompress gzip
+      final decompressed = gzip.decode(bytes);
+      // Convert back to UTF-8 string
+      return utf8.decode(decompressed);
+    } catch (e) {
+      // If decompression fails, log and return original
+      debugPrint('[fetchMessageBody] Decompression failed: $e');
+      return html;
+    }
+  }
 
   @override
   Future<LinkedAccount> connect({
@@ -114,20 +138,24 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
       'messageId': messageId,
     });
     final data = Map<String, dynamic>.from(result.data as Map);
-    final html = data['html'] as String? ?? '';
+    var html = data['html'] as String? ?? '';
     final attachmentNames = (data['attachmentNames'] as List<dynamic>? ?? [])
         .cast<String>();
     final isCompressed = (data['isCompressed'] as bool?) ?? false;
     final originalSize = data['originalSize'] as int?;
     final compressedSize = data['compressedSize'] as int?;
 
+    // ②-b: Decompress HTML if it was compressed by Cloud Functions
+    html = decompressHtml(html, isCompressed);
+
     // ③取得結果をキャッシュに保存（次回同じメール閲覧時はスキップ）。
+    // Store decompressed HTML in cache (marked as no longer compressed since we decompressed it)
     await _cacheService.cacheMessageBody(
       messageId: messageId,
       accountId: account.id,
       html: html,
       attachmentNames: attachmentNames,
-      isCompressed: isCompressed,
+      isCompressed: false, // Already decompressed, so mark as not compressed
       originalSize: originalSize,
       compressedSize: compressedSize,
     );
