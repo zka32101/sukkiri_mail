@@ -232,7 +232,7 @@ export class OutlookProvider implements MailProviderAdapter {
       return {
         id: m.id,
         accountId,
-        category: categorizeMessage(m.subject ?? "", senderEmail),
+        category: await categorizeMessage(m.subject ?? "", senderEmail),
         receivedAt: new Date(m.receivedDateTime).getTime(),
         hasAttachment: !!m.hasAttachments,
         snippet: (m.bodyPreview ?? "").slice(0, 80),

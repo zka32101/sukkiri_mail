@@ -1,3 +1,5 @@
+import { PredictionServiceClient } from "@google-cloud/aiplatform";
+
 export type MailCategory = "promotion" | "notification" | "invoice" | "other";
 
 const kAccountColorPalette = [
@@ -10,10 +12,12 @@ const kAccountColorPalette = [
 ];
 
 /**
- * 簡易カテゴリ自動判定。件名・送信者ドメインのキーワードで分類する。
- * 本番ではメール本文の機械学習分類に拡張可能な設計にしておく（MVPはルールベース）。
+ * 規則ベースのカテゴリ自動判定。件名・送信者ドメインのキーワードで分類する。
  */
-export function categorizeMessage(subject: string, senderEmail: string): MailCategory {
+export function categorizeMessageByRules(
+  subject: string,
+  senderEmail: string
+): MailCategory {
   const s = subject.toLowerCase();
   const from = senderEmail.toLowerCase();
 
@@ -25,6 +29,82 @@ export function categorizeMessage(subject: string, senderEmail: string): MailCat
     return "promotion";
   }
   return "other";
+}
+
+/**
+ * Vertex AI Text Classification を使用した機械学習分類。
+ * 環境変数で制御：
+ * - ENABLE_ML_CLASSIFICATION=true (デフォルト: false)
+ * - VERTEX_AI_PROJECT_ID
+ * - VERTEX_AI_LOCATION (デフォルト: us-central1)
+ * - VERTEX_AI_MODEL_ID
+ */
+export async function categorizeMessage(
+  subject: string,
+  senderEmail: string
+): Promise<MailCategory> {
+  // 環境変数でML分類有効化をチェック
+  const enableML = process.env.ENABLE_ML_CLASSIFICATION === "true";
+  const projectId = process.env.VERTEX_AI_PROJECT_ID;
+  const location = process.env.VERTEX_AI_LOCATION || "us-central1";
+  const modelId = process.env.VERTEX_AI_MODEL_ID;
+
+  // ML無効 or 必須環境変数が不足している場合は規則ベース分類を使用
+  if (!enableML || !projectId || !modelId) {
+    return categorizeMessageByRules(subject, senderEmail);
+  }
+
+  try {
+    // Vertex AI Text Classification で分類
+    const client = new PredictionServiceClient({
+      apiEndpoint: `${location}-aiplatform.googleapis.com`,
+    });
+
+    const endpoint = client.modelPath(projectId, location, modelId);
+
+    // メール件名を入力テキストとして使用
+    const textContent = subject || `From: ${senderEmail}`;
+
+    const request = {
+      endpoint,
+      instances: [
+        {
+          content: textContent,
+        },
+      ],
+    };
+
+    const [response] = await client.predict(request);
+
+    if (response.predictions && response.predictions.length > 0) {
+      const prediction = response.predictions[0] as {
+        displayNames?: string[];
+        confidences?: number[];
+      };
+
+      // 最も確信度が高い予測を取得
+      if (prediction.displayNames && prediction.displayNames.length > 0) {
+        const category = prediction.displayNames[0].toLowerCase();
+
+        // Vertex AI の出力を標準カテゴリにマッピング
+        if (
+          category === "promotion" ||
+          category === "notification" ||
+          category === "invoice"
+        ) {
+          console.info(`[Categorize] ML classified as '${category}': ${subject.slice(0, 50)}`);
+          return category as MailCategory;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn(
+      `[Categorize] ML classification failed, falling back to rules: ${error}`
+    );
+  }
+
+  // ML失敗時は規則ベース分類にフォールバック
+  return categorizeMessageByRules(subject, senderEmail);
 }
 
 /** アカウント登録時にパレットから重複回避で自動割当する。 */
