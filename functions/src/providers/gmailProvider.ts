@@ -170,7 +170,7 @@ export class GmailProvider implements MailProviderAdapter {
       items.push({
         id: m.id,
         accountId,
-        category: categorizeMessage(subject, senderEmail),
+        category: await categorizeMessage(subject, senderEmail),
         receivedAt: Number(full.data.internalDate ?? Date.now()),
         hasAttachment: false,
         snippet,

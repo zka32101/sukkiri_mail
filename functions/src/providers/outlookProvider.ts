@@ -227,20 +227,22 @@ export class OutlookProvider implements MailProviderAdapter {
     }
 
     const data = await this.graphFetch(accountId, query) as { value: MicrosoftGraphMessage[] };
-    const items: ScanResultItem[] = (data.value ?? []).map((m) => {
-      const senderEmail = m.from?.emailAddress?.address ?? "";
-      return {
-        id: m.id,
-        accountId,
-        category: categorizeMessage(m.subject ?? "", senderEmail),
-        receivedAt: new Date(m.receivedDateTime).getTime(),
-        hasAttachment: !!m.hasAttachments,
-        snippet: (m.bodyPreview ?? "").slice(0, 80),
-        subject: m.subject ?? "",
-        senderEmail,
-        isUnread: !m.isRead,
-      };
-    });
+    const items: ScanResultItem[] = await Promise.all(
+      (data.value ?? []).map(async (m) => {
+        const senderEmail = m.from?.emailAddress?.address ?? "";
+        return {
+          id: m.id,
+          accountId,
+          category: await categorizeMessage(m.subject ?? "", senderEmail),
+          receivedAt: new Date(m.receivedDateTime).getTime(),
+          hasAttachment: !!m.hasAttachments,
+          snippet: (m.bodyPreview ?? "").slice(0, 80),
+          subject: m.subject ?? "",
+          senderEmail,
+          isUnread: !m.isRead,
+        };
+      })
+    );
     return items;
   }
 

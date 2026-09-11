@@ -110,7 +110,7 @@ export class ImapProvider implements MailProviderAdapter {
             items.push({
               id: String(m.uid),
               accountId,
-              category: categorizeMessage(subject, senderEmail),
+              category: await categorizeMessage(subject, senderEmail),
               receivedAt: m.envelope?.date ? new Date(m.envelope.date).getTime() : Date.now(),
               hasAttachment: false,
               snippet: subject.slice(0, 80),
