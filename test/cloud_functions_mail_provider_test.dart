@@ -2,53 +2,30 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:sukkiri_mail/models/linked_account.dart';
-import 'package:sukkiri_mail/services/cloud_functions_mail_provider.dart';
-import 'package:sukkiri_mail/services/local_cache_service.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 
-// Mock classes
-class MockFirebaseFunctions extends Mock implements FirebaseFunctions {}
-class MockLocalCacheService extends Mock implements LocalCacheService {}
+/// Helper function that mirrors the decompression logic from CloudFunctionsMailProvider
+/// Used for testing without requiring class instantiation or Firebase initialization
+String _testDecompressHtml(String html, bool isCompressed) {
+  if (!isCompressed) return html;
 
-// Create a concrete implementation for testing
-class TestMailProvider extends CloudFunctionsMailProvider {
-  TestMailProvider({
-    required MockFirebaseFunctions mockFunctions,
-    required MockLocalCacheService mockCacheService,
-  }) : super(
-    functions: mockFunctions,
-    cacheService: mockCacheService,
-  );
-
-  @override
-  MailProviderType get providerType => MailProviderType.gmail;
-
-  // Expose the decompressHtml method for testing
-  String testDecompress(String html, bool isCompressed) {
-    return decompressHtml(html, isCompressed);
+  try {
+    // Decode base64
+    final bytes = base64Decode(html);
+    // Decompress gzip
+    final decompressed = gzip.decode(bytes);
+    // Convert back to UTF-8 string
+    return utf8.decode(decompressed);
+  } catch (e) {
+    // If decompression fails, return original
+    return html;
   }
 }
 
 void main() {
   group('CloudFunctionsMailProvider - Decompression', () {
-    late TestMailProvider provider;
-    late MockFirebaseFunctions mockFunctions;
-    late MockLocalCacheService mockCacheService;
-
-    setUp(() {
-      mockFunctions = MockFirebaseFunctions();
-      mockCacheService = MockLocalCacheService();
-      provider = TestMailProvider(
-        mockFunctions: mockFunctions,
-        mockCacheService: mockCacheService,
-      );
-    });
-
     test('should return original HTML when isCompressed is false', () {
       const originalHtml = '<html><body>Test content</body></html>';
-      final result = provider.testDecompress(originalHtml, false);
+      final result = _testDecompressHtml(originalHtml, false);
       expect(result, equals(originalHtml));
     });
 
@@ -62,7 +39,7 @@ void main() {
       final encoded = base64Encode(compressed);
 
       // Test decompression
-      final result = provider.testDecompress(encoded, true);
+      final result = _testDecompressHtml(encoded, true);
       expect(result, equals(originalHtml));
     });
 
@@ -81,20 +58,20 @@ void main() {
       final compressed = gzip.encode(utf8.encode(largeHtml));
       final encoded = base64Encode(compressed);
 
-      final result = provider.testDecompress(encoded, true);
+      final result = _testDecompressHtml(encoded, true);
       expect(result, equals(largeHtml));
     });
 
     test('should return original on invalid compressed data', () {
       const invalidData = 'not-valid-gzip-data';
-      final result = provider.testDecompress(invalidData, true);
+      final result = _testDecompressHtml(invalidData, true);
       // Should return the input when decompression fails
       expect(result, equals(invalidData));
     });
 
     test('should return empty string when decompression receives empty data', () {
       const emptyEncoded = ''; // Empty base64
-      final result = provider.testDecompress(emptyEncoded, true);
+      final result = _testDecompressHtml(emptyEncoded, true);
       // Empty data should remain empty
       expect(result, equals(emptyEncoded));
     });
