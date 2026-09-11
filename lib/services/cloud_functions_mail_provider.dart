@@ -3,16 +3,26 @@ import 'package:cloud_functions/cloud_functions.dart';
 import '../models/category_rule.dart';
 import '../models/email_meta.dart';
 import '../models/linked_account.dart';
+import 'local_cache_service.dart';
 import 'mail_provider.dart';
 
 /// Gmail/Outlook/IMAP共通の実装基盤。
 /// OAuthトークン・IMAPアプリパスワードはCloud Functions側（Secret Manager）でのみ保持し、
 /// クライアントには平文で渡さない。クライアントはCallable Functions越しに命令するだけ。
+///
+/// ローカルキャッシング戦略を実装：
+/// - メール本文: 24時間TTL でSQLiteキャッシュ
+/// - 添付ファイル: 7日TTLで保持（本文と一緒に24h後に期限切れになる）
 abstract class CloudFunctionsMailProvider implements MailProvider {
-  CloudFunctionsMailProvider({FirebaseFunctions? functions})
-    : _functions = functions ?? FirebaseFunctions.instance;
+  CloudFunctionsMailProvider({
+    FirebaseFunctions? functions,
+    LocalCacheService? cacheService,
+  })
+    : _functions = functions ?? FirebaseFunctions.instance,
+      _cacheService = cacheService ?? LocalCacheService();
 
   final FirebaseFunctions _functions;
+  final LocalCacheService _cacheService;
 
   String get _providerKey => mailProviderTypeToString(providerType);
 
@@ -86,6 +96,17 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
     required LinkedAccount account,
     required String messageId,
   }) async {
+    // ①キャッシュをチェック（24時間以内なら Cloud Functions 呼び出しをスキップ）。
+    final cached = await _cacheService.getMessageBodyCache(messageId, account.id);
+    if (cached != null) {
+      return MessageBody(
+        messageId: messageId,
+        html: cached.html,
+        attachmentNames: cached.attachmentNames,
+      );
+    }
+
+    // ②キャッシュなし（または期限切れ）→ Cloud Functions から取得。
     final callable = _functions.httpsCallable('fetchMessageBody');
     final result = await callable.call<Map<String, dynamic>>({
       'provider': _providerKey,
@@ -93,11 +114,28 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
       'messageId': messageId,
     });
     final data = Map<String, dynamic>.from(result.data as Map);
+    final html = data['html'] as String? ?? '';
+    final attachmentNames = (data['attachmentNames'] as List<dynamic>? ?? [])
+        .cast<String>();
+    final isCompressed = (data['isCompressed'] as bool?) ?? false;
+    final originalSize = data['originalSize'] as int?;
+    final compressedSize = data['compressedSize'] as int?;
+
+    // ③取得結果をキャッシュに保存（次回同じメール閲覧時はスキップ）。
+    await _cacheService.cacheMessageBody(
+      messageId: messageId,
+      accountId: account.id,
+      html: html,
+      attachmentNames: attachmentNames,
+      isCompressed: isCompressed,
+      originalSize: originalSize,
+      compressedSize: compressedSize,
+    );
+
     return MessageBody(
       messageId: messageId,
-      html: data['html'] as String? ?? '',
-      attachmentNames: (data['attachmentNames'] as List<dynamic>? ?? [])
-          .cast<String>(),
+      html: html,
+      attachmentNames: attachmentNames,
     );
   }
 }
@@ -105,7 +143,10 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
 /// gmail.modify（Tier2） + gmail.labels（non-sensitive）のみ使用。
 /// gmail.readonly（restricted）/ gmail.insert（restricted）は使用しない。
 class GmailProvider extends CloudFunctionsMailProvider {
-  GmailProvider({super.functions});
+  GmailProvider({
+    FirebaseFunctions? functions,
+    LocalCacheService? cacheService,
+  }) : super(functions: functions, cacheService: cacheService);
 
   @override
   MailProviderType get providerType => MailProviderType.gmail;
@@ -113,7 +154,10 @@ class GmailProvider extends CloudFunctionsMailProvider {
 
 /// Microsoft Graph API Mail.ReadWrite（delegated、個人アカウント同意のみで完結）。
 class OutlookProvider extends CloudFunctionsMailProvider {
-  OutlookProvider({super.functions});
+  OutlookProvider({
+    FirebaseFunctions? functions,
+    LocalCacheService? cacheService,
+  }) : super(functions: functions, cacheService: cacheService);
 
   @override
   MailProviderType get providerType => MailProviderType.outlook;
@@ -121,7 +165,10 @@ class OutlookProvider extends CloudFunctionsMailProvider {
 
 /// 標準IMAP/SMTP（Yahoo!メール・iCloud等）、アプリ専用パスワード方式。OAuth審査対象外。
 class ImapProvider extends CloudFunctionsMailProvider {
-  ImapProvider({super.functions});
+  ImapProvider({
+    FirebaseFunctions? functions,
+    LocalCacheService? cacheService,
+  }) : super(functions: functions, cacheService: cacheService);
 
   @override
   MailProviderType get providerType => MailProviderType.imap;
