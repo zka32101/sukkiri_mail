@@ -1,3 +1,5 @@
+import { GoogleAuth } from "google-auth-library";
+
 export type MailCategory = "promotion" | "notification" | "invoice" | "other";
 
 const kAccountColorPalette = [
@@ -58,7 +60,6 @@ export async function categorizeMessage(
     const textContent = subject || `From: ${senderEmail}`;
 
     // Cloud Functions環境のADC (Application Default Credentials) を使用
-    const { GoogleAuth } = require("google-auth-library");
     const auth = new GoogleAuth({
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
     });
@@ -101,8 +102,9 @@ export async function categorizeMessage(
       }
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.warn(
-      `[Categorize] ML classification failed, falling back to rules: ${error}`
+      `[Categorize] ML classification failed, falling back to rules: ${errorMessage}`
     );
   }
 

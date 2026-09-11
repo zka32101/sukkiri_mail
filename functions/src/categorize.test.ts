@@ -335,27 +335,27 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
 
   describe("pickNextAccountColor", () => {
     describe("Basic Color Selection", () => {
-      it("should return first color when no colors exist", async () => {
+      it("should return first color when no colors exist", () => {
         const color = pickNextAccountColor([]);
         expect(color).toBe("#3457C9");
       });
 
-      it("should return second color when first is used", async () => {
+      it("should return second color when first is used", () => {
         const color = pickNextAccountColor(["#3457C9"]);
         expect(color).toBe("#1F8A5F");
       });
 
-      it("should return third color when first two are used", async () => {
+      it("should return third color when first two are used", () => {
         const color = pickNextAccountColor(["#3457C9", "#1F8A5F"]);
         expect(color).toBe("#C9344A");
       });
 
-      it("should return fourth color when first three are used", async () => {
+      it("should return fourth color when first three are used", () => {
         const color = pickNextAccountColor(["#3457C9", "#1F8A5F", "#C9344A"]);
         expect(color).toBe("#9A7B1F");
       });
 
-      it("should return fifth color when first four are used", async () => {
+      it("should return fifth color when first four are used", () => {
         const color = pickNextAccountColor([
           "#3457C9",
           "#1F8A5F",
@@ -365,7 +365,7 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
         expect(color).toBe("#7A3FC9");
       });
 
-      it("should return sixth color when first five are used", async () => {
+      it("should return sixth color when first five are used", () => {
         const color = pickNextAccountColor([
           "#3457C9",
           "#1F8A5F",
@@ -378,34 +378,34 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
     });
 
     describe("Undefined/Null Handling", () => {
-      it("should skip undefined colors", async () => {
+      it("should skip undefined colors", () => {
         const color = pickNextAccountColor([undefined]);
         expect(color).toBe("#3457C9");
       });
 
-      it("should skip null colors", async () => {
+      it("should skip null colors", () => {
         const color = pickNextAccountColor([null as unknown as string]);
         expect(color).toBe("#3457C9");
       });
 
-      it("should skip multiple undefined colors", async () => {
+      it("should skip multiple undefined colors", () => {
         const color = pickNextAccountColor([undefined, undefined]);
         expect(color).toBe("#3457C9");
       });
 
-      it("should skip undefined and use next available", async () => {
+      it("should skip undefined and use next available", () => {
         const color = pickNextAccountColor([undefined, "#3457C9"]);
         expect(color).toBe("#1F8A5F");
       });
 
-      it("should handle mixed undefined and colors", async () => {
+      it("should handle mixed undefined and colors", () => {
         const color = pickNextAccountColor([undefined, "#3457C9", undefined]);
         expect(color).toBe("#1F8A5F");
       });
     });
 
     describe("Wrapping Behavior", () => {
-      it("should wrap to palette start when all colors used", async () => {
+      it("should wrap to palette start when all colors used", () => {
         const allColors = [
           "#3457C9",
           "#1F8A5F",
@@ -418,7 +418,7 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
         expect(color).toBe("#3457C9");
       });
 
-      it("should wrap correctly for 7 existing colors", async () => {
+      it("should wrap correctly for 7 existing colors", () => {
         const colors = [
           "#3457C9",
           "#1F8A5F",
@@ -432,7 +432,7 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
         expect(color).toBe("#1F8A5F");
       });
 
-      it("should wrap correctly for 8 existing colors", async () => {
+      it("should wrap correctly for 8 existing colors", () => {
         const colors = [
           "#3457C9",
           "#1F8A5F",
@@ -449,24 +449,24 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
     });
 
     describe("Case Sensitivity", () => {
-      it("should be case-sensitive for color matching", async () => {
+      it("should be case-sensitive for color matching", () => {
         const color = pickNextAccountColor(["#3457c9"]);
         expect(color).toBe("#3457C9");
       });
 
-      it("should handle uppercase color codes", async () => {
+      it("should handle uppercase color codes", () => {
         const color = pickNextAccountColor(["#3457C9"]);
         expect(color).toBe("#1F8A5F");
       });
     });
 
     describe("Deduplication", () => {
-      it("should return next color when some are duplicated", async () => {
+      it("should return next color when some are duplicated", () => {
         const color = pickNextAccountColor(["#3457C9", "#3457C9", "#3457C9"]);
         expect(color).toBe("#1F8A5F");
       });
 
-      it("should handle duplicates at different positions", async () => {
+      it("should handle duplicates at different positions", () => {
         const color = pickNextAccountColor([
           "#3457C9",
           "#1F8A5F",
@@ -476,7 +476,7 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
         expect(color).toBe("#C9344A");
       });
 
-      it("should not reuse colors even if duplicated in input", async () => {
+      it("should not reuse colors even if duplicated in input", () => {
         const colors = [
           "#3457C9",
           "#3457C9",
@@ -489,24 +489,24 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
     });
 
     describe("Empty String Handling", () => {
-      it("should treat empty string as a used color", async () => {
+      it("should treat empty string as a used color", () => {
         const color = pickNextAccountColor([""]);
         expect(color).toBe("#3457C9");
       });
 
-      it("should treat multiple empty strings as single used color", async () => {
+      it("should treat multiple empty strings as single used color", () => {
         const color = pickNextAccountColor(["", ""]);
         expect(color).toBe("#3457C9");
       });
     });
 
     describe("Return Value Validation", () => {
-      it("should always return a string", async () => {
+      it("should always return a string", () => {
         const result = pickNextAccountColor([]);
         expect(typeof result).toBe("string");
       });
 
-      it("should always return a valid hex color from palette", async () => {
+      it("should always return a valid hex color from palette", () => {
         const validPalette = [
           "#3457C9",
           "#1F8A5F",
@@ -519,12 +519,12 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
         expect(validPalette).toContain(result);
       });
 
-      it("should always return hex format color", async () => {
+      it("should always return hex format color", () => {
         const result = pickNextAccountColor([]);
         expect(result).toMatch(/^#[0-9A-F]{6}$/);
       });
 
-      it("should never return undefined or null", async () => {
+      it("should never return undefined or null", () => {
         const result = pickNextAccountColor([undefined, null as unknown as string]);
         expect(result).toBeDefined();
         expect(result).not.toBeNull();
@@ -532,7 +532,7 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
     });
 
     describe("Large Input Lists", () => {
-      it("should handle very large existing colors array", async () => {
+      it("should handle very large existing colors array", () => {
         const largeArray: (string | undefined)[] = Array(10000).fill(
           "#3457C9"
         ) as (string | undefined)[];
@@ -542,7 +542,7 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
         expect(color).toBe("#1F8A5F");
       });
 
-      it("should have reasonable performance with 1000 entries", async () => {
+      it("should have reasonable performance with 1000 entries", () => {
         const largeArray: (string | undefined)[] = Array(1000).fill(
           undefined
         ) as (string | undefined)[];
@@ -555,29 +555,29 @@ await categorizeMessage("請求書のお支払いについて🎉", "sender@exam
     });
 
     describe("Edge Cases", () => {
-      it("should handle single element array", async () => {
+      it("should handle single element array", () => {
         const color = pickNextAccountColor(["#3457C9"]);
         expect(color).toBe("#1F8A5F");
       });
 
-      it("should handle array with only undefined", async () => {
+      it("should handle array with only undefined", () => {
         const color = pickNextAccountColor([undefined, undefined, undefined]);
         expect(color).toBe("#3457C9");
       });
 
-      it("should handle numeric string colors", async () => {
+      it("should handle numeric string colors", () => {
         const color = pickNextAccountColor(["123456"]);
         expect(color).toBe("#3457C9");
       });
     });
 
     describe("Type Safety", () => {
-      it("should accept array of strings with undefined", async () => {
+      it("should accept array of strings with undefined", () => {
         const colors: (string | undefined)[] = ["#3457C9", undefined];
         expect(() => pickNextAccountColor(colors)).not.toThrow();
       });
 
-      it("should return string result", async () => {
+      it("should return string result", () => {
         const result: string = pickNextAccountColor([]);
         expect(typeof result).toBe("string");
       });
