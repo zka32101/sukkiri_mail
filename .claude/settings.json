@@ -1,0 +1,45 @@
+{
+  "name": "Sukkiri Mail",
+  "description": "Sukkiri Mail - シンプルで効率的なメール管理アプリケーション",
+  "permissions": {
+    "defaultMode": "prompt",
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Bash",
+      "Glob",
+      "Grep",
+      "Artifact",
+      "Agent",
+      "Workflow",
+      "SendMessage",
+      "mcp__Claude_Code_Remote__list_repos",
+      "mcp__Claude_Code_Remote__list_sessions",
+      "mcp__Claude_Code_Remote__send_later",
+      "mcp__github__get_me",
+      "mcp__github__list_branches",
+      "mcp__github__get_file_contents",
+      "mcp__github__search_code"
+    ]
+  },
+  "environment": {
+    "AUTO_SETUP": true
+  },
+  "recommendations": {
+    "skills": [
+      {
+        "name": "build-and-test",
+        "description": "ビルド完了後の自動エミュレータテスト"
+      },
+      {
+        "name": "security-review",
+        "description": "セキュリティレビュー自動実行"
+      },
+      {
+        "name": "code-review",
+        "description": "コード品質レビュー"
+      }
+    ]
+  }
+}

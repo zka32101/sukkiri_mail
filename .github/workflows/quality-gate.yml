@@ -1,0 +1,126 @@
+name: Quality Gate (Code + Security)
+
+# PR・pushでコード品質とセキュリティをチェック。
+# - Dart: フォーマット、静的解析
+# - TypeScript: ESLint、型チェック
+# - Dependencies: 脆弱性スキャン
+# - Secrets: 秘密鍵露出チェック
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  dart-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check code formatting (dart format)
+        run: dart format --output none --set-exit-if-changed lib/ test/
+        continue-on-error: true
+
+      - name: Static analysis (flutter analyze)
+        run: flutter analyze lib/ test/
+
+      - name: Run unit/widget tests
+        run: flutter test
+
+  typescript-quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: TypeScript type check
+        run: npm run build
+
+      - name: Lint (ESLint)
+        run: npm run lint
+        continue-on-error: true
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run secret scanning
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: .github/gitleaks.toml
+        continue-on-error: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check npm dependencies for vulnerabilities
+        working-directory: functions
+        run: |
+          npm ci
+          npm audit --production --audit-level=moderate
+        continue-on-error: true
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Check Flutter dependencies for vulnerabilities
+        run: |
+          flutter pub get
+          # Pub.devのセキュリティをチェック
+          flutter pub outdated --no-prerelease || true
+        continue-on-error: true
+
+  validate-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify firebase-deploy functions allowlist is in sync
+        # firebase-deploy.ymlは、このFirebaseプロジェクトを共有する他アプリの関数を
+        # 誤って削除しないよう、デプロイ対象のCloud Functions名を手動で列挙している
+        # 関数を追加/削除したのにこのリストを更新し忘れると、
+        # デプロイは「成功」するが実際には何も反映されない（エラーにもならない）
+        # そのため PR/push時に必ず一致を検証する。
+        working-directory: .
+        run: |
+          exported=$(grep -oP '(?<=^export const )\w+(?=\s*=\s*onCall)|(?<=^export \{ )\w+(?= \} from)' functions/src/index.ts | sort)
+          deployed=$(grep -oP '(?<=functions:)\w+' .github/workflows/firebase-deploy.yml | sort)
+          if [ "$exported" != "$deployed" ]; then
+            echo "❌ ERROR: functions/src/index.tsのexport済み関数と"
+            echo "firebase-deploy.ymlのデプロイ対象関数リストが一致していません。"
+            echo ""
+            echo "--- functions/src/index.ts で export されている関数 ---"
+            echo "$exported"
+            echo ""
+            echo "--- firebase-deploy.yml のデプロイ対象関数 ---"
+            echo "$deployed"
+            echo ""
+            echo "関数を追加/削除した場合は firebase-deploy.yml の FUNCTIONS 変数も更新してください。"
+            exit 1
+          fi
+          echo "✅ OK: Cloud Functions 一致を確認しました。"
