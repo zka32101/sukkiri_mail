@@ -27,7 +27,6 @@ jobs:
 
       - name: Check code formatting (dart format)
         run: dart format --output none --set-exit-if-changed lib/ test/
-        continue-on-error: true
 
       - name: Static analysis (flutter analyze)
         run: flutter analyze lib/ test/
@@ -55,18 +54,16 @@ jobs:
 
       - name: Lint (ESLint)
         run: npm run lint
-        continue-on-error: true
 
   security-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run secret scanning
+      - name: Run secret scanning (gitleaks)
         uses: gitleaks/gitleaks-action@v2
         with:
           config-path: .github/gitleaks.toml
-        continue-on-error: true
 
       - uses: actions/setup-node@v4
         with:
@@ -75,19 +72,18 @@ jobs:
       - name: Check npm dependencies for vulnerabilities
         working-directory: functions
         run: |
-          npm ci
+          npm install
           npm audit --production --audit-level=moderate
-        continue-on-error: true
 
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      - name: Check Flutter dependencies for vulnerabilities
+      - name: Check Flutter dependencies for outdated packages
         run: |
           flutter pub get
-          # Pub.devのセキュリティをチェック
+          # 依存パッケージの更新確認（ワーニングのみ）
           flutter pub outdated --no-prerelease || true
         continue-on-error: true
 
