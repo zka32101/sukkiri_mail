@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/category_rule.dart';
 import '../models/email_meta.dart';
@@ -43,7 +44,7 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
       return utf8.decode(decompressed);
     } catch (e) {
       // If decompression fails, log and return original
-      print('[fetchMessageBody] Decompression failed: $e');
+      debugPrint('[fetchMessageBody] Decompression failed: $e');
       return html;
     }
   }

@@ -5,19 +5,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sukkiri_mail/models/linked_account.dart';
 import 'package:sukkiri_mail/services/cloud_functions_mail_provider.dart';
 
+// Create a concrete implementation for testing
+class TestMailProvider extends CloudFunctionsMailProvider {
+  @override
+  MailProviderType get providerType => MailProviderType.gmail;
+
+  // Expose the private _decompressHtml method for testing
+  String testDecompress(String html, bool isCompressed) {
+    return _decompressHtml(html, isCompressed);
+  }
+}
+
 void main() {
   group('CloudFunctionsMailProvider - Decompression', () {
-    // Create a concrete implementation for testing
-    class TestMailProvider extends CloudFunctionsMailProvider {
-      @override
-      MailProviderType get providerType => MailProviderType.gmail;
-
-      // Expose the private _decompressHtml method for testing
-      String testDecompress(String html, bool isCompressed) {
-        return _decompressHtml(html, isCompressed);
-      }
-    }
-
     late TestMailProvider provider;
 
     setUp(() {
