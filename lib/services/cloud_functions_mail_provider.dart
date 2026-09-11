@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:meta/meta.dart';
 
 import '../models/category_rule.dart';
 import '../models/email_meta.dart';
@@ -32,7 +33,8 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
 
   /// Decompresses gzip-compressed HTML that was base64-encoded by Cloud Functions.
   /// Returns original decompressed HTML string, or the input string if not compressed.
-  String _decompressHtml(String html, bool isCompressed) {
+  @visibleForTesting
+  String decompressHtml(String html, bool isCompressed) {
     if (!isCompressed) return html;
 
     try {
@@ -145,7 +147,7 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
     final compressedSize = data['compressedSize'] as int?;
 
     // ②-b: Decompress HTML if it was compressed by Cloud Functions
-    html = _decompressHtml(html, isCompressed);
+    html = decompressHtml(html, isCompressed);
 
     // ③取得結果をキャッシュに保存（次回同じメール閲覧時はスキップ）。
     // Store decompressed HTML in cache (marked as no longer compressed since we decompressed it)

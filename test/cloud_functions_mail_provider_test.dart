@@ -10,9 +10,9 @@ class TestMailProvider extends CloudFunctionsMailProvider {
   @override
   MailProviderType get providerType => MailProviderType.gmail;
 
-  // Expose the private _decompressHtml method for testing
+  // Expose the decompressHtml method for testing
   String testDecompress(String html, bool isCompressed) {
-    return _decompressHtml(html, isCompressed);
+    return decompressHtml(html, isCompressed);
   }
 }
 
