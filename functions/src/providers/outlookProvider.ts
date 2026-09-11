@@ -217,11 +217,16 @@ export class OutlookProvider implements MailProviderAdapter {
     };
   }
 
-  async scan(accountId: string): Promise<ScanResultItem[]> {
-    const data = await this.graphFetch(
-      accountId,
-      "/me/mailFolders/inbox/messages?$top=50&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead"
-    ) as { value: MicrosoftGraphMessage[] };
+  async scan(accountId: string, lastScanAt?: number | null): Promise<ScanResultItem[]> {
+    // Build filter for incremental scanning
+    let query = "/me/mailFolders/inbox/messages?$top=100&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead";
+    if (lastScanAt) {
+      // Convert milliseconds to ISO 8601 format for Graph API
+      const filterDate = new Date(lastScanAt).toISOString();
+      query = `/me/mailFolders/inbox/messages?$top=100&$filter=receivedDateTime gt ${filterDate}&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead`;
+    }
+
+    const data = await this.graphFetch(accountId, query) as { value: MicrosoftGraphMessage[] };
     const items: ScanResultItem[] = (data.value ?? []).map((m) => {
       const senderEmail = m.from?.emailAddress?.address ?? "";
       return {

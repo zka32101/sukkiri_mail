@@ -81,23 +81,26 @@ export class ImapProvider implements MailProviderAdapter {
     };
   }
 
-  async scan(accountId: string): Promise<ScanResultItem[]> {
+  async scan(accountId: string, lastScanAt?: number | null): Promise<ScanResultItem[]> {
     const client = await this.openClient(accountId);
     const items: ScanResultItem[] = [];
     try {
       const lock = await client.getMailboxLock("INBOX");
       try {
-        // シーケンス番号は古い順に1から採番されるため、固定で"1:50"を指定すると
-        // メールボックスが50件を超えている場合は常に最も古い50件しか取得できず、
-        // 新着の販促/通知メールがスキャン対象に入らなくなってしまう。
-        // メールボックスの総数（client.mailbox.exists）から直近50件の範囲を算出する。
-        const total = client.mailbox ? client.mailbox.exists : 0;
-        if (total > 0) {
-          const start = Math.max(1, total - 49);
-          const messages = client.fetch(
-            { seq: `${start}:${total}` },
-            { envelope: true, uid: true, flags: true }
-          );
+        // Build search criteria for incremental scanning
+        // SINCE parameter filters by date, allowing incremental sync
+        const searchCriteria: Record<string, unknown> = {};
+        if (lastScanAt) {
+          searchCriteria.since = new Date(lastScanAt);
+        }
+
+        // Use search to get UIDs matching criteria (or all if full scan)
+        const uids = await client.search(searchCriteria);
+
+        if (uids && uids.length > 0) {
+          // Fetch metadata for all matching messages
+          // ImapFlow expects UID array directly, not wrapped in object
+          const messages = client.fetch(uids, { envelope: true, uid: true, flags: true });
           for await (const m of messages) {
             const from = m.envelope?.from?.[0];
             const senderEmail = from?.address ?? "";

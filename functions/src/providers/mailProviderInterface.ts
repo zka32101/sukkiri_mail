@@ -36,7 +36,13 @@ export interface MessageBodyResult {
 
 export interface MailProviderAdapter {
   connect(userId: string, params: Record<string, unknown>): Promise<ConnectedAccountResult>;
-  scan(accountId: string): Promise<ScanResultItem[]>;
+  /**
+   * Scan emails with optional incremental support.
+   * @param accountId Account identifier
+   * @param lastScanAt Optional timestamp. If provided, returns only emails received after this time.
+   *                   If undefined/null, performs full scan.
+   */
+  scan(accountId: string, lastScanAt?: number | null): Promise<ScanResultItem[]>;
   archive(accountId: string, emailIds: string[]): Promise<void>;
   restore(accountId: string, emailIds: string[]): Promise<void>;
   fetchMessageBody(accountId: string, messageId: string): Promise<MessageBodyResult>;
