@@ -17,7 +17,11 @@ admin.initializeApp();
 
 export { revenueCatWebhook } from "./revenueCatWebhook";
 
-function resolveProvider(provider: string): MailProviderAdapter {
+/**
+ * Resolve provider string to MailProviderAdapter instance
+ * @internal Used by Cloud Functions
+ */
+export function resolveProvider(provider: string): MailProviderAdapter {
   switch (provider) {
     case "gmail":
       return new GmailProvider();
@@ -30,23 +34,31 @@ function resolveProvider(provider: string): MailProviderAdapter {
   }
 }
 
-/** emailMetaのドキュメントIDを合成する（accountIdをprefixし、プロバイダ間でのID衝突を避ける）。
- *  クライアントに渡すemailIdは常にこの合成ID（＝Firestoreドキュメント ID）を使う。 */
-function emailMetaDocId(accountId: string, itemId: string): string {
+/**
+ * Synthesize Firestore document ID for emailMeta
+ * Combines accountId and itemId to avoid ID collisions across providers
+ * @internal
+ */
+export function emailMetaDocId(accountId: string, itemId: string): string {
   return `${accountId}_${itemId}`;
 }
 
-/** 合成IDからプロバイダ本来のメッセージID（Gmail/Outlook/IMAP APIへ渡す値）を取り出す。 */
-function rawProviderMessageId(accountId: string, compositeId: string): string {
+/**
+ * Extract provider's native message ID from composite ID
+ * Reverses the transformation done by emailMetaDocId
+ * @internal
+ */
+export function rawProviderMessageId(accountId: string, compositeId: string): string {
   const prefix = `${accountId}_`;
   return compositeId.startsWith(prefix) ? compositeId.slice(prefix.length) : compositeId;
 }
 
-/** クライアントから渡されたemailMeta合成IDが、確認済みのaccountId配下のものであることを検証する。
- *  assertAccountOwnership()でaccountId自体の所有権は確認済みだが、emailIds自体はクライアント入力
- *  であり、他ユーザーのaccountIdをprefixに持つIDを紛れ込ませて他ユーザーのemailMetaドキュメントを
- *  書き換えられる余地がないよう、常にこの関数で明示的に検証してから使う（IDOR対策の多層防御）。 */
-function assertOwnedEmailIds(accountId: string, ids: string[]): void {
+/**
+ * Verify that email IDs belong to the given accountId
+ * IDOR prevention: ensures client-provided emailIds can't reference other users' accounts
+ * @internal
+ */
+export function assertOwnedEmailIds(accountId: string, ids: string[]): void {
   const prefix = `${accountId}_`;
   for (const id of ids) {
     if (!id.startsWith(prefix)) {
@@ -218,7 +230,11 @@ export const fetchMessageBody = onCall(async (request) => {
   return adapter.fetchMessageBody(accountId, rawProviderMessageId(accountId, messageId ?? ""));
 });
 
-async function assertAccountOwnership(accountId: string, uid: string): Promise<void> {
+/**
+ * Verify that the given uid owns the linkedAccount
+ * @internal
+ */
+export async function assertAccountOwnership(accountId: string, uid: string): Promise<void> {
   const doc = await firestoreDb().collection("linkedAccounts").doc(accountId).get();
   const data = doc.data();
   if (!data || data.userId !== uid) {
