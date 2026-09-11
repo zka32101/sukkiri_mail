@@ -66,8 +66,8 @@ class _ScanResultViewState extends ConsumerState<ScanResultView> {
             ),
             data: (account) {
               if (account == null) {
-                return Center(
-                  child: Text(l10n.errorAccountNotFound ?? 'Account not found'),
+                return const Center(
+                  child: Text('Account not found'),
                 );
               }
 
@@ -89,7 +89,7 @@ class _ScanResultViewState extends ConsumerState<ScanResultView> {
                         const Icon(Icons.error_outline, size: 72),
                         const SizedBox(height: 24),
                         Text(
-                          l10n.scanFailed ?? 'Scan failed',
+                          'Scan failed',
                           style: Theme.of(context).textTheme.headlineSmall,
                           textAlign: TextAlign.center,
                         ),
@@ -167,8 +167,8 @@ class _ScanResultViewState extends ConsumerState<ScanResultView> {
         children: [
           const CircularProgressIndicator(),
           const SizedBox(height: 24),
-          Text(
-            l10n.scanningInProgress ?? 'Scanning emails...',
+          const Text(
+            'Scanning emails...',
             textAlign: TextAlign.center,
           ),
         ],
@@ -186,14 +186,13 @@ class _ScanResultViewState extends ConsumerState<ScanResultView> {
             const CircularProgressIndicator(),
             const SizedBox(height: 24),
             Text(
-              l10n.scanningInProgress ?? 'Scanning emails...',
+              'Scanning emails...',
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            Text(
-              l10n.scanningDescription ??
-                  'This may take a few minutes for large inboxes',
+            const Text(
+              'This may take a few minutes for large inboxes',
               textAlign: TextAlign.center,
             ),
           ],
