@@ -1,11 +1,13 @@
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onRequest } from "firebase-functions/v2/https";
 import * as zlib from "zlib";
 import { MailProviderAdapter } from "./providers/mailProviderInterface";
 import { GmailProvider } from "./providers/gmailProvider";
 import { OutlookProvider } from "./providers/outlookProvider";
 import { ImapProvider } from "./providers/imapProvider";
 import { db as firestoreDb } from "./firestore";
+import { enqueueScanTask } from "./cloudTasks";
 import {
   isConnectAccountRequest,
   isScanAccountRequest,
@@ -85,8 +87,8 @@ export const connectAccount = onCall(async (request) => {
   return result;
 });
 
-/** アカウントをスキャンし、カテゴリ自動判定した検出結果を返す（Aha Moment用）。
- *  検出結果はemailMetaへ永続化する（メール検索・アーカイブ済み一覧・ピン留めはこのコレクションを参照する）。 */
+/** アカウントをスキャンし、バックグラウンドで非同期処理（Cloud Tasks）を開始。
+ *  UIをブロックせず即座に応答。検出結果はemailMetaへ永続化する（メール検索・アーカイブ済み一覧・ピン留めはこのコレクションを参照する）。 */
 export const scanAccount = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
@@ -98,44 +100,24 @@ export const scanAccount = onCall(async (request) => {
   const { provider, accountId } = request.data;
   await assertAccountOwnership(accountId, uid);
 
-  // Fetch lastScanAt for incremental sync
-  const db = firestoreDb();
-  const accountDoc = await db.collection("linkedAccounts").doc(accountId).get();
-  const lastScanAt = (accountDoc.data()?.lastScanAt as number | null) ?? null;
+  // Cloud Tasks へスキャンタスクをエンキュー。
+  // 処理はバックグラウンドで実行される（UIをブロックしない）。
+  const projectId = process.env.GCLOUD_PROJECT || "sukkiri-mail-prod";
+  const location = "asia-northeast1";
+  const queueName = "email-scanning";
 
-  const adapter = resolveProvider(provider);
-  const items = await adapter.scan(accountId, lastScanAt);
-
-  const batch = db.batch();
-  for (const item of items) {
-    const docRef = db.collection("emailMeta").doc(emailMetaDocId(accountId, item.id));
-    // merge: trueで既存のstatus/isPinned/localCacheStatusは上書きしない（再スキャン時に保護状態を維持）。
-    batch.set(
-      docRef,
-      {
-        userId: uid,
-        accountId,
-        category: item.category,
-        receivedAt: item.receivedAt,
-        hasAttachment: item.hasAttachment,
-        snippet: item.snippet,
-        subject: item.subject,
-        senderEmail: item.senderEmail,
-        isUnread: item.isUnread,
-      },
-      { merge: true }
-    );
+  try {
+    await enqueueScanTask(projectId, queueName, location, accountId, uid, provider);
+    // スキャン開始確認を返却（実際の結果はリアルタイム Firestore 更新で配信）
+    return {
+      status: "scanning",
+      message: "Email scan started in background",
+      accountId,
+    };
+  } catch (error) {
+    console.error("[scanAccount] Failed to enqueue scan task:", error);
+    throw new HttpsError("internal", "Failed to start email scan");
   }
-  batch.update(db.collection("linkedAccounts").doc(accountId), { lastScanAt: Date.now() });
-  await batch.commit();
-
-  // クライアントへ返すidはFirestoreドキュメントID（合成ID）に揃える。
-  // 以降アーカイブ/復元/ピン留めはこのidをそのままemailMetaの参照に使う。
-  const responseItems = items.map((item) => ({
-    ...item,
-    id: emailMetaDocId(accountId, item.id),
-  }));
-  return { items: responseItems };
 });
 
 /** 検出結果のうち選択されたメールをアーカイブする（サーバー側、可逆）。 */
@@ -267,3 +249,104 @@ export async function assertAccountOwnership(accountId: string, uid: string): Pr
     throw new HttpsError("permission-denied", "not your account");
   }
 }
+
+/** Cloud Tasks から呼び出されるバックグラウンド関数。
+ *  実際のメールスキャン処理を実行し、結果を Firestore に永続化。
+ *  UIをブロックせずに大規模スキャンに対応。 */
+export const processScanTask = onRequest(async (request, response) => {
+  try {
+    // Cloud Tasks からのリクエストを検証
+    const payload = JSON.parse(Buffer.from(request.body as string, "base64").toString());
+    const { accountId, userId, provider } = payload;
+
+    if (!accountId || !userId || !provider) {
+      response.status(400).json({ error: "Missing required fields" });
+      return;
+    }
+
+    const db = firestoreDb();
+
+    // Firestore でスキャン状態を "in_progress" に更新
+    await db.collection("linkedAccounts").doc(accountId).update({
+      scanStatus: "in_progress",
+      scanStartedAt: admin.firestore.FieldValue.serverTimestamp(),
+      scanError: null,
+    });
+
+    console.info(`[processScanTask] Starting scan for account ${accountId}`);
+
+    // Fetch lastScanAt for incremental sync
+    const accountDoc = await db.collection("linkedAccounts").doc(accountId).get();
+    const lastScanAt = (accountDoc.data()?.lastScanAt as number | null) ?? null;
+
+    // プロバイダを解決し、スキャンを実行
+    const adapter = resolveProvider(provider);
+    const items = await adapter.scan(accountId, lastScanAt);
+
+    // emailMeta へメール情報を永続化（merge: true で既存の status/isPinned を保護）
+    const batch = db.batch();
+    for (const item of items) {
+      const docRef = db.collection("emailMeta").doc(emailMetaDocId(accountId, item.id));
+      batch.set(
+        docRef,
+        {
+          userId,
+          accountId,
+          category: item.category,
+          receivedAt: item.receivedAt,
+          hasAttachment: item.hasAttachment,
+          snippet: item.snippet,
+          subject: item.subject,
+          senderEmail: item.senderEmail,
+          isUnread: item.isUnread,
+        },
+        { merge: true }
+      );
+    }
+
+    // linkedAccounts を更新（lastScanAt を現在時刻に設定）
+    batch.update(db.collection("linkedAccounts").doc(accountId), {
+      lastScanAt: Date.now(),
+    });
+
+    await batch.commit();
+
+    // スキャン完了状態を Firestore に記録
+    await db.collection("linkedAccounts").doc(accountId).update({
+      scanStatus: "completed",
+      scanCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
+      scanItemCount: items.length,
+    });
+
+    console.info(
+      `[processScanTask] Scan completed for account ${accountId}: ${items.length} items`
+    );
+
+    response.status(200).json({
+      status: "success",
+      accountId,
+      itemCount: items.length,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("[processScanTask] Error during scan:", errorMessage);
+
+    // エラー情報を linkedAccounts に記録（ユーザー向けエラー表示用）
+    try {
+      const payload = JSON.parse(Buffer.from(request.body as string, "base64").toString());
+      const { accountId } = payload;
+      await firestoreDb().collection("linkedAccounts").doc(accountId).update({
+        scanStatus: "failed",
+        scanError: errorMessage,
+        scanFailedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (updateError) {
+      console.error("[processScanTask] Failed to update error status:", updateError);
+    }
+
+    response.status(500).json({
+      status: "error",
+      message: errorMessage,
+    });
+  }
+});
