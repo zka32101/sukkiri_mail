@@ -18,3 +18,11 @@ export function db(): Firestore {
   }
   return firestoreInstance;
 }
+
+/**
+ * Internal function to reset the cache (for testing only)
+ * @internal
+ */
+export function __resetFirestoreCache(): void {
+  firestoreInstance = undefined;
+}
