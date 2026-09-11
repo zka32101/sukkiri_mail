@@ -16,6 +16,14 @@ const cache = new Map<string, CachedSecret>();
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15分
 
 /**
+ * Internal function to clear the cache (for testing only)
+ * @internal
+ */
+export function __clearSecretCache(): void {
+  cache.clear();
+}
+
+/**
  * Secret Manager からOAuthクライアントシークレット等を取得する。
  * OAuthトークン・IMAPアプリパスワードはクライアントに平文で渡さない原則をここで担保する。
  */
