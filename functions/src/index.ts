@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import * as zlib from "zlib";
 import { MailProviderAdapter } from "./providers/mailProviderInterface";
 import { GmailProvider } from "./providers/gmailProvider";
 import { OutlookProvider } from "./providers/outlookProvider";
@@ -217,7 +218,8 @@ export const restoreEmail = onCall(async (request) => {
   return { ok: true };
 });
 
-/** 1通だけ本文/添付をオンデマンドでクラウド取得する（明示タップ時のみ発火）。 */
+/** 1通だけ本文/添付をオンデマンドでクラウド取得する（明示タップ時のみ発火）。
+ *  HTML本文が大きい場合は自動的にgzip圧縮して転送時間を削減（20-30%削減期待）。 */
 export const fetchMessageBody = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
@@ -231,7 +233,27 @@ export const fetchMessageBody = onCall(async (request) => {
   assertOwnedEmailIds(accountId, [messageId]);
 
   const adapter = resolveProvider(provider);
-  return adapter.fetchMessageBody(accountId, rawProviderMessageId(accountId, messageId ?? ""));
+  const result = await adapter.fetchMessageBody(accountId, rawProviderMessageId(accountId, messageId ?? ""));
+
+  // Compress HTML if it's large (>1KB threshold for gzip efficiency)
+  const htmlBuffer = Buffer.from(result.html, "utf-8");
+  const compressionThreshold = 1024; // 1KB
+
+  if (htmlBuffer.length > compressionThreshold) {
+    const compressed = zlib.gzipSync(htmlBuffer);
+    return {
+      html: compressed.toString("base64"),
+      attachmentNames: result.attachmentNames,
+      isCompressed: true,
+      originalSize: htmlBuffer.length,
+      compressedSize: compressed.length,
+    };
+  }
+
+  return {
+    ...result,
+    isCompressed: false,
+  };
 });
 
 /**
