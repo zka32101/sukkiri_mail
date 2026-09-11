@@ -144,9 +144,9 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
 /// gmail.readonly（restricted）/ gmail.insert（restricted）は使用しない。
 class GmailProvider extends CloudFunctionsMailProvider {
   GmailProvider({
-    FirebaseFunctions? functions,
-    LocalCacheService? cacheService,
-  }) : super(functions: functions, cacheService: cacheService);
+    super.functions,
+    super.cacheService,
+  });
 
   @override
   MailProviderType get providerType => MailProviderType.gmail;
@@ -155,9 +155,9 @@ class GmailProvider extends CloudFunctionsMailProvider {
 /// Microsoft Graph API Mail.ReadWrite（delegated、個人アカウント同意のみで完結）。
 class OutlookProvider extends CloudFunctionsMailProvider {
   OutlookProvider({
-    FirebaseFunctions? functions,
-    LocalCacheService? cacheService,
-  }) : super(functions: functions, cacheService: cacheService);
+    super.functions,
+    super.cacheService,
+  });
 
   @override
   MailProviderType get providerType => MailProviderType.outlook;
@@ -166,9 +166,9 @@ class OutlookProvider extends CloudFunctionsMailProvider {
 /// 標準IMAP/SMTP（Yahoo!メール・iCloud等）、アプリ専用パスワード方式。OAuth審査対象外。
 class ImapProvider extends CloudFunctionsMailProvider {
   ImapProvider({
-    FirebaseFunctions? functions,
-    LocalCacheService? cacheService,
-  }) : super(functions: functions, cacheService: cacheService);
+    super.functions,
+    super.cacheService,
+  });
 
   @override
   MailProviderType get providerType => MailProviderType.imap;
