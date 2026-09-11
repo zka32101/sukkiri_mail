@@ -1,5 +1,3 @@
-import { PredictionServiceClient } from "@google-cloud/aiplatform";
-
 export type MailCategory = "promotion" | "notification" | "invoice" | "other";
 
 const kAccountColorPalette = [
@@ -55,32 +53,37 @@ export async function categorizeMessage(
   }
 
   try {
-    // Vertex AI Text Classification で分類
-    const client = new PredictionServiceClient({
-      apiEndpoint: `${location}-aiplatform.googleapis.com`,
-    });
-
-    const endpoint = client.modelPath(projectId, location, modelId);
-
+    // Vertex AI REST API で分類 (Google Cloud Functions環境で実行)
     // メール件名を入力テキストとして使用
     const textContent = subject || `From: ${senderEmail}`;
 
-    const request = {
-      endpoint,
-      instances: [
-        {
-          content: textContent,
-        },
-      ],
-    };
+    // Cloud Functions環境のADC (Application Default Credentials) を使用
+    const { GoogleAuth } = require("google-auth-library");
+    const auth = new GoogleAuth({
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+    });
+    const client = await auth.getIdTokenClient(
+      `https://${location}-aiplatform.googleapis.com`
+    );
 
-    const [response] = await client.predict(request);
+    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/endpoints/${modelId}:predict`;
 
-    if (response.predictions && response.predictions.length > 0) {
-      const prediction = response.predictions[0] as {
-        displayNames?: string[];
-        confidences?: number[];
-      };
+    const response = await client.request({
+      url: endpoint,
+      method: "POST",
+      data: {
+        instances: [
+          {
+            content: textContent,
+          },
+        ],
+      },
+    });
+
+    const result = response.data as { predictions?: Array<{ displayNames?: string[]; confidences?: number[] }> };
+
+    if (result.predictions && result.predictions.length > 0) {
+      const prediction = result.predictions[0];
 
       // 最も確信度が高い予測を取得
       if (prediction.displayNames && prediction.displayNames.length > 0) {
