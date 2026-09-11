@@ -9,6 +9,7 @@ import { getSecret } from "../secrets";
 import { categorizeMessage } from "../categorize";
 import { db } from "../firestore";
 import { upsertLinkedAccount } from "../linkedAccountUpsert";
+import { LinkedAccountDoc } from "../types";
 
 /**
  * gmail.modify（sensitive/Tier2） + gmail.labels（non-sensitive）のみ使用。
@@ -32,16 +33,16 @@ export class GmailProvider implements MailProviderAdapter {
    */
   private async getClient(accountId: string) {
     const doc = await db().collection("linkedAccounts").doc(accountId).get();
-    const data = doc.data();
+    const data = doc.data() as LinkedAccountDoc | undefined;
     if (!data) throw new Error("account not found");
 
     const clientId = await getSecret("gmail-oauth-client-id");
     const clientSecret = await getSecret("gmail-oauth-client-secret");
     const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
 
-    const accessToken = data.accessToken as string | undefined;
-    const refreshToken = data.refreshToken as string | undefined;
-    const expiresAt = data.tokenExpiresAt as number | undefined;
+    const accessToken = data.accessToken;
+    const refreshToken = data.refreshToken;
+    const expiresAt = data.tokenExpiresAt;
     const now = Date.now();
     const bufferTime = 5 * 60 * 1000; // 5分
 
@@ -87,8 +88,8 @@ export class GmailProvider implements MailProviderAdapter {
   async connect(userId: string, params: Record<string, unknown>): Promise<ConnectedAccountResult> {
     // 実際のOAuthコード交換はクライアント側のgoogle_sign_inで得たauthCodeを
     // ここでトークンに交換し、accessToken/refreshTokenをFirestore（非公開フィールド）に保存する。
-    const authCode = params.authCode as string | undefined;
-    if (!authCode) throw new Error("authCode is required");
+    if (typeof params.authCode !== "string") throw new Error("authCode is required");
+    const authCode = params.authCode;
 
     const clientId = await getSecret("gmail-oauth-client-id");
     const clientSecret = await getSecret("gmail-oauth-client-secret");
