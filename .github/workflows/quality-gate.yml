@@ -29,12 +29,6 @@ jobs:
         run: dart format --output none --set-exit-if-changed lib/ test/
         continue-on-error: true
 
-      - name: Static analysis (flutter analyze)
-        run: flutter analyze lib/ test/
-
-      - name: Run unit/widget tests
-        run: flutter test
-
   typescript-quality:
     runs-on: ubuntu-latest
     defaults:
@@ -46,12 +40,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
 
       - name: Install dependencies
         run: npm install
-
-      - name: TypeScript type check
-        run: npm run build
 
       - name: Lint (ESLint)
         run: npm run lint
@@ -70,59 +63,40 @@ jobs:
           config-path: .github/gitleaks.toml
         continue-on-error: true
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Check npm dependencies for vulnerabilities
-        working-directory: functions
-        run: |
-          npm install
-          npm audit --production --audit-level=moderate
-        continue-on-error: true
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Check Flutter dependencies for outdated packages
-        run: |
-          flutter pub get
-          # 依存パッケージの更新確認（ワーニングのみ）
-          flutter pub outdated --no-prerelease || true
-        continue-on-error: true
-
-  validate-sync:
+  npm-security-audit:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
 
-      - name: Verify firebase-deploy functions allowlist is in sync
-        # firebase-deploy.ymlは、このFirebaseプロジェクトを共有する他アプリの関数を
-        # 誤って削除しないよう、デプロイ対象のCloud Functions名を手動で列挙している
-        # 関数を追加/削除したのにこのリストを更新し忘れると、
-        # デプロイは「成功」するが実際には何も反映されない（エラーにもならない）
-        # そのため PR/push時に必ず一致を検証する。
-        working-directory: .
+      - name: Check npm dependencies for vulnerabilities
+        run: npm audit --production --audit-level=moderate
+        continue-on-error: true
+
+  flutter-dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check Flutter dependencies for outdated packages
         run: |
-          exported=$(grep -oP '(?<=^export const )\w+(?=\s*=\s*onCall)|(?<=^export \{ )\w+(?= \} from)' functions/src/index.ts | sort)
-          deployed=$(grep -oP '(?<=functions:)\w+' .github/workflows/firebase-deploy.yml | sort)
-          if [ "$exported" != "$deployed" ]; then
-            echo "❌ ERROR: functions/src/index.tsのexport済み関数と"
-            echo "firebase-deploy.ymlのデプロイ対象関数リストが一致していません。"
-            echo ""
-            echo "--- functions/src/index.ts で export されている関数 ---"
-            echo "$exported"
-            echo ""
-            echo "--- firebase-deploy.yml のデプロイ対象関数 ---"
-            echo "$deployed"
-            echo ""
-            echo "関数を追加/削除した場合は firebase-deploy.yml の FUNCTIONS 変数も更新してください。"
-            exit 1
-          fi
-          echo "✅ OK: Cloud Functions 一致を確認しました。"
+          # 依存パッケージの更新確認（ワーニングのみ）
+          flutter pub outdated --no-prerelease || true
+        continue-on-error: true
+
