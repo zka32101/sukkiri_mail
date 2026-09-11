@@ -8,6 +8,7 @@ import {
 import { categorizeMessage } from "../categorize";
 import { db } from "../firestore";
 import { upsertLinkedAccount } from "../linkedAccountUpsert";
+import { LinkedAccountDoc } from "../types";
 
 /**
  * 標準IMAP/SMTP（Yahoo!メール・iCloud等）、アプリ専用パスワード方式。OAuth審査対象外。
@@ -17,8 +18,11 @@ import { upsertLinkedAccount } from "../linkedAccountUpsert";
 export class ImapProvider implements MailProviderAdapter {
   private async openClient(accountId: string): Promise<ImapFlow> {
     const doc = await db().collection("linkedAccounts").doc(accountId).get();
-    const data = doc.data();
+    const data = doc.data() as LinkedAccountDoc | undefined;
     if (!data) throw new Error("account not found");
+    if (!data.imapHost || !data.emailAddress || !data.appPassword) {
+      throw new Error("IMAP configuration incomplete");
+    }
     const client = new ImapFlow({
       host: data.imapHost,
       port: 993,

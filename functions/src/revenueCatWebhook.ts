@@ -96,7 +96,7 @@ export const revenueCatWebhook = onRequest(async (request, response) => {
     return;
   }
 
-  const event: RevenueCatEvent | undefined = request.body?.event;
+  const event: RevenueCatEvent | undefined = (request.body as Record<string, unknown>)?.event as RevenueCatEvent | undefined;
   const eventType = event?.type;
 
   if (!eventType || !event) {
