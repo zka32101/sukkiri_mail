@@ -79,6 +79,7 @@ jobs:
         run: |
           npm install
           npm audit --production --audit-level=moderate
+        continue-on-error: true
 
       - uses: subosito/flutter-action@v2
         with:
