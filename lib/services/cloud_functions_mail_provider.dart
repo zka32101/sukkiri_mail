@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
-import 'package:meta/meta.dart';
 
 import '../models/category_rule.dart';
 import '../models/email_meta.dart';
