@@ -132,12 +132,21 @@ export class GmailProvider implements MailProviderAdapter {
     };
   }
 
-  async scan(accountId: string): Promise<ScanResultItem[]> {
+  async scan(accountId: string, lastScanAt?: number | null): Promise<ScanResultItem[]> {
     const gmail = await this.getClient(accountId);
+
+    // Build query: incremental if lastScanAt provided, full scan otherwise
+    let q = "category:promotions OR category:updates";
+    if (lastScanAt) {
+      // Gmail API uses Unix timestamps (seconds), convert from milliseconds
+      const afterTimestamp = Math.floor(lastScanAt / 1000);
+      q = `${q} after:${afterTimestamp}`;
+    }
+
     const list = await gmail.users.messages.list({
       userId: "me",
-      q: "category:promotions OR category:updates",
-      maxResults: 50,
+      q,
+      maxResults: 100, // Increased from 50 for better efficiency
     });
     const messages = list.data.messages ?? [];
 

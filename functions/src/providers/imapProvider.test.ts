@@ -30,6 +30,7 @@ describe("ImapProvider", () => {
       logout: jest.fn().mockResolvedValue(undefined),
       getMailboxLock: jest.fn(),
       fetch: jest.fn(),
+      search: jest.fn().mockResolvedValue([1, 2, 3, 4, 5]),
       messageMove: jest.fn().mockResolvedValue(undefined),
       download: jest.fn(),
       mailbox: {
@@ -332,7 +333,7 @@ describe("ImapProvider", () => {
       expect(result[0].subject).toBe("");
     });
 
-    it("should limit scan to last 50 messages", async () => {
+    it("should support incremental sync with lastScanAt", async () => {
       const mockGet = jest.fn().mockResolvedValue({
         data: () => ({
           imapHost: "imap.example.com",
@@ -349,15 +350,21 @@ describe("ImapProvider", () => {
         }),
       });
 
-      mockClient.mailbox = { exists: 200 };
       mockClient.fetch.mockReturnValue((async function* () {})());
 
-      await provider.scan("account123");
+      const lastScanAt = Date.now() - 24 * 60 * 60 * 1000; // 24 hours ago
+      await provider.scan("account123", lastScanAt);
 
-      expect(mockClient.fetch).toHaveBeenCalledWith(
-        { seq: "151:200" },
-        { envelope: true, uid: true, flags: true }
-      );
+      // Should call search with since parameter for incremental sync
+      expect(mockClient.search).toHaveBeenCalledWith({
+        since: expect.any(Date),
+      });
+      // Should use returned UIDs for fetch
+      expect(mockClient.fetch).toHaveBeenCalledWith([1, 2, 3, 4, 5], {
+        envelope: true,
+        uid: true,
+        flags: true,
+      });
     });
   });
 

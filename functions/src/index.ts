@@ -97,10 +97,14 @@ export const scanAccount = onCall(async (request) => {
   const { provider, accountId } = request.data;
   await assertAccountOwnership(accountId, uid);
 
-  const adapter = resolveProvider(provider);
-  const items = await adapter.scan(accountId);
-
+  // Fetch lastScanAt for incremental sync
   const db = firestoreDb();
+  const accountDoc = await db.collection("linkedAccounts").doc(accountId).get();
+  const lastScanAt = (accountDoc.data()?.lastScanAt as number | null) ?? null;
+
+  const adapter = resolveProvider(provider);
+  const items = await adapter.scan(accountId, lastScanAt);
+
   const batch = db.batch();
   for (const item of items) {
     const docRef = db.collection("emailMeta").doc(emailMetaDocId(accountId, item.id));
