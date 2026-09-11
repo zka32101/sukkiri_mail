@@ -5,6 +5,13 @@ import { GmailProvider } from "./providers/gmailProvider";
 import { OutlookProvider } from "./providers/outlookProvider";
 import { ImapProvider } from "./providers/imapProvider";
 import { db as firestoreDb } from "./firestore";
+import {
+  isConnectAccountRequest,
+  isScanAccountRequest,
+  isApplyArchiveRulesRequest,
+  isRestoreEmailsRequest,
+  isFetchMessageRequest,
+} from "./types";
 
 admin.initializeApp();
 
@@ -52,7 +59,12 @@ function assertOwnedEmailIds(accountId: string, ids: string[]): void {
 export const connectAccount = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
-  const { provider, userId, ...params } = request.data ?? {};
+
+  if (!isConnectAccountRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { provider, userId, ...params } = request.data;
   if (userId !== uid) throw new HttpsError("permission-denied", "userId mismatch");
 
   const adapter = resolveProvider(provider);
@@ -65,7 +77,12 @@ export const connectAccount = onCall(async (request) => {
 export const scanAccount = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
-  const { provider, accountId } = request.data ?? {};
+
+  if (!isScanAccountRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { provider, accountId } = request.data;
   await assertAccountOwnership(accountId, uid);
 
   const adapter = resolveProvider(provider);
@@ -108,7 +125,12 @@ export const scanAccount = onCall(async (request) => {
 export const applyArchiveRules = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
-  const { provider, accountId, emailIds } = request.data ?? {};
+
+  if (!isApplyArchiveRulesRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { provider, accountId, emailIds } = request.data;
   await assertAccountOwnership(accountId, uid);
   // クライアントから渡されるemailIdsはemailMetaの合成ID。プロバイダAPIには本来のメッセージIDを渡す。
   const ids: string[] = emailIds ?? [];
@@ -151,7 +173,12 @@ export const applyArchiveRules = onCall(async (request) => {
 export const restoreEmail = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
-  const { provider, accountId, emailIds } = request.data ?? {};
+
+  if (!isRestoreEmailsRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { provider, accountId, emailIds } = request.data;
   await assertAccountOwnership(accountId, uid);
   const ids: string[] = emailIds ?? [];
   assertOwnedEmailIds(accountId, ids);
@@ -178,9 +205,14 @@ export const restoreEmail = onCall(async (request) => {
 export const fetchMessageBody = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
-  const { provider, accountId, messageId } = request.data ?? {};
+
+  if (!isFetchMessageRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { provider, accountId, messageId } = request.data;
   await assertAccountOwnership(accountId, uid);
-  assertOwnedEmailIds(accountId, [messageId ?? ""]);
+  assertOwnedEmailIds(accountId, [messageId]);
 
   const adapter = resolveProvider(provider);
   return adapter.fetchMessageBody(accountId, rawProviderMessageId(accountId, messageId ?? ""));
