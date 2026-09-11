@@ -2,6 +2,11 @@ name: Sukkiri Mail CI
 
 # コスト最適化のためUbuntu上のanalyze/testのみをPR/push時の必須ゲートとする
 # (feedback_ios_cicd_cost_optimization方針: 3段階ゲートのStep1に相当)。
+#
+# ワークフロー最適化:
+# - キャッシング: npm/pub の依存関係キャッシュで高速化
+# - 重複排除: firebase-deploy 検証を此処に統一（quality-gate.yml と重複排除）
+# - テスト統一: Flutter/Functions テストを此処で実行
 
 on:
   push:
@@ -9,7 +14,7 @@ on:
   pull_request:
 
 jobs:
-  analyze-and-test:
+  analyze-and-test-flutter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,12 +28,12 @@ jobs:
         run: flutter pub get
 
       - name: Static analysis
-        run: flutter analyze
+        run: flutter analyze lib/ test/
 
-      - name: Run tests
+      - name: Run unit/widget tests
         run: flutter test
 
-  functions-build:
+  functions-build-and-test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,6 +44,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
 
       - name: Install dependencies
         run: npm install
@@ -46,24 +53,29 @@ jobs:
       - name: TypeScript build
         run: npm run build
 
+      - name: Run tests
+        run: npm test
+
       - name: Verify firebase-deploy.yml functions allowlist is in sync
         working-directory: .
         # firebase-deploy.ymlは、このFirebaseプロジェクトを共有する他アプリの関数を
         # 誤って削除しないよう、デプロイ対象のCloud Functions名を手動で列挙している
-        # （詳細はfirebase-deploy.ymlのコメント参照）。関数を追加/削除したのに
-        # このリストを更新し忘れると、デプロイは「成功」するが実際には何も
-        # 反映されない（エラーにもならない）ため、PR/push時に必ず一致を検証する。
+        # 関数を追加/削除したのに此処を更新し忘れると、デプロイは「成功」するが
+        # 実際には何も反映されない（エラーにもならない）ため、PR/push時に必ず検証する。
         run: |
           exported=$(grep -oP '(?<=^export const )\w+(?=\s*=\s*onCall)|(?<=^export \{ )\w+(?= \} from)' functions/src/index.ts | sort)
           deployed=$(grep -oP '(?<=functions:)\w+' .github/workflows/firebase-deploy.yml | sort)
           if [ "$exported" != "$deployed" ]; then
-            echo "::error::functions/src/index.tsのexport済み関数と、firebase-deploy.ymlの" \
-                 "デプロイ対象関数リストが一致していません。関数を追加/削除した場合は" \
-                 "firebase-deploy.ymlのFUNCTIONS変数も更新してください。"
+            echo "❌ ERROR: functions/src/index.ts のexport済み関数と"
+            echo "firebase-deploy.yml のデプロイ対象関数リストが一致していません。"
+            echo ""
             echo "--- functions/src/index.ts で export されている関数 ---"
             echo "$exported"
+            echo ""
             echo "--- firebase-deploy.yml のデプロイ対象関数 ---"
             echo "$deployed"
+            echo ""
+            echo "関数を追加/削除した場合は firebase-deploy.yml の FUNCTIONS 変数も更新してください。"
             exit 1
           fi
-          echo "OK: 一致を確認しました。"
+          echo "✅ OK: Cloud Functions の一致を確認しました。"
