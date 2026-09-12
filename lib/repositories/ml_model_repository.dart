@@ -118,6 +118,7 @@ class MLModelRepository {
     // 新しい平均レイテンシを計算
     final newAvgLatency = (currentAvgLatency * currentTotal + latencyMs) / (currentTotal + 1);
 
+    // ignore: use_null_aware_elements
     await doc.reference.update({
       'totalInferences': currentTotal + 1,
       'averageLatencyMs': newAvgLatency,
