@@ -11,10 +11,13 @@ class MessageCacheDb {
   static const String _tableName = 'message_cache';
 
   Database? _db;
+  Future<Database>? _initFuture;
 
   Future<Database> get db async {
     if (_db != null) return _db!;
-    _db = await _initDb();
+    // Prevent race condition: ensure only one initialization occurs
+    _initFuture ??= _initDb();
+    _db = await _initFuture!;
     return _db!;
   }
 
@@ -39,6 +42,7 @@ class MessageCacheDb {
         isCompressed INTEGER DEFAULT 0,
         originalSize INTEGER,
         compressedSize INTEGER,
+        htmlBytesSize INTEGER DEFAULT 0,
         PRIMARY KEY (messageId, accountId)
       )
     ''');
@@ -117,10 +121,11 @@ class MessageCacheDb {
   }
 
   /// キャッシュサイズ情報を取得（ストレージ使用量表示用）。
+  /// OCTET_LENGTH() を使用してUTF-8バイト数を正確に計算。
   Future<Map<String, int>> getCacheStats() async {
     final database = await db;
     final result = await database.rawQuery(
-      'SELECT COUNT(*) as count, SUM(LENGTH(html)) as totalBytes FROM $_tableName',
+      'SELECT COUNT(*) as count, COALESCE(SUM(OCTET_LENGTH(html)), 0) as totalBytes FROM $_tableName',
     );
 
     if (result.isEmpty) return {'count': 0, 'totalBytes': 0};
