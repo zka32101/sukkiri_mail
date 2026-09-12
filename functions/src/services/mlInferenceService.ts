@@ -125,7 +125,7 @@ export class MLInferenceService {
       // 推論統計を更新
       await this.updateInferenceStats(userId, model.id, {
         latencyMs: result.latencyMs,
-        accuracyScore: null, // 後で検証時に更新
+        accuracyScore: undefined, // 後で検証時に更新
       });
 
       return result;
