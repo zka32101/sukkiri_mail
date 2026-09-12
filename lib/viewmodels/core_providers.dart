@@ -5,6 +5,7 @@ import '../repositories/cache_eviction_log_repository.dart';
 import '../repositories/category_rule_repository.dart';
 import '../repositories/email_meta_repository.dart';
 import '../repositories/linked_account_repository.dart';
+import '../repositories/ml_model_repository.dart';
 import '../repositories/sender_block_rule_repository.dart';
 import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';
@@ -31,6 +32,10 @@ final senderBlockRuleRepositoryProvider = Provider<SenderBlockRuleRepository>(
 
 final emailMetaRepositoryProvider = Provider<EmailMetaRepository>(
   (ref) => EmailMetaRepository(),
+);
+
+final mlModelRepositoryProvider = Provider<MLModelRepository>(
+  (ref) => MLModelRepository(),
 );
 
 final archiveLogRepositoryProvider = Provider<ArchiveLogRepository>(

@@ -1,5 +1,6 @@
 import { logger } from 'firebase-functions/v2';
 import { db } from '../firestore';
+import { mlDataCollectionService } from './mlDataCollectionService';
 
 /**
  * ML 推論エンジン（Vertex AI 統合）
@@ -289,6 +290,58 @@ export class MLInferenceService {
       });
     } catch (error) {
       logger.warn(`Failed to update inference stats: ${error}`);
+    }
+  }
+
+  /**
+   * 推論結果をログに記録し、モデル統計を更新。
+   * A/B テストデータ収集用。
+   */
+  async logAndTrackInference(
+    userId: string,
+    accountId: string,
+    messageId: string,
+    modelType: 'categorization' | 'spamDetection' | 'priorityPrediction',
+    inferenceResult: MLInferenceResult
+  ): Promise<string> {
+    try {
+      // 推論ログを Firestore に記録
+      const logId = await mlDataCollectionService.logInference(
+        userId,
+        accountId,
+        messageId,
+        inferenceResult.modelVersion,
+        modelType,
+        inferenceResult
+      );
+
+      return logId;
+    } catch (error) {
+      logger.error(`Failed to log and track inference: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 推論検証結果をログに反映。
+   * ユーザーが実際に分類したカテゴリを記録して精度計算に使用。
+   */
+  async verifyInferenceAccuracy(
+    userId: string,
+    logId: string,
+    userCategory: string,
+    userFeedback: 'accept' | 'reject' | 'skip'
+  ): Promise<void> {
+    try {
+      await mlDataCollectionService.verifyInference(
+        userId,
+        logId,
+        userCategory,
+        userFeedback
+      );
+    } catch (error) {
+      logger.error(`Failed to verify inference accuracy: ${error}`);
+      throw error;
     }
   }
 

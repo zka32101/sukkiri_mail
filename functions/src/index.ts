@@ -8,6 +8,7 @@ import { OutlookProvider } from "./providers/outlookProvider";
 import { ImapProvider } from "./providers/imapProvider";
 import { db as firestoreDb } from "./firestore";
 import { enqueueScanTask } from "./cloudTasks";
+import { mlDataCollectionService } from "./services/mlDataCollectionService";
 import {
   isConnectAccountRequest,
   isScanAccountRequest,
@@ -369,5 +370,124 @@ export const processScanTask = onRequest(async (request, response) => {
       status: "error",
       message: errorMessage,
     });
+  }
+});
+
+/** ML 推論ログを記録。推論実行後に呼び出す。 */
+export const logMLInference = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  const { accountId, messageId, modelVersion, modelType, inferenceResult } =
+    request.data;
+
+  if (
+    !accountId ||
+    !messageId ||
+    !modelVersion ||
+    !modelType ||
+    !inferenceResult
+  ) {
+    throw new HttpsError("invalid-argument", "missing required fields");
+  }
+
+  try {
+    const logId = await mlDataCollectionService.logInference(
+      uid,
+      accountId,
+      messageId,
+      modelVersion,
+      modelType,
+      inferenceResult
+    );
+
+    return { ok: true, logId };
+  } catch (error) {
+    throw new HttpsError(
+      "internal",
+      `Failed to log inference: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+});
+
+/** ML 推論検証。ユーザー確認後に実際の分類結果を記録。 */
+export const verifyMLInference = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  const { logId, userCategory, userFeedback } = request.data;
+
+  if (!logId || !userCategory || !userFeedback) {
+    throw new HttpsError("invalid-argument", "missing required fields");
+  }
+
+  if (!["accept", "reject", "skip"].includes(userFeedback)) {
+    throw new HttpsError("invalid-argument", "invalid userFeedback value");
+  }
+
+  try {
+    await mlDataCollectionService.verifyInference(
+      uid,
+      logId,
+      userCategory,
+      userFeedback
+    );
+
+    return { ok: true };
+  } catch (error) {
+    throw new HttpsError(
+      "internal",
+      `Failed to verify inference: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+});
+
+/** モデル精度統計を計算（A/B テスト検証用）。 */
+export const getModelAccuracyStats = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  const { modelVersion, startDate, endDate } = request.data;
+
+  if (!modelVersion || !startDate || !endDate) {
+    throw new HttpsError("invalid-argument", "missing required fields");
+  }
+
+  try {
+    const stats = await mlDataCollectionService.calculateModelAccuracy(
+      uid,
+      modelVersion,
+      new Date(startDate),
+      new Date(endDate)
+    );
+
+    return stats;
+  } catch (error) {
+    throw new HttpsError(
+      "internal",
+      `Failed to calculate accuracy stats: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+});
+
+/** 期限切れ ML ログをクリーンアップ。 */
+export const cleanupMLLogs = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  const { retentionDays } = request.data ?? {};
+
+  try {
+    const deletedCount = await mlDataCollectionService.cleanupOldLogs(
+      uid,
+      retentionDays ?? 90
+    );
+
+    return { ok: true, deletedCount };
+  } catch (error) {
+    throw new HttpsError(
+      "internal",
+      `Failed to cleanup logs: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 });
