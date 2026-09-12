@@ -168,7 +168,7 @@ class LocalCacheService {
 
     while (await _storageService.isStorageCritical()) {
       final stats = await getMessageCacheStats();
-      final currentSize = (stats['totalBytes'] ?? 0) as int;
+      final currentSize = stats['totalBytes'] ?? 0;
 
       if (currentSize <= recommendedSize) {
         break; // 推奨サイズ以下になったら終了
