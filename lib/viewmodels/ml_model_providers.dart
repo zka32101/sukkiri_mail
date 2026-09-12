@@ -28,7 +28,8 @@ final stagingCategorizationModelProvider = FutureProvider.autoDispose((ref) asyn
   final userId = await ref.watch(currentUserIdProvider.future);
   final repo = ref.watch(mlModelRepositoryProvider);
 
-  final allModels = await ref.watch(mlModelsProvider.future);
+  // StreamProvider は .future を持たないため、直接watchして非同期処理
+  final allModels = await repo.watchModelsForUser(userId).first;
   return allModels.firstWhere(
     (m) => m.type == MLModelType.categorization && m.status == MLModelStatus.staging,
     orElse: () => MLModel(
