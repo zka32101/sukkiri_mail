@@ -140,10 +140,8 @@ class MessageCacheDb {
   /// 戻り値: 削除されたキャッシュ件数（0または1）。
   Future<int> deleteOldestMessageCache() async {
     final database = await db;
-    return await database.delete(
-      _tableName,
-      limit: 1,
-      orderBy: 'cachedAt ASC',
+    return await database.rawDelete(
+      'DELETE FROM $_tableName WHERE rowid = (SELECT rowid FROM $_tableName ORDER BY cachedAt ASC LIMIT 1)',
     );
   }
 

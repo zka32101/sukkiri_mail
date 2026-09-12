@@ -82,8 +82,7 @@ class DeviceStorageService {
   /// Android: 総ストレージ容量を取得
   Future<int> _getAndroidTotalStorage() async {
     try {
-      final directory = Directory('/data');
-      final stat = FileStat.statSync(directory);
+      final stat = FileStat.statSync('/data');
       return stat.size;
     } catch (e) {
       return 64 * 1024 * 1024 * 1024; // フォールバック
@@ -93,8 +92,6 @@ class DeviceStorageService {
   /// Android: 空きストレージ容量を取得
   Future<int> _getAndroidFreeStorage() async {
     try {
-      final directory = Directory('/');
-      final stat = FileStat.statSync(directory);
       // 実装注: FileStat では空き容量が直接取得できないため、
       // プラットフォームチャネルまたは Path Provider を使用
       return 5 * 1024 * 1024 * 1024; // 仮の値
