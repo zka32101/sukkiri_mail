@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/ml_model.dart';
-import '../services/app_firestore.dart';
 import 'core_providers.dart';
 
 /// 指定ユーザーのすべての ML モデルを監視（リアルタイム）。
@@ -86,13 +85,13 @@ final mlModelComparisonProvider =
   final stagingModelAsync =
       ref.watch(stagingCategorizationModelProvider(userId));
 
-  final prodModel = await prodModelAsync.when(
+  final prodModel = prodModelAsync.when(
     data: (model) => model,
     loading: () => null,
     error: (err, st) => null,
   );
 
-  final stagingModel = await stagingModelAsync.when(
+  final stagingModel = stagingModelAsync.when(
     data: (model) => model,
     loading: () => null,
     error: (err, st) => null,
@@ -134,7 +133,7 @@ final mlModelUsageStatsProvider =
 ) async {
   final modelsAsync = ref.watch(mlModelsProvider(userId));
 
-  final models = await modelsAsync.when(
+  final models = modelsAsync.when(
     data: (models) => models,
     loading: () => <MLModel>[],
     error: (err, st) => <MLModel>[],
@@ -221,13 +220,13 @@ final abTestEvaluationProvider =
   final stagingModelAsync =
       ref.watch(stagingCategorizationModelProvider(userId));
 
-  final prodModel = await prodModelAsync.when(
+  final prodModel = prodModelAsync.when(
     data: (model) => model,
     loading: () => null,
     error: (err, st) => null,
   );
 
-  final stagingModel = await stagingModelAsync.when(
+  final stagingModel = stagingModelAsync.when(
     data: (model) => model,
     loading: () => null,
     error: (err, st) => null,
