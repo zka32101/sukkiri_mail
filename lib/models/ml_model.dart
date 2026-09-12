@@ -1,7 +1,4 @@
-/// ML モデルのメタデータと状態管理。
-/// Vertex AI 統合に向けた共通インターフェース。
-library models.ml_model;
-
+/// ML モデルの状態管理。トレーニング、ステージング、本番、廃止、アーカイブをサポート。
 enum MLModelStatus {
   training, // トレーニング中
   staging, // ステージング検証中
