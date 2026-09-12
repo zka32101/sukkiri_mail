@@ -1,3 +1,5 @@
+library viewmodels.ml_model_providers;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/ml_model.dart';

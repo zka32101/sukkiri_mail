@@ -1,3 +1,5 @@
+library models.ml_model;
+
 /// ML モデルのメタデータと状態管理。
 /// Vertex AI 統合に向けた共通インターフェース。
 

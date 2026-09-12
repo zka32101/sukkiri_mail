@@ -1,3 +1,5 @@
+library repositories.ml_model_repository;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/ml_model.dart';
