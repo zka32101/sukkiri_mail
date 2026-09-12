@@ -101,24 +101,33 @@ export class ImapProvider implements MailProviderAdapter {
           // Fetch metadata for all matching messages
           // ImapFlow expects UID array directly, not wrapped in object
           const messages = client.fetch(uids, { envelope: true, uid: true, flags: true });
+          const messageList = [];
           for await (const m of messages) {
-            const from = m.envelope?.from?.[0];
-            const senderEmail = from?.address ?? "";
-            const subject = m.envelope?.subject ?? "";
-            // IMAPの\Seenフラグが立っていなければ未読。
-            const isUnread = !m.flags?.has("\\Seen");
-            items.push({
-              id: String(m.uid),
-              accountId,
-              category: await categorizeMessage(subject, senderEmail),
-              receivedAt: m.envelope?.date ? new Date(m.envelope.date).getTime() : Date.now(),
-              hasAttachment: false,
-              snippet: subject.slice(0, 80),
-              subject,
-              senderEmail,
-              isUnread,
-            });
+            messageList.push(m);
           }
+
+          // Parallelize categorization for better performance
+          const fetchedItems = await Promise.all(
+            messageList.map(async (m) => {
+              const from = m.envelope?.from?.[0];
+              const senderEmail = from?.address ?? "";
+              const subject = m.envelope?.subject ?? "";
+              // IMAPの\Seenフラグが立っていなければ未読。
+              const isUnread = !m.flags?.has("\\Seen");
+              return {
+                id: String(m.uid),
+                accountId,
+                category: await categorizeMessage(subject, senderEmail),
+                receivedAt: m.envelope?.date ? new Date(m.envelope.date).getTime() : Date.now(),
+                hasAttachment: false,
+                snippet: subject.slice(0, 80),
+                subject,
+                senderEmail,
+                isUnread,
+              };
+            })
+          );
+          items.push(...fetchedItems);
         }
       } finally {
         lock.release();

@@ -150,35 +150,38 @@ export class GmailProvider implements MailProviderAdapter {
     });
     const messages = list.data.messages ?? [];
 
-    const items: ScanResultItem[] = [];
-    for (const m of messages) {
-      if (!m.id) continue;
-      const full = await gmail.users.messages.get({
-        userId: "me",
-        id: m.id,
-        format: "metadata",
-        metadataHeaders: ["Subject", "From"],
-      });
-      const headers = full.data.payload?.headers ?? [];
-      const subject = headers.find((h) => h.name === "Subject")?.value ?? "";
-      const from = headers.find((h) => h.name === "From")?.value ?? "";
-      const senderEmail = (from.match(/<(.+)>/)?.[1] ?? from).trim();
-      const snippet = (full.data.snippet ?? "").slice(0, 80);
-      // labelIdsはformatに関わらず常に返る。UNREADラベルの有無で未読判定する。
-      const isUnread = (full.data.labelIds ?? []).includes("UNREAD");
+    // Parallelize message fetching and categorization for better performance
+    const items: ScanResultItem[] = await Promise.all(
+      messages
+        .filter((m) => !!m.id)
+        .map(async (m) => {
+          const full = await gmail.users.messages.get({
+            userId: "me",
+            id: m.id!,
+            format: "metadata",
+            metadataHeaders: ["Subject", "From"],
+          });
+          const headers = full.data.payload?.headers ?? [];
+          const subject = headers.find((h) => h.name === "Subject")?.value ?? "";
+          const from = headers.find((h) => h.name === "From")?.value ?? "";
+          const senderEmail = (from.match(/<(.+)>/)?.[1] ?? from).trim();
+          const snippet = (full.data.snippet ?? "").slice(0, 80);
+          // labelIdsはformatに関わらず常に返る。UNREADラベルの有無で未読判定する。
+          const isUnread = (full.data.labelIds ?? []).includes("UNREAD");
 
-      items.push({
-        id: m.id,
-        accountId,
-        category: await categorizeMessage(subject, senderEmail),
-        receivedAt: Number(full.data.internalDate ?? Date.now()),
-        hasAttachment: false,
-        snippet,
-        subject,
-        senderEmail,
-        isUnread,
-      });
-    }
+          return {
+            id: m.id!,
+            accountId,
+            category: await categorizeMessage(subject, senderEmail),
+            receivedAt: Number(full.data.internalDate ?? Date.now()),
+            hasAttachment: false,
+            snippet,
+            subject,
+            senderEmail,
+            isUnread,
+          };
+        })
+    );
     return items;
   }
 

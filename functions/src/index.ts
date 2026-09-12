@@ -255,8 +255,18 @@ export async function assertAccountOwnership(accountId: string, uid: string): Pr
  *  UIをブロックせずに大規模スキャンに対応。 */
 export const processScanTask = onRequest(async (request, response) => {
   try {
-    // Cloud Tasks からのリクエストを検証
-    const payload = JSON.parse(Buffer.from(request.body as string, "base64").toString());
+    // Cloud Tasks からのリクエストを検証（安全な型チェック）
+    let bodyText: string;
+    if (typeof request.body === "string") {
+      bodyText = request.body;
+    } else if (Buffer.isBuffer(request.body)) {
+      bodyText = request.body.toString();
+    } else {
+      response.status(400).json({ error: "Invalid request body format" });
+      return;
+    }
+
+    const payload = JSON.parse(Buffer.from(bodyText, "base64").toString());
     const { accountId, userId, provider } = payload;
 
     if (!accountId || !userId || !provider) {
@@ -333,13 +343,24 @@ export const processScanTask = onRequest(async (request, response) => {
 
     // エラー情報を linkedAccounts に記録（ユーザー向けエラー表示用）
     try {
-      const payload = JSON.parse(Buffer.from(request.body as string, "base64").toString());
+      let bodyText: string;
+      if (typeof request.body === "string") {
+        bodyText = request.body;
+      } else if (Buffer.isBuffer(request.body)) {
+        bodyText = request.body.toString();
+      } else {
+        throw new Error("Invalid request body format");
+      }
+
+      const payload = JSON.parse(Buffer.from(bodyText, "base64").toString());
       const { accountId } = payload;
-      await firestoreDb().collection("linkedAccounts").doc(accountId).update({
-        scanStatus: "failed",
-        scanError: errorMessage,
-        scanFailedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      if (accountId) {
+        await firestoreDb().collection("linkedAccounts").doc(accountId).update({
+          scanStatus: "failed",
+          scanError: errorMessage,
+          scanFailedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
     } catch (updateError) {
       console.error("[processScanTask] Failed to update error status:", updateError);
     }

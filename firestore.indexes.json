@@ -48,6 +48,15 @@
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "archivedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "emailMeta",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "accountId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "receivedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
