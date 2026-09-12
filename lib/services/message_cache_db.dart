@@ -136,6 +136,15 @@ class MessageCacheDb {
     };
   }
 
+  /// 最も古いメール本文キャッシュ1件を削除（容量不足時の自動削除用）。
+  /// 戻り値: 削除されたキャッシュ件数（0または1）。
+  Future<int> deleteOldestMessageCache() async {
+    final database = await db;
+    return await database.rawDelete(
+      'DELETE FROM $_tableName WHERE rowid = (SELECT rowid FROM $_tableName ORDER BY cachedAt ASC LIMIT 1)',
+    );
+  }
+
   /// データベースをクローズ（テスト・アプリシャットダウン時に使用）。
   Future<void> close() async {
     final database = _db;
