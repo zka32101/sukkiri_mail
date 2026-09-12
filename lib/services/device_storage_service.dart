@@ -82,7 +82,9 @@ class DeviceStorageService {
   /// Android: 総ストレージ容量を取得
   Future<int> _getAndroidTotalStorage() async {
     try {
-      final stat = FileStat.statSync('/data');
+      // FileStat.statSync はテスト環境では使用できない可能性があるため、
+      // プラットフォームチャネルまたはPath Providerを使用することが推奨される
+      final stat = await Future(() => FileStat.statSync('/data'));
       return stat.size;
     } catch (e) {
       return 64 * 1024 * 1024 * 1024; // フォールバック
