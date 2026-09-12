@@ -1,7 +1,6 @@
 import '../models/email_meta.dart';
 import '../models/message_cache.dart';
 import '../models/sender_block_rule.dart';
-import 'device_storage_service.dart';
 import 'message_cache_db.dart';
 
 /// 端末ローカルの本文/添付キャッシュ管理（クライアント側のみで完結、サーバーAPI呼び出し不要）。
@@ -17,13 +16,10 @@ import 'message_cache_db.dart';
 /// fetchMessageBody() 呼び出し前にキャッシュを確認、有効なら API 呼び出しをスキップ。
 class LocalCacheService {
   final MessageCacheDb _db;
-  final DeviceStorageService _storageService;
 
   LocalCacheService({
     MessageCacheDb? cacheDb,
-    DeviceStorageService? storageService,
-  })  : _db = cacheDb ?? MessageCacheDb(),
-        _storageService = storageService ?? DeviceStorageService();
+  })  : _db = cacheDb ?? MessageCacheDb();
   /// 1件のメールについて、次に取るべき localCacheStatus を決定する。
   /// [isUnread] が true の間は自動パージ対象にしない（未読メールは経過日数によらず保持）。
   LocalCacheStatus determineStatus({
@@ -96,7 +92,6 @@ class LocalCacheService {
 
   /// メール本文をキャッシュに保存（24時間TTL）。
   /// Cloud Functions の fetchMessageBody() 呼び出し後、本文を保存する。
-  /// ストレージ容量が不足している場合は、自動的に古いキャッシュを削除。
   Future<void> cacheMessageBody({
     required String messageId,
     required String accountId,
@@ -106,17 +101,6 @@ class LocalCacheService {
     int? originalSize,
     int? compressedSize,
   }) async {
-    // ストレージ容量をチェック
-    if (await _storageService.isStorageWarning()) {
-      // 警告レベル：期限切れキャッシュを削除
-      await cleanupExpiredMessageCaches();
-    }
-
-    if (await _storageService.isStorageCritical()) {
-      // 危機的状況：古いキャッシュを削除（容量が空くまで）
-      await _deleteOldestCachesUntilAvailable();
-    }
-
     final cache = MessageBodyCache(
       messageId: messageId,
       accountId: accountId,
@@ -160,52 +144,4 @@ class LocalCacheService {
     return await _db.getCacheStats();
   }
 
-  /// ストレージ容量が十分になるまで古いキャッシュを段階的に削除。
-  /// 推奨キャッシュサイズを下回るまで削除を続ける。
-  Future<int> _deleteOldestCachesUntilAvailable() async {
-    int deletedCount = 0;
-    final recommendedSize = await _storageService.getRecommendedCacheSizeBytes();
-
-    while (await _storageService.isStorageCritical()) {
-      final stats = await getMessageCacheStats();
-      final currentSize = stats['totalBytes'] ?? 0;
-
-      if (currentSize <= recommendedSize) {
-        break; // 推奨サイズ以下になったら終了
-      }
-
-      // 最も古いキャッシュ1件を削除
-      final deleted = await _db.deleteOldestMessageCache();
-      if (deleted == 0) {
-        break; // 削除する対象がない
-      }
-
-      deletedCount += deleted;
-
-      // 連続削除は避けるため、少し待機
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
-
-    return deletedCount;
-  }
-
-  /// デバイスストレージの状態を取得（UI表示用）
-  Future<StorageStatus> getStorageStatus() async {
-    final isCritical = await _storageService.isStorageCritical();
-    final isWarning = await _storageService.isStorageWarning();
-
-    if (isCritical) {
-      return StorageStatus.critical;
-    } else if (isWarning) {
-      return StorageStatus.warning;
-    }
-    return StorageStatus.normal;
-  }
-}
-
-/// ストレージの状態
-enum StorageStatus {
-  normal, // 正常
-  warning, // 警告（15%未満）
-  critical, // 危機的（5%未満）
 }
