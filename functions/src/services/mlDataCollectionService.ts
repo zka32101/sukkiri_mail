@@ -76,7 +76,8 @@ export class MLDataCollectionService {
       );
       return docRef.id;
     } catch (error) {
-      logger.error(`Failed to log ML inference: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to log ML inference: ${errorMsg}`);
       throw error;
     }
   }
@@ -125,7 +126,8 @@ export class MLDataCollectionService {
         `ML inference verified: user=${userId}, log=${logId}, correct=${isCorrect}`
       );
     } catch (error) {
-      logger.error(`Failed to verify ML inference: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to verify ML inference: ${errorMsg}`);
       throw error;
     }
   }
@@ -219,7 +221,8 @@ export class MLDataCollectionService {
         correctByConfidence,
       };
     } catch (error) {
-      logger.error(`Failed to calculate model accuracy: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to calculate model accuracy: ${errorMsg}`);
       throw error;
     }
   }
@@ -251,7 +254,8 @@ export class MLDataCollectionService {
       );
       return deletedCount;
     } catch (error) {
-      logger.error(`Failed to cleanup ML logs: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to cleanup ML logs: ${errorMsg}`);
       throw error;
     }
   }

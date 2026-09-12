@@ -121,7 +121,7 @@ class MLModelRepository {
     await doc.reference.update({
       'totalInferences': currentTotal + 1,
       'averageLatencyMs': newAvgLatency,
-      if (accuracyScore != null) 'accuracyScore': accuracyScore,
+      if (accuracyScore case final score?) 'accuracyScore': score,
     });
   }
 

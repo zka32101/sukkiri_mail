@@ -51,7 +51,7 @@ export class MLInferenceService {
    * ルールベース分類（フォールバック用）
    * 既存のカテゴリ分類ロジックを使用
    */
-  private async categorizeWithRules(features: MailFeatures): Promise<string> {
+  private categorizeWithRules(_features: MailFeatures): string {
     // 既存の categorize.ts ロジックを統合
     // TODO: ルールベース分類に delegation
     return 'other';
@@ -71,7 +71,7 @@ export class MLInferenceService {
     try {
       // フォールバック: ルールベース分類に強制する場合
       if (forceRule) {
-        const category = await this.categorizeWithRules(features);
+        const category = this.categorizeWithRules(features);
         return {
           recommendedCategory: category,
           confidenceScore: 0.5,
@@ -86,7 +86,7 @@ export class MLInferenceService {
       if (!model) {
         logger.warn(`No production model found for user ${userId}, using rules`);
         return {
-          recommendedCategory: await this.categorizeWithRules(features),
+          recommendedCategory: this.categorizeWithRules(features),
           confidenceScore: 0.5,
           alternativesWithScores: {},
           latencyMs: Date.now() - startTime,
@@ -109,7 +109,7 @@ export class MLInferenceService {
       }
 
       // Vertex AI に推論リクエスト
-      const result = await this.vertexAIPredict(
+      const result = this.vertexAIPredict(
         model.vertexAIModelId!,
         this.featuresToVertexInput(features)
       );
@@ -119,7 +119,7 @@ export class MLInferenceService {
         logger.info(
           `Low confidence ${result.confidenceScore} < ${model.confidenceThreshold}, using rules`
         );
-        const category = await this.categorizeWithRules(features);
+        const category = this.categorizeWithRules(features);
         result.recommendedCategory = category;
       }
 
@@ -131,14 +131,15 @@ export class MLInferenceService {
 
       return result;
     } catch (error) {
-      logger.error(`ML inference failed for user ${userId}: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`ML inference failed for user ${userId}: ${errorMsg}`);
       return {
         recommendedCategory: null,
         confidenceScore: 0,
         alternativesWithScores: {},
         latencyMs: Date.now() - startTime,
         modelVersion: 'unknown',
-        errorMessage: `Inference error: ${error}`,
+        errorMessage: `Inference error: ${errorMsg}`,
       };
     }
   }
@@ -180,7 +181,8 @@ export class MLInferenceService {
 
       return model;
     } catch (error) {
-      logger.error(`Failed to fetch production model: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to fetch production model: ${errorMsg}`);
       return null;
     }
   }
@@ -224,35 +226,30 @@ export class MLInferenceService {
    * Vertex AI に推論リクエスト
    * TODO: google-cloud-aiplatform ライブラリと統合
    */
-  private async vertexAIPredict(
-    modelId: string,
-    features: Record<string, unknown>
-  ): Promise<MLInferenceResult> {
+  private vertexAIPredict(
+    _modelId: string,
+    _features: Record<string, unknown>
+  ): MLInferenceResult {
     const startTime = Date.now();
 
     // ここで実装: Vertex AI Python API または gRPC を呼び出し
     // サンプル実装は以下の通り（実際は SDK に置き換え）
 
-    try {
-      // TODO: Vertex AI API 呼び出し
-      // const response = await vertexAiClient.predict(modelId, [features]);
+    // TODO: Vertex AI API 呼び出し
+    // const response = await vertexAiClient.predict(_modelId, [_features]);
 
-      // サンプルレスポンス
-      return {
-        recommendedCategory: 'promotion',
-        confidenceScore: 0.82,
-        alternativesWithScores: {
-          'notification': 0.12,
-          'invoice': 0.04,
-          'other': 0.02,
-        },
-        latencyMs: Date.now() - startTime,
-        modelVersion: '2.1.0',
-      };
-    } catch (error) {
-      logger.error(`Vertex AI prediction failed: ${error}`);
-      throw error;
-    }
+    // サンプルレスポンス
+    return {
+      recommendedCategory: 'promotion',
+      confidenceScore: 0.82,
+      alternativesWithScores: {
+        'notification': 0.12,
+        'invoice': 0.04,
+        'other': 0.02,
+      },
+      latencyMs: Date.now() - startTime,
+      modelVersion: '2.1.0',
+    };
   }
 
   /**
@@ -289,7 +286,8 @@ export class MLInferenceService {
         }),
       });
     } catch (error) {
-      logger.warn(`Failed to update inference stats: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.warn(`Failed to update inference stats: ${errorMsg}`);
     }
   }
 
@@ -317,7 +315,8 @@ export class MLInferenceService {
 
       return logId;
     } catch (error) {
-      logger.error(`Failed to log and track inference: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to log and track inference: ${errorMsg}`);
       throw error;
     }
   }
@@ -340,7 +339,8 @@ export class MLInferenceService {
         userFeedback
       );
     } catch (error) {
-      logger.error(`Failed to verify inference accuracy: ${error}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to verify inference accuracy: ${errorMsg}`);
       throw error;
     }
   }
