@@ -5,8 +5,7 @@
  * API Call → Email Scanning → ML Categorization → Firestore Storage
  */
 
-import { db } from './firestore';
-import { categorizeMessage, categorizeMessageByRules } from './categorize';
+import { categorizeMessage } from './categorize';
 import { mlInferenceService } from './services/mlInferenceService';
 
 // Mock Firestore

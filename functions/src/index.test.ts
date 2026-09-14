@@ -459,7 +459,7 @@ describe("index utilities", () => {
 
       // Should count only 2 cached emails
       expect(totalSizeEstimate).toBe(2 * avgBytesPerEmail);
-      expect(totalSizeEstimate).toBe(314 * 1024); // 2 * 150KB
+      expect(totalSizeEstimate).toBe(300 * 1024); // 2 * 150KB
     });
 
     it("should handle missing localCacheStatus field with default", () => {

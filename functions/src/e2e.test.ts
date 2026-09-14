@@ -10,8 +10,6 @@
  * 6. Rule Application
  */
 
-import { HttpsError } from 'firebase-functions/v2/https';
-import { db } from './firestore';
 import { categorizeMessage } from './categorize';
 
 // Mock Firestore and providers
@@ -262,7 +260,7 @@ describe('End-to-End User Workflows', () => {
   describe('Workflow: Search and Filter', () => {
     it('should search emails by keyword', async () => {
       const searchResults = [
-        { id: 'msg1', subject: 'Special Offer - 50% Off' },
+        { id: 'msg1', subject: 'Sale - 50% Off' },
         { id: 'msg2', subject: 'Flash Sale Alert' },
         { id: 'msg3', subject: 'Limited Time Offer' },
       ];
