@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/category_rule.dart';
-import '../viewmodels/core_providers.dart';
 import '../viewmodels/rule_providers.dart';
 
 /// ルール管理の強化版UI
@@ -10,7 +9,7 @@ import '../viewmodels/rule_providers.dart';
 /// - ルール優先度の管理
 /// - ルールテスト機能
 class RuleManagementEnhancedView extends ConsumerWidget {
-  const RuleManagementEnhancedView({Key? key}) : super(key: key);
+  const RuleManagementEnhancedView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -90,7 +89,7 @@ class RuleManagementEnhancedView extends ConsumerWidget {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
+                                  color: Colors.blue.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -193,7 +192,7 @@ class RuleManagementEnhancedView extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Row(
