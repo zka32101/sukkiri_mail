@@ -49,3 +49,4 @@ final archivedEmailsProvider =
           .watch(emailMetaRepositoryProvider)
           .watchForAccount(accountId, userId, status: EmailStatus.archived);
     });
+
