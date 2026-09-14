@@ -97,6 +97,17 @@ export interface DisconnectAccountRequest {
   accountId: string;
 }
 
+/** updateCategoryRule function request parameters */
+export interface UpdateCategoryRuleRequest {
+  ruleId: string;
+  retentionDays: number;
+}
+
+/** getCacheStats function request parameters (no params needed) */
+export interface GetCacheStatsRequest {
+  // No parameters needed - returns user's cache stats
+}
+
 /** Type guard to validate ConnectAccountRequest */
 export function isConnectAccountRequest(data: unknown): data is ConnectAccountRequest {
   return (
@@ -155,6 +166,23 @@ export function isDisconnectAccountRequest(data: unknown): data is DisconnectAcc
     data !== null &&
     "accountId" in data
   );
+}
+
+/** Type guard to validate UpdateCategoryRuleRequest */
+export function isUpdateCategoryRuleRequest(data: unknown): data is UpdateCategoryRuleRequest {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "ruleId" in data &&
+    "retentionDays" in data &&
+    typeof (data as UpdateCategoryRuleRequest).retentionDays === "number"
+  );
+}
+
+/** Type guard to validate GetCacheStatsRequest */
+export function isGetCacheStatsRequest(data: unknown): data is GetCacheStatsRequest {
+  // No validation needed - GetCacheStatsRequest has no fields
+  return typeof data === "object";
 }
 
 // ============================================================================

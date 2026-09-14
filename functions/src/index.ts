@@ -15,6 +15,8 @@ import {
   isApplyArchiveRulesRequest,
   isRestoreEmailsRequest,
   isFetchMessageRequest,
+  isUpdateCategoryRuleRequest,
+  isGetCacheStatsRequest,
 } from "./types";
 
 admin.initializeApp();
@@ -488,6 +490,115 @@ export const cleanupMLLogs = onCall(async (request) => {
     throw new HttpsError(
       "internal",
       `Failed to cleanup logs: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+});
+
+/**
+ * ユーザーがカテゴリルールを編集し、保持日数を更新する
+ */
+export const updateCategoryRule = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isUpdateCategoryRuleRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { ruleId, retentionDays } = request.data;
+
+  // 保持日数は1～90日の範囲
+  if (retentionDays < 1 || retentionDays > 90) {
+    throw new HttpsError(
+      "invalid-argument",
+      "retentionDays must be between 1 and 90"
+    );
+  }
+
+  try {
+    // ルールがユーザーに所有されていることを確認
+    const ruleDoc = await firestoreDb()
+      .collection("users")
+      .doc(uid)
+      .collection("rules")
+      .doc(ruleId)
+      .get();
+
+    if (!ruleDoc.exists) {
+      throw new HttpsError("not-found", "rule not found");
+    }
+
+    // 保持日数を更新
+    await ruleDoc.ref.update({
+      retentionDays,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { ok: true, ruleId, retentionDays };
+  } catch (error) {
+    if (error instanceof HttpsError) throw error;
+    throw new HttpsError(
+      "internal",
+      `Failed to update rule: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+});
+
+/**
+ * 現在のユーザーのローカルキャッシュ統計情報を返す
+ * フロントエンドでキャッシュ管理画面に表示する情報
+ */
+export const getCacheStats = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isGetCacheStatsRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  try {
+    // ユーザーの全メタデータを取得
+    const emailMetaSnapshot = await firestoreDb()
+      .collectionGroup("emailMeta")
+      .where("userId", "==", uid)
+      .get();
+
+    const totalEmailCount = emailMetaSnapshot.size;
+
+    // キャッシュステータス別にメールをカウント
+    const statsByStatus: Record<string, number> = {
+      cached: 0,
+      purged: 0,
+      blocked: 0,
+    };
+
+    let totalSizeEstimate = 0;
+    const avgBytesPerEmail = 150 * 1024; // 150 KB per email (estimate)
+
+    emailMetaSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      const cacheStatus = data.localCacheStatus ?? "cached";
+      statsByStatus[cacheStatus] = (statsByStatus[cacheStatus] ?? 0) + 1;
+
+      // cached状態のメールについてサイズ推定
+      if (cacheStatus === "cached") {
+        totalSizeEstimate += avgBytesPerEmail;
+      }
+    });
+
+    return {
+      ok: true,
+      stats: {
+        count: statsByStatus.cached ?? 0, // フロントエンドで表示されるメール数
+        totalBytes: totalSizeEstimate,
+        byStatus: statsByStatus,
+        totalEmails: totalEmailCount,
+      },
+    };
+  } catch (error) {
+    throw new HttpsError(
+      "internal",
+      `Failed to get cache stats: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 });

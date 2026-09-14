@@ -258,7 +258,7 @@ describe("GmailProvider", () => {
       expect(mockGmailClient.users.messages.list).toHaveBeenCalledWith({
         userId: "me",
         q: "category:promotions OR category:updates",
-        maxResults: 50,
+        maxResults: 100,
       });
 
       expect(result).toHaveLength(2);

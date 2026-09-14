@@ -19,6 +19,15 @@ import 'linked_account_providers.dart';
 ///   ①SenderBlockRule（最優先） ②isPinned（保護） ③時間経過による自動パージ
 /// カテゴリごとの保持日数（CategoryRule.retentionDays）を反映するため、
 /// カテゴリ単位でLocalCacheService.planEvictionを呼び分ける。
+/// ローカルキャッシュの統計情報（キャッシュ件数とストレージ使用量）を取得する。
+/// キャッシュ管理画面でストレージ使用量を表示する際に使用。
+/// Cloud Functionsから取得したデータを使用（サーバー側で計算）。
+final cacheStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final cacheStatsService = ref.watch(cacheStatsServiceProvider);
+  final result = await cacheStatsService.getCacheStats();
+  return result['stats'] ?? {};
+});
+
 final localCacheEvictionSweepProvider = FutureProvider<void>((ref) async {
   final userId = await ref.watch(currentUserIdProvider.future);
   final accounts = await ref.watch(linkedAccountsProvider.future);
@@ -74,6 +83,8 @@ final localCacheEvictionSweepProvider = FutureProvider<void>((ref) async {
             freedBytesEstimate: freedBytes,
           ),
         );
+    // キャッシュ削除後に統計情報を無効化して再取得させる
+    ref.invalidate(cacheStatsProvider);
   }
 });
 

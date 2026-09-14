@@ -144,7 +144,8 @@ class RuleManagementEnhancedView extends ConsumerWidget {
                               ),
                               const SizedBox(width: 8),
                               OutlinedButton.icon(
-                                onPressed: () {},
+                                onPressed: () =>
+                                    _showRuleEditDialog(context, ref, rule),
                                 icon: const Icon(Icons.edit_outlined),
                                 label: const Text('編集'),
                                 style: OutlinedButton.styleFrom(
@@ -213,6 +214,102 @@ class RuleManagementEnhancedView extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('閉じる'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRuleEditDialog(BuildContext context, WidgetRef ref, CategoryRule rule) {
+    late int retentionDays;
+    retentionDays = rule.retentionDays;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ルール編集'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'カテゴリ: ${rule.category.name}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '保持日数',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            StatefulBuilder(
+              builder: (context, setState) => Column(
+                children: [
+                  Slider(
+                    value: retentionDays.toDouble(),
+                    min: 1,
+                    max: 90,
+                    divisions: 89,
+                    label: '$retentionDays日',
+                    onChanged: (value) {
+                      setState(() => retentionDays = value.toInt());
+                    },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('$retentionDays日間保持'),
+                      Text(
+                        retentionDays <= 7
+                            ? '短期'
+                            : retentionDays <= 30
+                                ? '標準'
+                                : '長期',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final ruleService = ref.read(ruleServiceProvider);
+                await ruleService.updateCategoryRule(
+                  ruleId: rule.id,
+                  retentionDays: retentionDays,
+                );
+
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('ルール更新完了: ${rule.category.name} - $retentionDays日'),
+                  ),
+                );
+
+                // ルール一覧を無効化して再取得
+                ref.invalidate(categoryRulesProvider);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('エラー: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('保存'),
           ),
         ],
       ),
