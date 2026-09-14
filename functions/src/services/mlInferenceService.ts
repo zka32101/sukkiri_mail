@@ -1,6 +1,7 @@
 import { logger } from 'firebase-functions/v2';
 import { db } from '../firestore';
 import { mlDataCollectionService } from './mlDataCollectionService';
+import { categorizeMessage, categorizeMessageByRules } from '../categorize';
 
 /**
  * ML 推論エンジン（Vertex AI 統合）
@@ -49,12 +50,10 @@ export class MLInferenceService {
 
   /**
    * ルールベース分類（フォールバック用）
-   * 既存のカテゴリ分類ロジックを使用
+   * categorize.ts の categorizeMessageByRules を使用
    */
-  private categorizeWithRules(_features: MailFeatures): string {
-    // 既存の categorize.ts ロジックを統合
-    // TODO: ルールベース分類に delegation
-    return 'other';
+  private categorizeWithRules(features: MailFeatures): string {
+    return categorizeMessageByRules(features.subject, features.from);
   }
 
   /**
@@ -109,7 +108,7 @@ export class MLInferenceService {
       }
 
       // Vertex AI に推論リクエスト
-      const result = this.vertexAIPredict(
+      const result = await this.vertexAIPredict(
         model.vertexAIModelId!,
         this.featuresToVertexInput(features)
       );
@@ -224,32 +223,57 @@ export class MLInferenceService {
 
   /**
    * Vertex AI に推論リクエスト
-   * TODO: google-cloud-aiplatform ライブラリと統合
+   * categorize.ts の categorizeMessage を使用して ML 推論を実行
    */
-  private vertexAIPredict(
+  private async vertexAIPredict(
     _modelId: string,
-    _features: Record<string, unknown>
-  ): MLInferenceResult {
+    features: Record<string, unknown>
+  ): Promise<MLInferenceResult> {
     const startTime = Date.now();
 
-    // ここで実装: Vertex AI Python API または gRPC を呼び出し
-    // サンプル実装は以下の通り（実際は SDK に置き換え）
+    try {
+      // Mail features の再構築
+      const mailFeatures: MailFeatures = {
+        subject: (features.subject as string) || '',
+        from: (features.from as string) || '',
+        snippet: (features.snippet as string) || '',
+        recipientCount: (features.recipient_count as number) || 0,
+        hasAttachments: (features.has_attachments as boolean) || false,
+      };
 
-    // TODO: Vertex AI API 呼び出し
-    // const response = await vertexAiClient.predict(_modelId, [_features]);
+      // categorize.ts の categorizeMessage を呼び出し（Vertex AI統合済み）
+      const category = await categorizeMessage(mailFeatures.subject, mailFeatures.from);
 
-    // サンプルレスポンス
-    return {
-      recommendedCategory: 'promotion',
-      confidenceScore: 0.82,
-      alternativesWithScores: {
-        'notification': 0.12,
-        'invoice': 0.04,
-        'other': 0.02,
-      },
-      latencyMs: Date.now() - startTime,
-      modelVersion: '2.1.0',
-    };
+      // 推論結果を構築
+      // 注: Vertex AI から信頼度が直接返される場合、以下のように使用
+      // 現在は推測値を使用（0.75 = 基本的な信頼度）
+      const confidenceMap: Record<string, number> = {
+        [category]: 0.75,
+        'other': 0.25,
+      };
+
+      // category 以外の信頼度を分配
+      const alternatives = { promotion: 0, notification: 0, invoice: 0, other: 0 };
+      Object.keys(alternatives).forEach((key) => {
+        if (key !== category) {
+          alternatives[key as keyof typeof alternatives] = 0.08;
+        } else {
+          alternatives[key as keyof typeof alternatives] = 0.76;
+        }
+      });
+
+      return {
+        recommendedCategory: category,
+        confidenceScore: confidenceMap[category] || 0.5,
+        alternativesWithScores: alternatives,
+        latencyMs: Date.now() - startTime,
+        modelVersion: '2.1.0',
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      logger.error(`Vertex AI predict failed: ${errorMsg}`);
+      throw error;
+    }
   }
 
   /**
