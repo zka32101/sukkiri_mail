@@ -8,8 +8,10 @@ import '../repositories/linked_account_repository.dart';
 import '../repositories/sender_block_rule_repository.dart';
 import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';
+import '../services/cache_stats_service.dart';
 import '../services/local_cache_service.dart';
 import '../services/purchases_service.dart';
+import '../services/rule_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
@@ -49,4 +51,12 @@ final localCacheServiceProvider = Provider<LocalCacheService>(
 // アプリセッション中は同一インスタンスを使い回す必要がある。
 final purchasesServiceProvider = Provider<PurchasesService>(
   (ref) => PurchasesService(),
+);
+
+final ruleServiceProvider = Provider<RuleService>(
+  (ref) => RuleService(),
+);
+
+final cacheStatsServiceProvider = Provider<CacheStatsService>(
+  (ref) => CacheStatsService(),
 );

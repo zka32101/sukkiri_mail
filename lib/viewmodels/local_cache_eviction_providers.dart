@@ -21,9 +21,11 @@ import 'linked_account_providers.dart';
 /// カテゴリ単位でLocalCacheService.planEvictionを呼び分ける。
 /// ローカルキャッシュの統計情報（キャッシュ件数とストレージ使用量）を取得する。
 /// キャッシュ管理画面でストレージ使用量を表示する際に使用。
-final cacheStatsProvider = FutureProvider<Map<String, int>>((ref) async {
-  final service = ref.watch(localCacheServiceProvider);
-  return await service.getMessageCacheStats();
+/// Cloud Functionsから取得したデータを使用（サーバー側で計算）。
+final cacheStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final cacheStatsService = ref.watch(cacheStatsServiceProvider);
+  final result = await cacheStatsService.getCacheStats();
+  return result['stats'] ?? {};
 });
 
 final localCacheEvictionSweepProvider = FutureProvider<void>((ref) async {

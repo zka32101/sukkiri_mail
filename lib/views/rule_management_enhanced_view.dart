@@ -146,7 +146,7 @@ class RuleManagementEnhancedView extends ConsumerWidget {
                               const SizedBox(width: 8),
                               OutlinedButton.icon(
                                 onPressed: () =>
-                                    _showRuleEditDialog(context, rule),
+                                    _showRuleEditDialog(context, ref, rule),
                                 icon: const Icon(Icons.edit_outlined),
                                 label: const Text('編集'),
                                 style: OutlinedButton.styleFrom(
@@ -221,13 +221,13 @@ class RuleManagementEnhancedView extends ConsumerWidget {
     );
   }
 
-  void _showRuleEditDialog(BuildContext context, CategoryRule rule) {
+  void _showRuleEditDialog(BuildContext context, WidgetRef ref, CategoryRule rule) {
     late int retentionDays;
     retentionDays = rule.retentionDays;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('ルール編集'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -277,18 +277,38 @@ class RuleManagementEnhancedView extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('キャンセル'),
           ),
           ElevatedButton(
-            onPressed: () {
-              // TODO: ルール更新処理を呼び出し
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('ルール更新: ${rule.category.name} - $retentionDays日'),
-                ),
-              );
+            onPressed: () async {
+              try {
+                final ruleService = ref.read(ruleServiceProvider);
+                await ruleService.updateCategoryRule(
+                  ruleId: rule.id,
+                  retentionDays: retentionDays,
+                );
+
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('ルール更新完了: ${rule.category.name} - $retentionDays日'),
+                  ),
+                );
+
+                // ルール一覧を無効化して再取得
+                ref.invalidate(categoryRulesProvider);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('エラー: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             child: const Text('保存'),
           ),

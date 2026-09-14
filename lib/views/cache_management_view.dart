@@ -65,11 +65,16 @@ class CacheManagementView extends ConsumerWidget {
                 ),
               ),
               data: (stats) {
-                final cacheCount = stats['count'] ?? 0;
-                final usedBytes = stats['totalBytes'] ?? 0;
+                final cacheCount = stats['count'] as int? ?? 0;
+                final usedBytes = stats['totalBytes'] as int? ?? 0;
+                final byStatus = stats['byStatus'] as Map<dynamic, dynamic>? ?? {};
+
                 const maxBytes = 500 * 1024 * 1024; // 500 MB
                 final ratio = usedBytes / maxBytes;
                 final usedMB = (usedBytes / (1024 * 1024)).toStringAsFixed(1);
+
+                final purgedCount = byStatus['purged'] ?? 0;
+                final blockedCount = byStatus['blocked'] ?? 0;
 
                 return Card(
                   child: Padding(
@@ -120,7 +125,7 @@ class CacheManagementView extends ConsumerWidget {
                             Expanded(
                               child: _MetricCard(
                                 label: 'パージ済み',
-                                value: '---',
+                                value: purgedCount.toString(),
                                 icon: Icons.delete_outline,
                               ),
                             ),
@@ -128,7 +133,7 @@ class CacheManagementView extends ConsumerWidget {
                             Expanded(
                               child: _MetricCard(
                                 label: 'ブロック済み',
-                                value: '---',
+                                value: blockedCount.toString(),
                                 icon: Icons.block,
                               ),
                             ),
