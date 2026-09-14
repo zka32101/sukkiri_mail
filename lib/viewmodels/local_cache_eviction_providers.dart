@@ -152,24 +152,3 @@ Future<int> _sweepAccount({
   }
   return freedCount;
 }
-
-/// キャッシュ統計情報（サイズ、メール数など）
-final cacheStatisticsProvider = Provider<Map<String, dynamic>>((ref) {
-  // 簡易実装: 後続フェーズで非同期に改良
-  return {
-    'totalSize': 0,
-    'emailCount': 0,
-    'unreadCount': 0,
-    'archivedCount': 0,
-  };
-});
-
-/// キャッシュ状態とヘルスチェック
-final cacheStatusProvider = Provider<Map<String, dynamic>>((ref) {
-  // 簡易実装: 後続フェーズで非同期に改良
-  return {
-    'isHealthy': true,
-    'hitRate': 0.75,
-    'lastEvictionTime': DateTime.now().toString(),
-  };
-});
