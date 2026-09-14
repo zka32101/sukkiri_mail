@@ -272,7 +272,7 @@ describe("OutlookProvider", () => {
       const result = await provider.scan("account123");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=50&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead",
+        "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?$top=100&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead",
         expect.any(Object)
       );
 
