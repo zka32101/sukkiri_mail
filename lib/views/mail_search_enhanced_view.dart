@@ -73,7 +73,7 @@ class _MailSearchEnhancedViewState extends ConsumerState<MailSearchEnhancedView>
     if (_unreadOnly && !email.isUnread) {
       return false;
     }
-    if (_hasAttachments && !email.hasAttachments) {
+    if (_hasAttachments && !email.hasAttachment) {
       return false;
     }
     return true;
@@ -243,7 +243,7 @@ class _MailSearchEnhancedViewState extends ConsumerState<MailSearchEnhancedView>
     AppLocalizations l10n,
   ) {
     if (accounts.isEmpty) {
-      return Center(child: Text(l10n.noLinkedAccount));
+      return const Center(child: Text('リンク済みのメールアカウントがありません'));
     }
 
     return ListView(
@@ -313,7 +313,7 @@ class _MailSearchEnhancedViewState extends ConsumerState<MailSearchEnhancedView>
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (m.hasAttachments)
+                        if (m.hasAttachment)
                           const Icon(Icons.attach_file, size: 16),
                         const SizedBox(width: 8),
                         if (m.isUnread)
@@ -328,7 +328,7 @@ class _MailSearchEnhancedViewState extends ConsumerState<MailSearchEnhancedView>
                       ],
                     ),
                   );
-                }).toList(),
+                }),
               ],
             );
           },
@@ -392,8 +392,9 @@ class _MailSearchEnhancedViewState extends ConsumerState<MailSearchEnhancedView>
                           firstDate: DateTime(2020),
                           lastDate: DateTime.now(),
                         );
-                        if (picked != null) {
+                        if (picked != null && mounted) {
                           setState(() => _startDate = picked);
+                          // ignore: use_build_context_synchronously
                           Navigator.pop(context);
                         }
                       },
@@ -415,8 +416,9 @@ class _MailSearchEnhancedViewState extends ConsumerState<MailSearchEnhancedView>
                           firstDate: DateTime(2020),
                           lastDate: DateTime.now(),
                         );
-                        if (picked != null) {
+                        if (picked != null && mounted) {
                           setState(() => _endDate = picked);
+                          // ignore: use_build_context_synchronously
                           Navigator.pop(context);
                         }
                       },
