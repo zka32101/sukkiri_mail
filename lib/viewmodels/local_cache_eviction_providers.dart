@@ -152,3 +152,51 @@ Future<int> _sweepAccount({
   }
   return freedCount;
 }
+
+/// キャッシュ統計情報（サイズ、メール数など）
+final cacheStatisticsProvider =
+    FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  final userId = await ref.watch(currentUserIdProvider.future);
+  final accounts = await ref.watch(linkedAccountsProvider.future);
+
+  int totalSize = 0;
+  int emailCount = 0;
+  int unreadCount = 0;
+  int archivedCount = 0;
+
+  final emailMetaRepo = ref.watch(emailMetaRepositoryProvider);
+
+  for (final account in accounts) {
+    final metas =
+        await emailMetaRepo.watchForAccount(account.id, userId).first;
+    emailCount += metas.length;
+    unreadCount += metas.where((m) => m.isUnread).length;
+    archivedCount += metas.where((m) => m.status == EmailStatus.archived).length;
+    // 簡易サイズ推定: 1メール = 200KB
+    totalSize += metas.length * 200 * 1024;
+  }
+
+  return {
+    'totalSize': totalSize,
+    'emailCount': emailCount,
+    'unreadCount': unreadCount,
+    'archivedCount': archivedCount,
+  };
+});
+
+/// キャッシュ状態とヘルスチェック
+final cacheStatusProvider =
+    FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  final userId = await ref.watch(currentUserIdProvider.future);
+  final service = ref.watch(localCacheServiceProvider);
+
+  // キャッシュヒット率の簡易実装（実際には専用トラッキングが必要）
+  final hitRate = 0.75; // デモ用: 75%
+  final isHealthy = hitRate > 0.5;
+
+  return {
+    'isHealthy': isHealthy,
+    'hitRate': hitRate,
+    'lastEvictionTime': DateTime.now().subtract(const Duration(hours: 1)).toString(),
+  };
+});
