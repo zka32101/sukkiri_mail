@@ -9,6 +9,15 @@ import { ImapProvider } from "./providers/imapProvider";
 import { db as firestoreDb } from "./firestore";
 import { enqueueScanTask } from "./cloudTasks";
 import { mlDataCollectionService } from "./services/mlDataCollectionService";
+import { globalRateLimiter } from "./scaling/rateLimiter";
+import { performanceMonitor } from "./monitoring/monitoring";
+import { errorHandlingService, defaultRetryStrategy } from "./services/errorHandlingService";
+import {
+  getLivenessCheck,
+  getReadinessCheck,
+  getDeepHealthCheck,
+  recordHealthCheck,
+} from "./health/healthCheck";
 import {
   isConnectAccountRequest,
   isScanAccountRequest,
@@ -102,6 +111,15 @@ export const scanAccount = onCall(async (request) => {
 
   const { provider, accountId } = request.data;
   await assertAccountOwnership(accountId, uid);
+
+  // 乱発スキャンによる負荷・コスト急増を防ぐため、ユーザー単位でレート制限をかける。
+  const rateLimitStatus = globalRateLimiter.isUserAllowed(uid);
+  if (!rateLimitStatus.allowed) {
+    throw new HttpsError(
+      "resource-exhausted",
+      `Too many scan requests. Please retry in ${Math.ceil(rateLimitStatus.retryAfterMs / 1000)}s`
+    );
+  }
 
   // Cloud Tasks へスキャンタスクをエンキュー。
   // 処理はバックグラウンドで実行される（UIをブロックしない）。
@@ -293,8 +311,31 @@ export const processScanTask = onRequest(async (request, response) => {
     const lastScanAt = (accountDoc.data()?.lastScanAt as number | null) ?? null;
 
     // プロバイダを解決し、スキャンを実行
+    // サーキットブレーカーで連続障害中のプロバイダへの無駄なリクエストを遮断し、
+    // 一時的なエラー（ネットワーク/レート制限等）は指数バックオフで自動リトライする。
     const adapter = resolveProvider(provider);
-    const items = await adapter.scan(accountId, lastScanAt);
+    const operationName = `scan.${provider}`;
+    const circuitBreaker = errorHandlingService.getCircuitBreaker(operationName);
+
+    if (circuitBreaker.isOpen()) {
+      throw new Error(`Circuit breaker open for provider ${provider}; skipping scan`);
+    }
+
+    let items;
+    try {
+      const { result } = await performanceMonitor.measureOperation(operationName, () =>
+        defaultRetryStrategy.executeWithRetry(
+          () => adapter.scan(accountId, lastScanAt),
+          operationName
+        )
+      );
+      items = result;
+      circuitBreaker.recordSuccess();
+    } catch (scanError) {
+      circuitBreaker.recordFailure();
+      errorHandlingService.recordError(operationName, scanError);
+      throw scanError;
+    }
 
     // emailMeta へメール情報を永続化（merge: true で既存の status/isPinned を保護）
     const batch = db.batch();
@@ -601,4 +642,52 @@ export const getCacheStats = onCall(async (request) => {
       `Failed to get cache stats: ${error instanceof Error ? error.message : String(error)}`
     );
   }
+});
+
+/** Kubernetes-style Liveness probe。外部依存なし、プロセスが生きていれば200を返す。 */
+export const healthz = onRequest(async (request, response) => {
+  const result = getLivenessCheck();
+  recordHealthCheck(result);
+  response.status(200).json(result);
+});
+
+/** Kubernetes-style Readiness probe。Firestore接続を確認し、準備完了かを返す。 */
+export const readyz = onRequest(async (request, response) => {
+  const result = await getReadinessCheck();
+  recordHealthCheck(result);
+  response.status(result.status === "unhealthy" ? 503 : 200).json(result);
+});
+
+/** 詳細ヘルスチェック（Firestore/メモリ/イベントループ）。運用監視・障害調査用。 */
+export const deepHealthCheck = onRequest(async (request, response) => {
+  const result = await getDeepHealthCheck();
+  recordHealthCheck(result);
+  response.status(result.status === "unhealthy" ? 503 : 200).json(result);
+});
+
+/** 運用モニタリング用: スキャン処理のレイテンシ/エラー率、アクティブアラート、レート制限状況を返す。 */
+export const getSystemMetrics = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  const providers = ["gmail", "outlook", "imap"];
+  const scanMetrics = providers.reduce<Record<string, unknown>>((acc, provider) => {
+    acc[provider] = {
+      latency: performanceMonitor.getMetricStats(`scan.${provider}.latency`),
+      errorStats: errorHandlingService.getErrorStats(`scan.${provider}`),
+      circuitBreaker: errorHandlingService.getCircuitBreaker(`scan.${provider}`).getState(),
+    };
+    return acc;
+  }, {});
+
+  return {
+    ok: true,
+    scanMetrics,
+    activeAlerts: performanceMonitor.getActiveAlerts(),
+    rateLimiter: {
+      deniedCount: globalRateLimiter.getDeniedCount(),
+      activeUsers: globalRateLimiter.getActiveUsers(),
+      userStats: globalRateLimiter.getUserStats(uid),
+    },
+  };
 });
