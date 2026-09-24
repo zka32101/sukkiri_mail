@@ -17,6 +17,9 @@ import {
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
+/** messageリソースのwebhookサブスクリプション最大有効期間（約4230分）に対し、余裕を見た2.5日。 */
+const SUBSCRIPTION_LIFETIME_MS = 2.5 * 24 * 60 * 60 * 1000;
+
 /**
  * Microsoft Graph API Mail.ReadWrite（delegated、個人アカウント同意のみで完結）。
  * 第三者セキュリティ監査（CASA相当）は不要。
@@ -126,7 +129,7 @@ export class OutlookProvider implements MailProviderAdapter {
     }
   }
 
-  private async graphFetch(accountId: string, path: string, init?: RequestInit) {
+  private async graphRequest(accountId: string, path: string, init?: RequestInit): Promise<Response> {
     const token = await this.getAccessToken(accountId);
     const res = await fetch(`${GRAPH_BASE}${path}`, {
       ...init,
@@ -137,6 +140,11 @@ export class OutlookProvider implements MailProviderAdapter {
       },
     });
     if (!res.ok) throw new Error(`Graph API error: ${res.status} ${await res.text()}`);
+    return res;
+  }
+
+  private async graphFetch(accountId: string, path: string, init?: RequestInit) {
+    const res = await this.graphRequest(accountId, path, init);
     return res.json();
   }
 
@@ -263,6 +271,49 @@ export class OutlookProvider implements MailProviderAdapter {
         body: JSON.stringify({ destinationId: "inbox" }),
       });
     }
+  }
+
+  /**
+   * Microsoft Graph webhookサブスクリプションを作成し、受信箱の変更をリアルタイム通知させる。
+   * messageリソースの最大有効期間は約4230分（≒2.94日）のため、余裕を見て2.5日で作成する。
+   */
+  async createSubscription(
+    accountId: string,
+    notificationUrl: string,
+    clientState: string
+  ): Promise<{ subscriptionId: string; expiresAt: number }> {
+    const expirationDateTime = new Date(Date.now() + SUBSCRIPTION_LIFETIME_MS).toISOString();
+    const data = (await this.graphFetch(accountId, "/subscriptions", {
+      method: "POST",
+      body: JSON.stringify({
+        changeType: "created",
+        notificationUrl,
+        resource: "me/mailFolders('Inbox')/messages",
+        expirationDateTime,
+        clientState,
+      }),
+    })) as { id: string; expirationDateTime: string };
+
+    return {
+      subscriptionId: data.id,
+      expiresAt: new Date(data.expirationDateTime).getTime(),
+    };
+  }
+
+  /** 既存のwebhookサブスクリプションの有効期限を延長する。 */
+  async renewSubscription(accountId: string, subscriptionId: string): Promise<{ expiresAt: number }> {
+    const expirationDateTime = new Date(Date.now() + SUBSCRIPTION_LIFETIME_MS).toISOString();
+    const data = (await this.graphFetch(accountId, `/subscriptions/${subscriptionId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ expirationDateTime }),
+    })) as { expirationDateTime: string };
+
+    return { expiresAt: new Date(data.expirationDateTime).getTime() };
+  }
+
+  /** webhookサブスクリプションを削除する（アカウント連携解除時に呼び出す）。 */
+  async deleteSubscription(accountId: string, subscriptionId: string): Promise<void> {
+    await this.graphRequest(accountId, `/subscriptions/${subscriptionId}`, { method: "DELETE" });
   }
 
   async fetchMessageBody(accountId: string, messageId: string): Promise<MessageBodyResult> {

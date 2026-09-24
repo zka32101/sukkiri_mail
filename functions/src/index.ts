@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onRequest } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as zlib from "zlib";
 import { MailProviderAdapter } from "./providers/mailProviderInterface";
 import { GmailProvider } from "./providers/gmailProvider";
@@ -19,6 +20,13 @@ import {
   recordHealthCheck,
 } from "./health/healthCheck";
 import {
+  enablePushSyncForAccount,
+  disablePushSyncForAccount,
+  renewExpiringPushSync,
+  findAccountByEmail,
+  findAccountBySubscriptionId,
+} from "./services/pushSyncService";
+import {
   isConnectAccountRequest,
   isScanAccountRequest,
   isApplyArchiveRulesRequest,
@@ -26,7 +34,9 @@ import {
   isFetchMessageRequest,
   isUpdateCategoryRuleRequest,
   isGetCacheStatsRequest,
+  isPushSyncRequest,
 } from "./types";
+import { getSecret } from "./secrets";
 
 admin.initializeApp();
 
@@ -690,4 +700,166 @@ export const getSystemMetrics = onCall(async (request) => {
       userStats: globalRateLimiter.getUserStats(uid),
     },
   };
+});
+
+/**
+ * プッシュ型同期を有効化する（ポーリングではなくプロバイダ側からの変更通知でスキャンを起動）。
+ * gmail: Pub/Sub watch、outlook: Graph webhookサブスクリプションを登録する。imapは非対応。
+ */
+export const enablePushSync = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isPushSyncRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { provider, accountId } = request.data;
+  await assertAccountOwnership(accountId, uid);
+
+  if (provider !== "gmail" && provider !== "outlook") {
+    throw new HttpsError("invalid-argument", "push sync is only supported for gmail and outlook");
+  }
+
+  try {
+    const { expiresAt } = await enablePushSyncForAccount(accountId, provider);
+    return { ok: true, expiresAt };
+  } catch (error) {
+    throw new HttpsError(
+      "internal",
+      `Failed to enable push sync: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+});
+
+/** プッシュ型同期を無効化する（アカウント連携解除時にも呼び出すこと）。 */
+export const disablePushSync = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isPushSyncRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { provider, accountId } = request.data;
+  await assertAccountOwnership(accountId, uid);
+
+  try {
+    await disablePushSyncForAccount(accountId, provider);
+    return { ok: true };
+  } catch (error) {
+    throw new HttpsError(
+      "internal",
+      `Failed to disable push sync: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+});
+
+/**
+ * Gmail Pub/Sub push通知の受信エンドポイント。
+ * 【要確認】GCP ConsoleでPub/Subトピックを作成し、このURLをpushサブスクリプションの
+ * エンドポイントに設定、共有シークレットをSecret Managerに`gmail-pubsub-verification-token`
+ * として登録し、サブスクリプションのpush先URLに `?token=<同じ値>` を付与すること。
+ */
+export const gmailPushNotification = onRequest(async (request, response) => {
+  try {
+    const expectedToken = await getSecret("gmail-pubsub-verification-token");
+    if (request.query.token !== expectedToken) {
+      response.status(403).json({ error: "invalid verification token" });
+      return;
+    }
+
+    const message = (request.body as { message?: { data?: string } } | undefined)?.message;
+    if (!message?.data) {
+      response.status(400).json({ error: "missing message data" });
+      return;
+    }
+
+    const decoded = JSON.parse(Buffer.from(message.data, "base64").toString("utf-8")) as {
+      emailAddress?: string;
+    };
+    if (!decoded.emailAddress) {
+      response.status(400).json({ error: "missing emailAddress" });
+      return;
+    }
+
+    const account = await findAccountByEmail("gmail", decoded.emailAddress);
+    if (!account) {
+      // 連携解除済み等でアカウントが見つからない場合もPub/Subの再送を止めるため200を返す。
+      console.warn(`[gmailPushNotification] No linked account for ${decoded.emailAddress}`);
+      response.status(200).json({ ok: true, skipped: true });
+      return;
+    }
+
+    const projectId = process.env.GCLOUD_PROJECT || "sukkiri-mail-prod";
+    await enqueueScanTask(
+      projectId,
+      "email-scanning",
+      "asia-northeast1",
+      account.accountId,
+      account.userId,
+      "gmail"
+    );
+
+    response.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("[gmailPushNotification] Error:", error);
+    // Pub/Subの無限リトライを避けるためエラー時も200を返す（追跡はログで行う）。
+    response.status(200).json({ ok: false });
+  }
+});
+
+/**
+ * Microsoft Graph webhook通知の受信エンドポイント。
+ * サブスクリプション作成直後の検証リクエスト（validationTokenクエリパラメータ）と、
+ * 実際の変更通知（POSTボディのvalue配列）の両方を処理する。
+ */
+export const outlookPushNotification = onRequest(async (request, response) => {
+  const validationToken = request.query.validationToken;
+  if (typeof validationToken === "string") {
+    response.status(200).set("Content-Type", "text/plain").send(validationToken);
+    return;
+  }
+
+  try {
+    const notifications =
+      (request.body as { value?: Array<{ subscriptionId?: string; clientState?: string }> } | undefined)
+        ?.value ?? [];
+
+    for (const notification of notifications) {
+      if (!notification.subscriptionId) continue;
+
+      const account = await findAccountBySubscriptionId(notification.subscriptionId);
+      if (!account) continue;
+
+      // clientStateはGraphのwebhookが本物の送信元かを検証するための共有シークレット。
+      if (account.clientState !== notification.clientState) {
+        console.warn(
+          `[outlookPushNotification] clientState mismatch for subscription ${notification.subscriptionId}`
+        );
+        continue;
+      }
+
+      const projectId = process.env.GCLOUD_PROJECT || "sukkiri-mail-prod";
+      await enqueueScanTask(
+        projectId,
+        "email-scanning",
+        "asia-northeast1",
+        account.accountId,
+        account.userId,
+        "outlook"
+      );
+    }
+
+    response.status(202).json({ ok: true });
+  } catch (error) {
+    console.error("[outlookPushNotification] Error:", error);
+    response.status(202).json({ ok: false });
+  }
+});
+
+/** プッシュ同期サブスクリプションの期限切れ防止のため、定期的に更新する（6時間毎）。 */
+export const renewPushSubscriptions = onSchedule("every 6 hours", async () => {
+  const result = await renewExpiringPushSync();
+  console.info(`[renewPushSubscriptions] renewed=${result.renewed} failed=${result.failed}`);
 });
