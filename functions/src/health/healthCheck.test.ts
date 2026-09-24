@@ -14,6 +14,7 @@ import {
   resetStartTime,
   HealthCheckResult,
 } from './healthCheck';
+import { db } from '../firestore';
 
 // Mock firestore
 jest.mock('../firestore', () => ({
@@ -83,8 +84,7 @@ describe('HealthCheck', () => {
     });
 
     it('should handle Firestore timeout gracefully', async () => {
-      const { db } = require('../firestore');
-      db.mockImplementation(() => ({
+      (db as jest.Mock).mockImplementation(() => ({
         collection: () => ({
           doc: () => ({
             get: jest.fn().mockRejectedValue(
@@ -100,8 +100,7 @@ describe('HealthCheck', () => {
     });
 
     it('should handle Firestore errors', async () => {
-      const { db } = require('../firestore');
-      db.mockImplementation(() => ({
+      (db as jest.Mock).mockImplementation(() => ({
         collection: () => ({
           doc: () => ({
             get: jest.fn().mockRejectedValue(new Error('Connection failed')),
@@ -169,8 +168,7 @@ describe('HealthCheck', () => {
     });
 
     it('should handle all components failing', async () => {
-      const { db } = require('../firestore');
-      db.mockImplementation(() => ({
+      (db as jest.Mock).mockImplementation(() => ({
         collection: () => ({
           doc: () => ({
             get: jest.fn().mockRejectedValue(new Error('Connection error')),

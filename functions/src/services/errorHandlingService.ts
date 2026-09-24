@@ -353,7 +353,7 @@ export class ErrorHandlingService {
   /**
    * エラーを記録
    */
-  recordError(operation: string, error: unknown): void {
+  recordError(operation: string, _error: unknown): void {
     const stats = this.errorStats.get(operation) || {
       count: 0,
       lastError: new Date(),
