@@ -121,6 +121,12 @@ export interface PushSyncRequest {
   accountId: string;
 }
 
+/** registerFcmToken / unregisterFcmToken function request parameters */
+export interface FcmTokenRequest {
+  token: string;
+  platform?: "ios" | "android" | "web";
+}
+
 /** Type guard to validate ConnectAccountRequest */
 export function isConnectAccountRequest(data: unknown): data is ConnectAccountRequest {
   return (
@@ -206,6 +212,11 @@ export function isPushSyncRequest(data: unknown): data is PushSyncRequest {
     "provider" in data &&
     "accountId" in data
   );
+}
+
+/** Type guard to validate FcmTokenRequest */
+export function isFcmTokenRequest(data: unknown): data is FcmTokenRequest {
+  return typeof data === "object" && data !== null && "token" in data;
 }
 
 // ============================================================================

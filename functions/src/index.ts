@@ -27,6 +27,12 @@ import {
   findAccountBySubscriptionId,
 } from "./services/pushSyncService";
 import {
+  registerFcmTokenForUser,
+  unregisterFcmTokenForUser,
+  notifyScanCompleted,
+  notifyScanFailed,
+} from "./services/notificationService";
+import {
   isConnectAccountRequest,
   isScanAccountRequest,
   isApplyArchiveRulesRequest,
@@ -35,6 +41,7 @@ import {
   isUpdateCategoryRuleRequest,
   isGetCacheStatsRequest,
   isPushSyncRequest,
+  isFcmTokenRequest,
 } from "./types";
 import { getSecret } from "./secrets";
 
@@ -386,6 +393,9 @@ export const processScanTask = onRequest(async (request, response) => {
       `[processScanTask] Scan completed for account ${accountId}: ${items.length} items`
     );
 
+    // ユーザーへプッシュ通知（失敗してもスキャン自体は成功扱いのまま継続）。
+    await notifyScanCompleted(userId, items.length);
+
     response.status(200).json({
       status: "success",
       accountId,
@@ -407,13 +417,16 @@ export const processScanTask = onRequest(async (request, response) => {
       }
 
       const payload = JSON.parse(Buffer.from(bodyText, "base64").toString());
-      const { accountId } = payload;
+      const { accountId, userId } = payload;
       if (accountId) {
         await firestoreDb().collection("linkedAccounts").doc(accountId).update({
           scanStatus: "failed",
           scanError: errorMessage,
           scanFailedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+      }
+      if (userId && accountId) {
+        await notifyScanFailed(userId, accountId);
       }
     } catch (updateError) {
       console.error("[processScanTask] Failed to update error status:", updateError);
@@ -862,4 +875,34 @@ export const outlookPushNotification = onRequest(async (request, response) => {
 export const renewPushSubscriptions = onSchedule("every 6 hours", async () => {
   const result = await renewExpiringPushSync();
   console.info(`[renewPushSubscriptions] renewed=${result.renewed} failed=${result.failed}`);
+});
+
+/**
+ * デバイスのFCMトークンを登録する。クライアントはfirebase_messagingでトークンを取得後、
+ * ログイン時・トークンリフレッシュ時に呼び出すこと。
+ */
+export const registerFcmToken = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isFcmTokenRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { token, platform } = request.data;
+  await registerFcmTokenForUser(uid, token, platform ?? "android");
+  return { ok: true };
+});
+
+/** デバイスのFCMトークンを解除する（ログアウト時に呼び出すこと）。 */
+export const unregisterFcmToken = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isFcmTokenRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  await unregisterFcmTokenForUser(uid, request.data.token);
+  return { ok: true };
 });
