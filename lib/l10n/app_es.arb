@@ -22,10 +22,29 @@
   "archiveCandidatesArchiveAll": "Archivar todo",
   "archiveCandidatesPin": "Proteger",
 
-  "dashboardTitle": "Nivel de orden de tu bandeja",
   "dashboardArchivedCount": "Total archivado",
   "dashboardFreedBytes": "Espacio local liberado",
   "dashboardPinnedCount": "Correos protegidos",
+
+  "mailListTitle": "Lista de correos",
+  "mailListEmpty": "No hay correos para mostrar",
+  "mailListSortNewest": "Más recientes",
+  "mailListSortUnreadFirst": "No leídos primero",
+  "mailListSortSender": "Por remitente",
+  "mailListGroupToggle": "Agrupar por remitente",
+  "mailListSelectionCount": "{count} seleccionados",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "Archivar",
+  "mailListBulkMarkRead": "Marcar como leído",
+  "mailListUnknownSender": "(Remitente desconocido)",
+
+  "categoryAll": "Todos",
+  "categoryPromotion": "Promociones",
+  "categoryNotification": "Notificaciones",
+  "categoryInvoice": "Facturas",
+  "categoryOther": "Otros",
 
   "ruleSettingsTitle": "Reglas",
   "ruleSettingsCategoryTab": "Reglas por categoría",

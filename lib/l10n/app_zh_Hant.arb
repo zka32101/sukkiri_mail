@@ -22,10 +22,29 @@
   "archiveCandidatesArchiveAll": "全部封存",
   "archiveCandidatesPin": "保護",
 
-  "dashboardTitle": "收件匣清爽度",
   "dashboardArchivedCount": "累計封存件數",
   "dashboardFreedBytes": "已釋放的本機空間",
   "dashboardPinnedCount": "已保護件數",
+
+  "mailListTitle": "郵件清單",
+  "mailListEmpty": "沒有可顯示的郵件",
+  "mailListSortNewest": "最新優先",
+  "mailListSortUnreadFirst": "未讀優先",
+  "mailListSortSender": "依寄件人",
+  "mailListGroupToggle": "依寄件人分組",
+  "mailListSelectionCount": "已選擇{count}項",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "封存",
+  "mailListBulkMarkRead": "標記為已讀",
+  "mailListUnknownSender": "（未知寄件人）",
+
+  "categoryAll": "全部",
+  "categoryPromotion": "促銷",
+  "categoryNotification": "通知",
+  "categoryInvoice": "帳單",
+  "categoryOther": "其他",
 
   "ruleSettingsTitle": "規則設定",
   "ruleSettingsCategoryTab": "分類規則",

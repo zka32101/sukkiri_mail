@@ -55,7 +55,51 @@ class AppLocalizationsHi extends AppLocalizations {
   String get archiveCandidatesPin => 'सुरक्षित करें';
 
   @override
-  String get dashboardTitle => 'इनबॉक्स की सफ़ाई';
+  String get mailListTitle => 'मेल सूची';
+
+  @override
+  String get mailListEmpty => 'दिखाने के लिए कोई मेल नहीं';
+
+  @override
+  String get mailListSortNewest => 'नवीनतम पहले';
+
+  @override
+  String get mailListSortUnreadFirst => 'अपठित पहले';
+
+  @override
+  String get mailListSortSender => 'प्रेषक के अनुसार';
+
+  @override
+  String get mailListGroupToggle => 'प्रेषक के अनुसार समूहित करें';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count चयनित';
+  }
+
+  @override
+  String get mailListBulkArchive => 'संग्रहित करें';
+
+  @override
+  String get mailListBulkMarkRead => 'पढ़ा हुआ चिह्नित करें';
+
+  @override
+  String get mailListUnknownSender => '(अज्ञात प्रेषक)';
+
+  @override
+  String get categoryAll => 'सभी';
+
+  @override
+  String get categoryPromotion => 'प्रचार';
+
+  @override
+  String get categoryNotification => 'सूचनाएं';
+
+  @override
+  String get categoryInvoice => 'चालान';
+
+  @override
+  String get categoryOther => 'अन्य';
 
   @override
   String get dashboardArchivedCount => 'कुल संग्रहित';

@@ -22,10 +22,29 @@
   "archiveCandidatesArchiveAll": "सभी संग्रहित करें",
   "archiveCandidatesPin": "सुरक्षित करें",
 
-  "dashboardTitle": "इनबॉक्स की सफ़ाई",
   "dashboardArchivedCount": "कुल संग्रहित",
   "dashboardFreedBytes": "मुक्त हुआ स्थानीय स्थान",
   "dashboardPinnedCount": "सुरक्षित मेल",
+
+  "mailListTitle": "मेल सूची",
+  "mailListEmpty": "दिखाने के लिए कोई मेल नहीं",
+  "mailListSortNewest": "नवीनतम पहले",
+  "mailListSortUnreadFirst": "अपठित पहले",
+  "mailListSortSender": "प्रेषक के अनुसार",
+  "mailListGroupToggle": "प्रेषक के अनुसार समूहित करें",
+  "mailListSelectionCount": "{count} चयनित",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "संग्रहित करें",
+  "mailListBulkMarkRead": "पढ़ा हुआ चिह्नित करें",
+  "mailListUnknownSender": "(अज्ञात प्रेषक)",
+
+  "categoryAll": "सभी",
+  "categoryPromotion": "प्रचार",
+  "categoryNotification": "सूचनाएं",
+  "categoryInvoice": "चालान",
+  "categoryOther": "अन्य",
 
   "ruleSettingsTitle": "नियम",
   "ruleSettingsCategoryTab": "श्रेणी नियम",

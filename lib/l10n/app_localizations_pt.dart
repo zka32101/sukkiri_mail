@@ -55,7 +55,51 @@ class AppLocalizationsPt extends AppLocalizations {
   String get archiveCandidatesPin => 'Proteger';
 
   @override
-  String get dashboardTitle => 'Leveza da caixa de entrada';
+  String get mailListTitle => 'Lista de e-mails';
+
+  @override
+  String get mailListEmpty => 'Nenhum e-mail para mostrar';
+
+  @override
+  String get mailListSortNewest => 'Mais recentes';
+
+  @override
+  String get mailListSortUnreadFirst => 'Não lidos primeiro';
+
+  @override
+  String get mailListSortSender => 'Por remetente';
+
+  @override
+  String get mailListGroupToggle => 'Agrupar por remetente';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count selecionado(s)';
+  }
+
+  @override
+  String get mailListBulkArchive => 'Arquivar';
+
+  @override
+  String get mailListBulkMarkRead => 'Marcar como lido';
+
+  @override
+  String get mailListUnknownSender => '(Remetente desconhecido)';
+
+  @override
+  String get categoryAll => 'Todos';
+
+  @override
+  String get categoryPromotion => 'Promoções';
+
+  @override
+  String get categoryNotification => 'Notificações';
+
+  @override
+  String get categoryInvoice => 'Faturas';
+
+  @override
+  String get categoryOther => 'Outros';
 
   @override
   String get dashboardArchivedCount => 'Total arquivado';
@@ -184,7 +228,51 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get archiveCandidatesPin => 'Proteger';
 
   @override
-  String get dashboardTitle => 'Leveza da caixa de entrada';
+  String get mailListTitle => 'Lista de e-mails';
+
+  @override
+  String get mailListEmpty => 'Nenhum e-mail para mostrar';
+
+  @override
+  String get mailListSortNewest => 'Mais recentes';
+
+  @override
+  String get mailListSortUnreadFirst => 'Não lidos primeiro';
+
+  @override
+  String get mailListSortSender => 'Por remetente';
+
+  @override
+  String get mailListGroupToggle => 'Agrupar por remetente';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count selecionado(s)';
+  }
+
+  @override
+  String get mailListBulkArchive => 'Arquivar';
+
+  @override
+  String get mailListBulkMarkRead => 'Marcar como lido';
+
+  @override
+  String get mailListUnknownSender => '(Remetente desconhecido)';
+
+  @override
+  String get categoryAll => 'Todos';
+
+  @override
+  String get categoryPromotion => 'Promoções';
+
+  @override
+  String get categoryNotification => 'Notificações';
+
+  @override
+  String get categoryInvoice => 'Faturas';
+
+  @override
+  String get categoryOther => 'Outros';
 
   @override
   String get dashboardArchivedCount => 'Total arquivado';

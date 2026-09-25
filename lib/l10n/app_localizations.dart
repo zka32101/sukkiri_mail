@@ -200,12 +200,6 @@ abstract class AppLocalizations {
   /// **'保護する'**
   String get archiveCandidatesPin;
 
-  /// No description provided for @dashboardTitle.
-  ///
-  /// In ja, this message translates to:
-  /// **'受信箱スッキリ度'**
-  String get dashboardTitle;
-
   /// No description provided for @dashboardArchivedCount.
   ///
   /// In ja, this message translates to:
@@ -223,6 +217,96 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'保護件数'**
   String get dashboardPinnedCount;
+
+  /// No description provided for @mailListTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'メール一覧'**
+  String get mailListTitle;
+
+  /// No description provided for @mailListEmpty.
+  ///
+  /// In ja, this message translates to:
+  /// **'表示するメールがありません'**
+  String get mailListEmpty;
+
+  /// No description provided for @mailListSortNewest.
+  ///
+  /// In ja, this message translates to:
+  /// **'新着順'**
+  String get mailListSortNewest;
+
+  /// No description provided for @mailListSortUnreadFirst.
+  ///
+  /// In ja, this message translates to:
+  /// **'未読優先'**
+  String get mailListSortUnreadFirst;
+
+  /// No description provided for @mailListSortSender.
+  ///
+  /// In ja, this message translates to:
+  /// **'送信者別'**
+  String get mailListSortSender;
+
+  /// No description provided for @mailListGroupToggle.
+  ///
+  /// In ja, this message translates to:
+  /// **'送信者でグループ化'**
+  String get mailListGroupToggle;
+
+  /// No description provided for @mailListSelectionCount.
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}件選択中'**
+  String mailListSelectionCount(int count);
+
+  /// No description provided for @mailListBulkArchive.
+  ///
+  /// In ja, this message translates to:
+  /// **'アーカイブ'**
+  String get mailListBulkArchive;
+
+  /// No description provided for @mailListBulkMarkRead.
+  ///
+  /// In ja, this message translates to:
+  /// **'既読にする'**
+  String get mailListBulkMarkRead;
+
+  /// No description provided for @mailListUnknownSender.
+  ///
+  /// In ja, this message translates to:
+  /// **'（不明な送信者）'**
+  String get mailListUnknownSender;
+
+  /// No description provided for @categoryAll.
+  ///
+  /// In ja, this message translates to:
+  /// **'すべて'**
+  String get categoryAll;
+
+  /// No description provided for @categoryPromotion.
+  ///
+  /// In ja, this message translates to:
+  /// **'プロモーション'**
+  String get categoryPromotion;
+
+  /// No description provided for @categoryNotification.
+  ///
+  /// In ja, this message translates to:
+  /// **'通知'**
+  String get categoryNotification;
+
+  /// No description provided for @categoryInvoice.
+  ///
+  /// In ja, this message translates to:
+  /// **'請求書'**
+  String get categoryInvoice;
+
+  /// No description provided for @categoryOther.
+  ///
+  /// In ja, this message translates to:
+  /// **'その他'**
+  String get categoryOther;
 
   /// No description provided for @ruleSettingsTitle.
   ///

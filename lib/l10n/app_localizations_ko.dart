@@ -54,7 +54,51 @@ class AppLocalizationsKo extends AppLocalizations {
   String get archiveCandidatesPin => '보호하기';
 
   @override
-  String get dashboardTitle => '받은편지함 정리도';
+  String get mailListTitle => '메일 목록';
+
+  @override
+  String get mailListEmpty => '표시할 메일이 없습니다';
+
+  @override
+  String get mailListSortNewest => '최신순';
+
+  @override
+  String get mailListSortUnreadFirst => '읽지 않은 메일 우선';
+
+  @override
+  String get mailListSortSender => '보낸 사람별';
+
+  @override
+  String get mailListGroupToggle => '보낸 사람별로 그룹화';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count개 선택됨';
+  }
+
+  @override
+  String get mailListBulkArchive => '보관';
+
+  @override
+  String get mailListBulkMarkRead => '읽음으로 표시';
+
+  @override
+  String get mailListUnknownSender => '(알 수 없는 발신자)';
+
+  @override
+  String get categoryAll => '전체';
+
+  @override
+  String get categoryPromotion => '프로모션';
+
+  @override
+  String get categoryNotification => '알림';
+
+  @override
+  String get categoryInvoice => '청구서';
+
+  @override
+  String get categoryOther => '기타';
 
   @override
   String get dashboardArchivedCount => '누적 보관 건수';

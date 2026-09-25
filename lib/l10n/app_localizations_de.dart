@@ -55,7 +55,51 @@ class AppLocalizationsDe extends AppLocalizations {
   String get archiveCandidatesPin => 'Schützen';
 
   @override
-  String get dashboardTitle => 'Klarheit im Posteingang';
+  String get mailListTitle => 'E-Mail-Liste';
+
+  @override
+  String get mailListEmpty => 'Keine E-Mails vorhanden';
+
+  @override
+  String get mailListSortNewest => 'Neueste zuerst';
+
+  @override
+  String get mailListSortUnreadFirst => 'Ungelesene zuerst';
+
+  @override
+  String get mailListSortSender => 'Nach Absender';
+
+  @override
+  String get mailListGroupToggle => 'Nach Absender gruppieren';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count ausgewählt';
+  }
+
+  @override
+  String get mailListBulkArchive => 'Archivieren';
+
+  @override
+  String get mailListBulkMarkRead => 'Als gelesen markieren';
+
+  @override
+  String get mailListUnknownSender => '(Unbekannter Absender)';
+
+  @override
+  String get categoryAll => 'Alle';
+
+  @override
+  String get categoryPromotion => 'Werbung';
+
+  @override
+  String get categoryNotification => 'Benachrichtigungen';
+
+  @override
+  String get categoryInvoice => 'Rechnungen';
+
+  @override
+  String get categoryOther => 'Sonstige';
 
   @override
   String get dashboardArchivedCount => 'Insgesamt archiviert';

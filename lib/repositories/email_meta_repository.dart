@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../models/category_rule.dart';
 import '../models/email_meta.dart';
 import '../services/app_firestore.dart';
 
@@ -20,12 +21,16 @@ class EmailMetaRepository {
     String accountId,
     String userId, {
     EmailStatus? status,
+    MailCategory? category,
   }) {
     Query<Map<String, dynamic>> q = _col
         .where('accountId', isEqualTo: accountId)
         .where('userId', isEqualTo: userId);
     if (status != null) {
       q = q.where('status', isEqualTo: emailStatusToString(status));
+    }
+    if (category != null) {
+      q = q.where('category', isEqualTo: mailCategoryToString(category));
     }
     return q.snapshots().map(
       (snap) =>
@@ -55,6 +60,22 @@ class EmailMetaRepository {
 
   Future<void> setPinned(String emailId, bool isPinned) {
     return _col.doc(emailId).update({'isPinned': isPinned});
+  }
+
+  /// 既読/未読はメールプロバイダ側の実際の状態と厳密に同期させず、アプリ内の
+  /// 「見やすく管理する」ための表示用フラグとして扱う（isPinnedと同じ位置づけ）。
+  Future<void> setUnread(String emailId, bool isUnread) {
+    return _col.doc(emailId).update({'isUnread': isUnread});
+  }
+
+  /// 一覧画面での複数選択→一括既読化用。1回のバッチ書き込みでまとめて更新する。
+  Future<void> setUnreadBatch(List<String> emailIds, bool isUnread) async {
+    if (emailIds.isEmpty) return;
+    final batch = _db.batch();
+    for (final id in emailIds) {
+      batch.update(_col.doc(id), {'isUnread': isUnread});
+    }
+    await batch.commit();
   }
 
   // statusの更新はCloud Functions（applyArchiveRules/restoreEmail、Admin SDK）側のみが
