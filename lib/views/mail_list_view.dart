@@ -6,6 +6,7 @@ import '../models/category_rule.dart';
 import '../models/email_meta.dart';
 import '../models/linked_account.dart';
 import '../services/cloud_functions_mail_provider.dart';
+import '../theme/app_theme.dart';
 import '../viewmodels/core_providers.dart';
 import '../viewmodels/dashboard_providers.dart';
 import '../viewmodels/linked_account_providers.dart';
@@ -115,7 +116,20 @@ class _MailListViewState extends ConsumerState<MailListView> {
                         .map(
                           (a) => DropdownMenuItem(
                             value: a.id,
-                            child: Text(a.emailAddress),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircleAvatar(
+                                  radius: 6,
+                                  backgroundColor: AppTheme.accountColorFor(
+                                    a.colorHex,
+                                    Theme.of(context).brightness,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(a.emailAddress),
+                              ],
+                            ),
                           ),
                         )
                         .toList(),
@@ -268,42 +282,53 @@ class _MailListViewState extends ConsumerState<MailListView> {
     final titleStyle = mail.isUnread
         ? const TextStyle(fontWeight: FontWeight.bold)
         : null;
+    // アカウントごとに一覧の色分けができるよう、左端にアカウントカラーのバーを表示する。
+    // 色自体は設定画面（settings_view.dart）でユーザーが自由に変更できる。
+    final accountColor = AppTheme.accountColorFor(
+      account.colorHex,
+      Theme.of(context).brightness,
+    );
 
-    return ListTile(
-      selected: isSelected,
-      leading: _selectionMode
-          ? Checkbox(
-              value: isSelected,
-              onChanged: (_) => _toggleSelection(mail.id),
-            )
-          : CircleIcon(isUnread: mail.isUnread),
-      title: Text(titleText, maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
-      subtitle: Text(
-        '${mail.senderEmail}  ·  ${mail.snippet}',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: accountColor, width: 4)),
       ),
-      trailing: mail.isPinned ? const Icon(Icons.push_pin, size: 18) : null,
-      onTap: () async {
-        if (_selectionMode) {
-          _toggleSelection(mail.id);
-          return;
-        }
-        if (mail.isUnread) {
-          try {
-            await ref.read(emailMetaRepositoryProvider).setUnread(mail.id, false);
-          } catch (_) {
-            // 既読化はタップの副作用に過ぎないため、失敗してもエラー表示はしない
-            // （メール自体は正しく表示されており、ユーザー操作を妨げる必要がない）。
+      child: ListTile(
+        selected: isSelected,
+        leading: _selectionMode
+            ? Checkbox(
+                value: isSelected,
+                onChanged: (_) => _toggleSelection(mail.id),
+              )
+            : CircleIcon(isUnread: mail.isUnread, color: accountColor),
+        title: Text(titleText, maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
+        subtitle: Text(
+          '${mail.senderEmail}  ·  ${mail.snippet}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: mail.isPinned ? const Icon(Icons.push_pin, size: 18) : null,
+        onTap: () async {
+          if (_selectionMode) {
+            _toggleSelection(mail.id);
+            return;
           }
-        }
-      },
-      onLongPress: () {
-        setState(() {
-          _selectionMode = true;
-          _selectedIds.add(mail.id);
-        });
-      },
+          if (mail.isUnread) {
+            try {
+              await ref.read(emailMetaRepositoryProvider).setUnread(mail.id, false);
+            } catch (_) {
+              // 既読化はタップの副作用に過ぎないため、失敗してもエラー表示はしない
+              // （メール自体は正しく表示されており、ユーザー操作を妨げる必要がない）。
+            }
+          }
+        },
+        onLongPress: () {
+          setState(() {
+            _selectionMode = true;
+            _selectedIds.add(mail.id);
+          });
+        },
+      ),
     );
   }
 
@@ -339,11 +364,12 @@ class _MailListViewState extends ConsumerState<MailListView> {
   }
 }
 
-/// 未読/既読を示す小さなドット。
+/// 未読/既読を示す小さなドット。色はアカウントカラー（未指定ならテーマの強調色）。
 class CircleIcon extends StatelessWidget {
-  const CircleIcon({super.key, required this.isUnread});
+  const CircleIcon({super.key, required this.isUnread, this.color});
 
   final bool isUnread;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -356,7 +382,7 @@ class CircleIcon extends StatelessWidget {
         width: 8,
         height: 8,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
+          color: color ?? Theme.of(context).colorScheme.primary,
           shape: BoxShape.circle,
         ),
       ),
