@@ -6,7 +6,6 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mockito/mockito.dart';
 
 // TODO: Implement complete Riverpod provider tests
 // These are placeholder tests for Phase 4 Step 3
