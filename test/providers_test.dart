@@ -1,11 +1,10 @@
-/// Riverpod プロバイダーのユニットテスト
-///
-/// Phase 4 で新規追加されたプロバイダー：
-/// - cacheStatsProvider: Cloud Functions から キャッシュ統計を取得
-/// - localCacheEvictionSweepProvider: キャッシュ自動削除の実行
+// Riverpod プロバイダーのユニットテスト
+//
+// Phase 4 で新規追加されたプロバイダー：
+// - cacheStatsProvider: Cloud Functions から キャッシュ統計を取得
+// - localCacheEvictionSweepProvider: キャッシュ自動削除の実行
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // TODO: Implement complete Riverpod provider tests
 // These are placeholder tests for Phase 4 Step 3

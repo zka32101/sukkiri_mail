@@ -242,7 +242,7 @@ class CacheManagementView extends ConsumerWidget {
                   label: const Text('キャッシュをクリア中...'),
                 ),
               ),
-              error: (_, __) => SizedBox(
+              error: (_, _) => SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {},
