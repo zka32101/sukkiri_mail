@@ -22,10 +22,29 @@
   "archiveCandidatesArchiveAll": "Archive all",
   "archiveCandidatesPin": "Protect",
 
-  "dashboardTitle": "Inbox tidiness",
   "dashboardArchivedCount": "Total archived",
   "dashboardFreedBytes": "Local storage freed",
   "dashboardPinnedCount": "Protected emails",
+
+  "mailListTitle": "Mail list",
+  "mailListEmpty": "No emails to show",
+  "mailListSortNewest": "Newest",
+  "mailListSortUnreadFirst": "Unread first",
+  "mailListSortSender": "By sender",
+  "mailListGroupToggle": "Group by sender",
+  "mailListSelectionCount": "{count} selected",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "Archive",
+  "mailListBulkMarkRead": "Mark as read",
+  "mailListUnknownSender": "(Unknown sender)",
+
+  "categoryAll": "All",
+  "categoryPromotion": "Promotions",
+  "categoryNotification": "Notifications",
+  "categoryInvoice": "Invoices",
+  "categoryOther": "Other",
 
   "ruleSettingsTitle": "Rules",
   "ruleSettingsCategoryTab": "Category rules",

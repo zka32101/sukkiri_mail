@@ -22,10 +22,29 @@
   "archiveCandidatesArchiveAll": "Arsipkan semua",
   "archiveCandidatesPin": "Lindungi",
 
-  "dashboardTitle": "Kerapian kotak masuk",
   "dashboardArchivedCount": "Total diarsipkan",
   "dashboardFreedBytes": "Ruang lokal yang dibebaskan",
   "dashboardPinnedCount": "Email terlindungi",
+
+  "mailListTitle": "Daftar email",
+  "mailListEmpty": "Tidak ada email untuk ditampilkan",
+  "mailListSortNewest": "Terbaru",
+  "mailListSortUnreadFirst": "Belum dibaca dahulu",
+  "mailListSortSender": "Berdasarkan pengirim",
+  "mailListGroupToggle": "Kelompokkan berdasarkan pengirim",
+  "mailListSelectionCount": "{count} dipilih",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "Arsipkan",
+  "mailListBulkMarkRead": "Tandai sudah dibaca",
+  "mailListUnknownSender": "(Pengirim tidak diketahui)",
+
+  "categoryAll": "Semua",
+  "categoryPromotion": "Promosi",
+  "categoryNotification": "Notifikasi",
+  "categoryInvoice": "Faktur",
+  "categoryOther": "Lainnya",
 
   "ruleSettingsTitle": "Aturan",
   "ruleSettingsCategoryTab": "Aturan kategori",

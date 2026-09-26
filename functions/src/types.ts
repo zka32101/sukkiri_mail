@@ -24,6 +24,13 @@ export interface LinkedAccountDoc {
   lastScanAt?: number;
   createdAt?: number;
   updatedAt?: number;
+  // Push sync fields (Gmail Pub/Sub watch / Outlook Graph webhook subscription)
+  pushSyncEnabled?: boolean;
+  gmailHistoryId?: string;
+  gmailWatchExpiration?: number;
+  outlookSubscriptionId?: string;
+  outlookSubscriptionExpiresAt?: number;
+  outlookClientState?: string;
 }
 
 /** EmailMeta document in Firestore */
@@ -108,6 +115,18 @@ export interface GetCacheStatsRequest {
   // No parameters needed - returns user's cache stats
 }
 
+/** enablePushSync / disablePushSync function request parameters */
+export interface PushSyncRequest {
+  provider: string;
+  accountId: string;
+}
+
+/** registerFcmToken / unregisterFcmToken function request parameters */
+export interface FcmTokenRequest {
+  token: string;
+  platform?: "ios" | "android" | "web";
+}
+
 /** Type guard to validate ConnectAccountRequest */
 export function isConnectAccountRequest(data: unknown): data is ConnectAccountRequest {
   return (
@@ -183,6 +202,21 @@ export function isUpdateCategoryRuleRequest(data: unknown): data is UpdateCatego
 export function isGetCacheStatsRequest(data: unknown): data is GetCacheStatsRequest {
   // No validation needed - GetCacheStatsRequest has no fields
   return typeof data === "object";
+}
+
+/** Type guard to validate PushSyncRequest */
+export function isPushSyncRequest(data: unknown): data is PushSyncRequest {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "provider" in data &&
+    "accountId" in data
+  );
+}
+
+/** Type guard to validate FcmTokenRequest */
+export function isFcmTokenRequest(data: unknown): data is FcmTokenRequest {
+  return typeof data === "object" && data !== null && "token" in data;
 }
 
 // ============================================================================

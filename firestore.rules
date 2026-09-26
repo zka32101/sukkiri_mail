@@ -72,11 +72,13 @@ service cloud.firestore {
 
     // emailMetaはCloud Functions（scanAccount等）が生成する。クライアントは
     // isPinned等の限定フィールドのみ更新可能にする（詳細はCloud Functions側で検証）。
+    // isUnreadはメールプロバイダ側の実際の既読状態と厳密に同期させない、アプリ内の
+    // 「見やすく管理する」ための表示用フラグ（isPinnedと同じ位置づけ）としてクライアント更新を許可する。
     match /emailMeta/{emailId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['isPinned', 'localCacheStatus', 'lastFetchedAt']);
+          .hasOnly(['isPinned', 'localCacheStatus', 'lastFetchedAt', 'isUnread']);
       allow create, delete: if false;
     }
 

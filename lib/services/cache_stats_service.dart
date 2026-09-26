@@ -22,7 +22,7 @@ class CacheStatsService {
     try {
       final callable = _functions.httpsCallable('getCacheStats');
       final result = await callable.call<Map<String, dynamic>>({});
-      return result.data ?? {};
+      return result.data;
     } catch (e) {
       rethrow;
     }

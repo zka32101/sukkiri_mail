@@ -24,7 +24,7 @@ class RuleService {
         'ruleId': ruleId,
         'retentionDays': retentionDays,
       });
-      return result.data ?? {};
+      return result.data;
     } catch (e) {
       rethrow;
     }

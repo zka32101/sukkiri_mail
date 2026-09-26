@@ -22,10 +22,29 @@
   "archiveCandidatesArchiveAll": "すべてアーカイブ",
   "archiveCandidatesPin": "保護する",
 
-  "dashboardTitle": "受信箱スッキリ度",
   "dashboardArchivedCount": "累計アーカイブ件数",
   "dashboardFreedBytes": "解放したローカル容量",
   "dashboardPinnedCount": "保護件数",
+
+  "mailListTitle": "メール一覧",
+  "mailListEmpty": "表示するメールがありません",
+  "mailListSortNewest": "新着順",
+  "mailListSortUnreadFirst": "未読優先",
+  "mailListSortSender": "送信者別",
+  "mailListGroupToggle": "送信者でグループ化",
+  "mailListSelectionCount": "{count}件選択中",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "アーカイブ",
+  "mailListBulkMarkRead": "既読にする",
+  "mailListUnknownSender": "（不明な送信者）",
+
+  "categoryAll": "すべて",
+  "categoryPromotion": "プロモーション",
+  "categoryNotification": "通知",
+  "categoryInvoice": "請求書",
+  "categoryOther": "その他",
 
   "ruleSettingsTitle": "ルール設定",
   "ruleSettingsCategoryTab": "カテゴリルール",

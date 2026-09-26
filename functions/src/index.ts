@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onRequest } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as zlib from "zlib";
 import { MailProviderAdapter } from "./providers/mailProviderInterface";
 import { GmailProvider } from "./providers/gmailProvider";
@@ -9,6 +10,28 @@ import { ImapProvider } from "./providers/imapProvider";
 import { db as firestoreDb } from "./firestore";
 import { enqueueScanTask } from "./cloudTasks";
 import { mlDataCollectionService } from "./services/mlDataCollectionService";
+import { globalRateLimiter } from "./scaling/rateLimiter";
+import { performanceMonitor } from "./monitoring/monitoring";
+import { errorHandlingService, defaultRetryStrategy } from "./services/errorHandlingService";
+import {
+  getLivenessCheck,
+  getReadinessCheck,
+  getDeepHealthCheck,
+  recordHealthCheck,
+} from "./health/healthCheck";
+import {
+  enablePushSyncForAccount,
+  disablePushSyncForAccount,
+  renewExpiringPushSync,
+  findAccountByEmail,
+  findAccountBySubscriptionId,
+} from "./services/pushSyncService";
+import {
+  registerFcmTokenForUser,
+  unregisterFcmTokenForUser,
+  notifyScanCompleted,
+  notifyScanFailed,
+} from "./services/notificationService";
 import {
   isConnectAccountRequest,
   isScanAccountRequest,
@@ -17,7 +40,10 @@ import {
   isFetchMessageRequest,
   isUpdateCategoryRuleRequest,
   isGetCacheStatsRequest,
+  isPushSyncRequest,
+  isFcmTokenRequest,
 } from "./types";
+import { getSecret } from "./secrets";
 
 admin.initializeApp();
 
@@ -102,6 +128,15 @@ export const scanAccount = onCall(async (request) => {
 
   const { provider, accountId } = request.data;
   await assertAccountOwnership(accountId, uid);
+
+  // 乱発スキャンによる負荷・コスト急増を防ぐため、ユーザー単位でレート制限をかける。
+  const rateLimitStatus = globalRateLimiter.isUserAllowed(uid);
+  if (!rateLimitStatus.allowed) {
+    throw new HttpsError(
+      "resource-exhausted",
+      `Too many scan requests. Please retry in ${Math.ceil(rateLimitStatus.retryAfterMs / 1000)}s`
+    );
+  }
 
   // Cloud Tasks へスキャンタスクをエンキュー。
   // 処理はバックグラウンドで実行される（UIをブロックしない）。
@@ -293,8 +328,31 @@ export const processScanTask = onRequest(async (request, response) => {
     const lastScanAt = (accountDoc.data()?.lastScanAt as number | null) ?? null;
 
     // プロバイダを解決し、スキャンを実行
+    // サーキットブレーカーで連続障害中のプロバイダへの無駄なリクエストを遮断し、
+    // 一時的なエラー（ネットワーク/レート制限等）は指数バックオフで自動リトライする。
     const adapter = resolveProvider(provider);
-    const items = await adapter.scan(accountId, lastScanAt);
+    const operationName = `scan.${provider}`;
+    const circuitBreaker = errorHandlingService.getCircuitBreaker(operationName);
+
+    if (circuitBreaker.isOpen()) {
+      throw new Error(`Circuit breaker open for provider ${provider}; skipping scan`);
+    }
+
+    let items;
+    try {
+      const { result } = await performanceMonitor.measureOperation(operationName, () =>
+        defaultRetryStrategy.executeWithRetry(
+          () => adapter.scan(accountId, lastScanAt),
+          operationName
+        )
+      );
+      items = result;
+      circuitBreaker.recordSuccess();
+    } catch (scanError) {
+      circuitBreaker.recordFailure();
+      errorHandlingService.recordError(operationName, scanError);
+      throw scanError;
+    }
 
     // emailMeta へメール情報を永続化（merge: true で既存の status/isPinned を保護）
     const batch = db.batch();
@@ -335,6 +393,9 @@ export const processScanTask = onRequest(async (request, response) => {
       `[processScanTask] Scan completed for account ${accountId}: ${items.length} items`
     );
 
+    // ユーザーへプッシュ通知（失敗してもスキャン自体は成功扱いのまま継続）。
+    await notifyScanCompleted(userId, items.length);
+
     response.status(200).json({
       status: "success",
       accountId,
@@ -356,13 +417,16 @@ export const processScanTask = onRequest(async (request, response) => {
       }
 
       const payload = JSON.parse(Buffer.from(bodyText, "base64").toString());
-      const { accountId } = payload;
+      const { accountId, userId } = payload;
       if (accountId) {
         await firestoreDb().collection("linkedAccounts").doc(accountId).update({
           scanStatus: "failed",
           scanError: errorMessage,
           scanFailedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+      }
+      if (userId && accountId) {
+        await notifyScanFailed(userId, accountId);
       }
     } catch (updateError) {
       console.error("[processScanTask] Failed to update error status:", updateError);
@@ -601,4 +665,244 @@ export const getCacheStats = onCall(async (request) => {
       `Failed to get cache stats: ${error instanceof Error ? error.message : String(error)}`
     );
   }
+});
+
+/** Kubernetes-style Liveness probe。外部依存なし、プロセスが生きていれば200を返す。 */
+export const healthz = onRequest(async (request, response) => {
+  const result = getLivenessCheck();
+  recordHealthCheck(result);
+  response.status(200).json(result);
+});
+
+/** Kubernetes-style Readiness probe。Firestore接続を確認し、準備完了かを返す。 */
+export const readyz = onRequest(async (request, response) => {
+  const result = await getReadinessCheck();
+  recordHealthCheck(result);
+  response.status(result.status === "unhealthy" ? 503 : 200).json(result);
+});
+
+/** 詳細ヘルスチェック（Firestore/メモリ/イベントループ）。運用監視・障害調査用。 */
+export const deepHealthCheck = onRequest(async (request, response) => {
+  const result = await getDeepHealthCheck();
+  recordHealthCheck(result);
+  response.status(result.status === "unhealthy" ? 503 : 200).json(result);
+});
+
+/** 運用モニタリング用: スキャン処理のレイテンシ/エラー率、アクティブアラート、レート制限状況を返す。 */
+export const getSystemMetrics = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  const providers = ["gmail", "outlook", "imap"];
+  const scanMetrics = providers.reduce<Record<string, unknown>>((acc, provider) => {
+    acc[provider] = {
+      latency: performanceMonitor.getMetricStats(`scan.${provider}.latency`),
+      errorStats: errorHandlingService.getErrorStats(`scan.${provider}`),
+      circuitBreaker: errorHandlingService.getCircuitBreaker(`scan.${provider}`).getState(),
+    };
+    return acc;
+  }, {});
+
+  return {
+    ok: true,
+    scanMetrics,
+    activeAlerts: performanceMonitor.getActiveAlerts(),
+    rateLimiter: {
+      deniedCount: globalRateLimiter.getDeniedCount(),
+      activeUsers: globalRateLimiter.getActiveUsers(),
+      userStats: globalRateLimiter.getUserStats(uid),
+    },
+  };
+});
+
+/**
+ * プッシュ型同期を有効化する（ポーリングではなくプロバイダ側からの変更通知でスキャンを起動）。
+ * gmail: Pub/Sub watch、outlook: Graph webhookサブスクリプションを登録する。imapは非対応。
+ */
+export const enablePushSync = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isPushSyncRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { provider, accountId } = request.data;
+  await assertAccountOwnership(accountId, uid);
+
+  if (provider !== "gmail" && provider !== "outlook") {
+    throw new HttpsError("invalid-argument", "push sync is only supported for gmail and outlook");
+  }
+
+  try {
+    const { expiresAt } = await enablePushSyncForAccount(accountId, provider);
+    return { ok: true, expiresAt };
+  } catch (error) {
+    throw new HttpsError(
+      "internal",
+      `Failed to enable push sync: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+});
+
+/** プッシュ型同期を無効化する（アカウント連携解除時にも呼び出すこと）。 */
+export const disablePushSync = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isPushSyncRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { provider, accountId } = request.data;
+  await assertAccountOwnership(accountId, uid);
+
+  try {
+    await disablePushSyncForAccount(accountId, provider);
+    return { ok: true };
+  } catch (error) {
+    throw new HttpsError(
+      "internal",
+      `Failed to disable push sync: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+});
+
+/**
+ * Gmail Pub/Sub push通知の受信エンドポイント。
+ * 【要確認】GCP ConsoleでPub/Subトピックを作成し、このURLをpushサブスクリプションの
+ * エンドポイントに設定、共有シークレットをSecret Managerに`gmail-pubsub-verification-token`
+ * として登録し、サブスクリプションのpush先URLに `?token=<同じ値>` を付与すること。
+ */
+export const gmailPushNotification = onRequest(async (request, response) => {
+  try {
+    const expectedToken = await getSecret("gmail-pubsub-verification-token");
+    if (request.query.token !== expectedToken) {
+      response.status(403).json({ error: "invalid verification token" });
+      return;
+    }
+
+    const message = (request.body as { message?: { data?: string } } | undefined)?.message;
+    if (!message?.data) {
+      response.status(400).json({ error: "missing message data" });
+      return;
+    }
+
+    const decoded = JSON.parse(Buffer.from(message.data, "base64").toString("utf-8")) as {
+      emailAddress?: string;
+    };
+    if (!decoded.emailAddress) {
+      response.status(400).json({ error: "missing emailAddress" });
+      return;
+    }
+
+    const account = await findAccountByEmail("gmail", decoded.emailAddress);
+    if (!account) {
+      // 連携解除済み等でアカウントが見つからない場合もPub/Subの再送を止めるため200を返す。
+      console.warn(`[gmailPushNotification] No linked account for ${decoded.emailAddress}`);
+      response.status(200).json({ ok: true, skipped: true });
+      return;
+    }
+
+    const projectId = process.env.GCLOUD_PROJECT || "sukkiri-mail-prod";
+    await enqueueScanTask(
+      projectId,
+      "email-scanning",
+      "asia-northeast1",
+      account.accountId,
+      account.userId,
+      "gmail"
+    );
+
+    response.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("[gmailPushNotification] Error:", error);
+    // Pub/Subの無限リトライを避けるためエラー時も200を返す（追跡はログで行う）。
+    response.status(200).json({ ok: false });
+  }
+});
+
+/**
+ * Microsoft Graph webhook通知の受信エンドポイント。
+ * サブスクリプション作成直後の検証リクエスト（validationTokenクエリパラメータ）と、
+ * 実際の変更通知（POSTボディのvalue配列）の両方を処理する。
+ */
+export const outlookPushNotification = onRequest(async (request, response) => {
+  const validationToken = request.query.validationToken;
+  if (typeof validationToken === "string") {
+    response.status(200).set("Content-Type", "text/plain").send(validationToken);
+    return;
+  }
+
+  try {
+    const notifications =
+      (request.body as { value?: Array<{ subscriptionId?: string; clientState?: string }> } | undefined)
+        ?.value ?? [];
+
+    for (const notification of notifications) {
+      if (!notification.subscriptionId) continue;
+
+      const account = await findAccountBySubscriptionId(notification.subscriptionId);
+      if (!account) continue;
+
+      // clientStateはGraphのwebhookが本物の送信元かを検証するための共有シークレット。
+      if (account.clientState !== notification.clientState) {
+        console.warn(
+          `[outlookPushNotification] clientState mismatch for subscription ${notification.subscriptionId}`
+        );
+        continue;
+      }
+
+      const projectId = process.env.GCLOUD_PROJECT || "sukkiri-mail-prod";
+      await enqueueScanTask(
+        projectId,
+        "email-scanning",
+        "asia-northeast1",
+        account.accountId,
+        account.userId,
+        "outlook"
+      );
+    }
+
+    response.status(202).json({ ok: true });
+  } catch (error) {
+    console.error("[outlookPushNotification] Error:", error);
+    response.status(202).json({ ok: false });
+  }
+});
+
+/** プッシュ同期サブスクリプションの期限切れ防止のため、定期的に更新する（6時間毎）。 */
+export const renewPushSubscriptions = onSchedule("every 6 hours", async () => {
+  const result = await renewExpiringPushSync();
+  console.info(`[renewPushSubscriptions] renewed=${result.renewed} failed=${result.failed}`);
+});
+
+/**
+ * デバイスのFCMトークンを登録する。クライアントはfirebase_messagingでトークンを取得後、
+ * ログイン時・トークンリフレッシュ時に呼び出すこと。
+ */
+export const registerFcmToken = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isFcmTokenRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  const { token, platform } = request.data;
+  await registerFcmTokenForUser(uid, token, platform ?? "android");
+  return { ok: true };
+});
+
+/** デバイスのFCMトークンを解除する（ログアウト時に呼び出すこと）。 */
+export const unregisterFcmToken = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+
+  if (!isFcmTokenRequest(request.data)) {
+    throw new HttpsError("invalid-argument", "invalid request data");
+  }
+
+  await unregisterFcmTokenForUser(uid, request.data.token);
+  return { ok: true };
 });

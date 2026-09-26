@@ -208,6 +208,31 @@ export class GmailProvider implements MailProviderAdapter {
     }
   }
 
+  /**
+   * Gmail Pub/Sub watchを登録し、以後のメールボックス変更をリアルタイム通知させる。
+   * 有効期限は最大7日間のため、期限前に再度呼び出して更新する必要がある。
+   */
+  async watch(accountId: string, topicName: string): Promise<{ historyId: string; expiration: number }> {
+    const gmail = await this.getClient(accountId);
+    const res = await gmail.users.watch({
+      userId: "me",
+      requestBody: {
+        topicName,
+        labelIds: ["INBOX"],
+      },
+    });
+    return {
+      historyId: res.data.historyId ?? "",
+      expiration: Number(res.data.expiration ?? Date.now() + 7 * 24 * 60 * 60 * 1000),
+    };
+  }
+
+  /** Gmail Pub/Sub watchを解除する（アカウント連携解除時に呼び出す）。 */
+  async stopWatch(accountId: string): Promise<void> {
+    const gmail = await this.getClient(accountId);
+    await gmail.users.stop({ userId: "me" });
+  }
+
   async fetchMessageBody(accountId: string, messageId: string): Promise<MessageBodyResult> {
     const gmail = await this.getClient(accountId);
     const full = await gmail.users.messages.get({

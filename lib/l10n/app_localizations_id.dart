@@ -54,7 +54,51 @@ class AppLocalizationsId extends AppLocalizations {
   String get archiveCandidatesPin => 'Lindungi';
 
   @override
-  String get dashboardTitle => 'Kerapian kotak masuk';
+  String get mailListTitle => 'Daftar email';
+
+  @override
+  String get mailListEmpty => 'Tidak ada email untuk ditampilkan';
+
+  @override
+  String get mailListSortNewest => 'Terbaru';
+
+  @override
+  String get mailListSortUnreadFirst => 'Belum dibaca dahulu';
+
+  @override
+  String get mailListSortSender => 'Berdasarkan pengirim';
+
+  @override
+  String get mailListGroupToggle => 'Kelompokkan berdasarkan pengirim';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count dipilih';
+  }
+
+  @override
+  String get mailListBulkArchive => 'Arsipkan';
+
+  @override
+  String get mailListBulkMarkRead => 'Tandai sudah dibaca';
+
+  @override
+  String get mailListUnknownSender => '(Pengirim tidak diketahui)';
+
+  @override
+  String get categoryAll => 'Semua';
+
+  @override
+  String get categoryPromotion => 'Promosi';
+
+  @override
+  String get categoryNotification => 'Notifikasi';
+
+  @override
+  String get categoryInvoice => 'Faktur';
+
+  @override
+  String get categoryOther => 'Lainnya';
 
   @override
   String get dashboardArchivedCount => 'Total diarsipkan';

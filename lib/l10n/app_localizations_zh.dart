@@ -53,7 +53,51 @@ class AppLocalizationsZh extends AppLocalizations {
   String get archiveCandidatesPin => '保護';
 
   @override
-  String get dashboardTitle => '收件匣清爽度';
+  String get mailListTitle => '郵件清單';
+
+  @override
+  String get mailListEmpty => '沒有可顯示的郵件';
+
+  @override
+  String get mailListSortNewest => '最新優先';
+
+  @override
+  String get mailListSortUnreadFirst => '未讀優先';
+
+  @override
+  String get mailListSortSender => '依寄件人';
+
+  @override
+  String get mailListGroupToggle => '依寄件人分組';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '已選擇$count項';
+  }
+
+  @override
+  String get mailListBulkArchive => '封存';
+
+  @override
+  String get mailListBulkMarkRead => '標記為已讀';
+
+  @override
+  String get mailListUnknownSender => '（未知寄件人）';
+
+  @override
+  String get categoryAll => '全部';
+
+  @override
+  String get categoryPromotion => '促銷';
+
+  @override
+  String get categoryNotification => '通知';
+
+  @override
+  String get categoryInvoice => '帳單';
+
+  @override
+  String get categoryOther => '其他';
 
   @override
   String get dashboardArchivedCount => '累計封存件數';
@@ -180,7 +224,51 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get archiveCandidatesPin => '保護';
 
   @override
-  String get dashboardTitle => '收件匣清爽度';
+  String get mailListTitle => '郵件清單';
+
+  @override
+  String get mailListEmpty => '沒有可顯示的郵件';
+
+  @override
+  String get mailListSortNewest => '最新優先';
+
+  @override
+  String get mailListSortUnreadFirst => '未讀優先';
+
+  @override
+  String get mailListSortSender => '依寄件人';
+
+  @override
+  String get mailListGroupToggle => '依寄件人分組';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '已選擇$count項';
+  }
+
+  @override
+  String get mailListBulkArchive => '封存';
+
+  @override
+  String get mailListBulkMarkRead => '標記為已讀';
+
+  @override
+  String get mailListUnknownSender => '（未知寄件人）';
+
+  @override
+  String get categoryAll => '全部';
+
+  @override
+  String get categoryPromotion => '促銷';
+
+  @override
+  String get categoryNotification => '通知';
+
+  @override
+  String get categoryInvoice => '帳單';
+
+  @override
+  String get categoryOther => '其他';
 
   @override
   String get dashboardArchivedCount => '累計封存件數';

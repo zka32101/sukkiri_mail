@@ -722,6 +722,98 @@ describe("OutlookProvider", () => {
     });
   });
 
+  describe("Webhook subscription (push sync)", () => {
+    beforeEach(() => {
+      const mockGet = jest.fn().mockResolvedValue({
+        data: () => ({
+          accessToken: "valid-token",
+          refreshToken: "refresh-token",
+          tokenExpiresAt: Date.now() + 3600000,
+        }),
+      });
+
+      (db as jest.Mock).mockReturnValue({
+        collection: jest.fn().mockReturnValue({
+          doc: jest.fn().mockReturnValue({
+            get: mockGet,
+            update: jest.fn().mockResolvedValue(undefined),
+          }),
+        }),
+      });
+    });
+
+    it("should create a subscription and return id/expiration", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          id: "sub-123",
+          expirationDateTime: "2030-01-01T00:00:00.000Z",
+        }),
+      });
+
+      const result = await provider.createSubscription(
+        "account123",
+        "https://example.com/outlookPushNotification",
+        "client-state-abc"
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/subscriptions"),
+        expect.objectContaining({ method: "POST" })
+      );
+      const body = JSON.parse((mockFetch.mock.calls[0][1] as RequestInit).body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(body.resource).toBe("me/mailFolders('Inbox')/messages");
+      expect(body.clientState).toBe("client-state-abc");
+      expect(result).toEqual({
+        subscriptionId: "sub-123",
+        expiresAt: new Date("2030-01-01T00:00:00.000Z").getTime(),
+      });
+    });
+
+    it("should renew a subscription's expiration", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          expirationDateTime: "2030-02-01T00:00:00.000Z",
+        }),
+      });
+
+      const result = await provider.renewSubscription("account123", "sub-123");
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/subscriptions/sub-123"),
+        expect.objectContaining({ method: "PATCH" })
+      );
+      expect(result).toEqual({ expiresAt: new Date("2030-02-01T00:00:00.000Z").getTime() });
+    });
+
+    it("should delete a subscription", async () => {
+      mockFetch.mockResolvedValue({ ok: true, status: 204 });
+
+      await provider.deleteSubscription("account123", "sub-123");
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/subscriptions/sub-123"),
+        expect.objectContaining({ method: "DELETE" })
+      );
+    });
+
+    it("should throw if subscription creation fails", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 403,
+        text: jest.fn().mockResolvedValue("Forbidden"),
+      });
+
+      await expect(
+        provider.createSubscription("account123", "https://example.com/hook", "state")
+      ).rejects.toThrow("Graph API error: 403");
+    });
+  });
+
   describe("MailProviderAdapter interface compliance", () => {
     it("should implement all required methods", () => {
       expect(typeof provider.connect).toBe("function");

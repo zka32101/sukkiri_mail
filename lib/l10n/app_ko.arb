@@ -22,10 +22,29 @@
   "archiveCandidatesArchiveAll": "모두 보관",
   "archiveCandidatesPin": "보호하기",
 
-  "dashboardTitle": "받은편지함 정리도",
   "dashboardArchivedCount": "누적 보관 건수",
   "dashboardFreedBytes": "확보한 저장공간",
   "dashboardPinnedCount": "보호된 메일 수",
+
+  "mailListTitle": "메일 목록",
+  "mailListEmpty": "표시할 메일이 없습니다",
+  "mailListSortNewest": "최신순",
+  "mailListSortUnreadFirst": "읽지 않은 메일 우선",
+  "mailListSortSender": "보낸 사람별",
+  "mailListGroupToggle": "보낸 사람별로 그룹화",
+  "mailListSelectionCount": "{count}개 선택됨",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "보관",
+  "mailListBulkMarkRead": "읽음으로 표시",
+  "mailListUnknownSender": "(알 수 없는 발신자)",
+
+  "categoryAll": "전체",
+  "categoryPromotion": "프로모션",
+  "categoryNotification": "알림",
+  "categoryInvoice": "청구서",
+  "categoryOther": "기타",
 
   "ruleSettingsTitle": "규칙 설정",
   "ruleSettingsCategoryTab": "카테고리 규칙",

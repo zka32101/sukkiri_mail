@@ -54,9 +54,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get archiveCandidatesPin => 'Protect';
 
   @override
-  String get dashboardTitle => 'Inbox tidiness';
-
-  @override
   String get dashboardArchivedCount => 'Total archived';
 
   @override
@@ -64,6 +61,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardPinnedCount => 'Protected emails';
+
+  @override
+  String get mailListTitle => 'Mail list';
+
+  @override
+  String get mailListEmpty => 'No emails to show';
+
+  @override
+  String get mailListSortNewest => 'Newest';
+
+  @override
+  String get mailListSortUnreadFirst => 'Unread first';
+
+  @override
+  String get mailListSortSender => 'By sender';
+
+  @override
+  String get mailListGroupToggle => 'Group by sender';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get mailListBulkArchive => 'Archive';
+
+  @override
+  String get mailListBulkMarkRead => 'Mark as read';
+
+  @override
+  String get mailListUnknownSender => '(Unknown sender)';
+
+  @override
+  String get categoryAll => 'All';
+
+  @override
+  String get categoryPromotion => 'Promotions';
+
+  @override
+  String get categoryNotification => 'Notifications';
+
+  @override
+  String get categoryInvoice => 'Invoices';
+
+  @override
+  String get categoryOther => 'Other';
 
   @override
   String get ruleSettingsTitle => 'Rules';

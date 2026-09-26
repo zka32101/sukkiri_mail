@@ -51,7 +51,7 @@ jobs:
             echo "リポジトリのSettings > Secrets and variables > Actionsから登録してください。"
             exit 1
           fi
-          FUNCTIONS="functions:connectAccount,functions:scanAccount,functions:applyArchiveRules,functions:restoreEmail,functions:fetchMessageBody,functions:revenueCatWebhook,functions:logMLInference,functions:verifyMLInference,functions:getModelAccuracyStats,functions:cleanupMLLogs"
+          FUNCTIONS="functions:connectAccount,functions:scanAccount,functions:applyArchiveRules,functions:restoreEmail,functions:fetchMessageBody,functions:revenueCatWebhook,functions:logMLInference,functions:verifyMLInference,functions:getModelAccuracyStats,functions:cleanupMLLogs,functions:updateCategoryRule,functions:getCacheStats,functions:getSystemMetrics,functions:enablePushSync,functions:disablePushSync,functions:registerFcmToken,functions:unregisterFcmToken"
           npx firebase-tools deploy \
             --only "$FUNCTIONS,firestore:rules,firestore:indexes" \
             --project app1-6c108 \

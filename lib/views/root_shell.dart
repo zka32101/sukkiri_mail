@@ -5,11 +5,11 @@ import '../l10n/app_localizations.dart';
 import '../viewmodels/linked_account_providers.dart';
 import '../viewmodels/local_cache_eviction_providers.dart';
 import 'archive_restore_view.dart';
+import 'mail_list_view.dart';
 import 'mail_search_view.dart';
 import 'onboarding_view.dart';
 import 'rule_settings_view.dart';
 import 'settings_view.dart';
-import 'tidiness_dashboard_view.dart';
 
 /// アカウント未連携ならOnboarding→AccountLink→ScanResult→ArchiveCandidatesの
 /// Aha Moment動線へ、連携済みならメインシェル（ボトムナビ）へ分岐する。
@@ -51,7 +51,7 @@ class _MainShellState extends ConsumerState<_MainShell> {
     ref.watch(localCacheEvictionSweepProvider);
     final l10n = AppLocalizations.of(context)!;
     final pages = const [
-      TidinessDashboardView(),
+      MailListView(),
       RuleSettingsView(),
       ArchiveRestoreView(),
       MailSearchView(),
@@ -65,8 +65,8 @@ class _MainShellState extends ConsumerState<_MainShell> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: [
           NavigationDestination(
-            icon: const Icon(Icons.dashboard_outlined),
-            label: l10n.dashboardTitle,
+            icon: const Icon(Icons.mail_outline),
+            label: l10n.mailListTitle,
           ),
           NavigationDestination(
             icon: const Icon(Icons.rule_outlined),

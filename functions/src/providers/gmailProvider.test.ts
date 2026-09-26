@@ -30,6 +30,8 @@ describe("GmailProvider", () => {
     mockGmailClient = {
       users: {
         getProfile: jest.fn(),
+        watch: jest.fn(),
+        stop: jest.fn(),
         messages: {
           list: jest.fn(),
           get: jest.fn(),
@@ -777,6 +779,61 @@ describe("GmailProvider", () => {
       expect(mockUpdate).toHaveBeenCalledWith({
         oauthStatus: "expired",
       });
+    });
+  });
+
+  describe("watch / stopWatch (push sync)", () => {
+    beforeEach(() => {
+      const mockGet = jest.fn().mockResolvedValue({
+        data: () => ({
+          accessToken: "valid-token",
+          refreshToken: "refresh-token",
+          tokenExpiresAt: Date.now() + 3600000,
+        }),
+      });
+
+      (db as jest.Mock).mockReturnValue({
+        collection: jest.fn().mockReturnValue({
+          doc: jest.fn().mockReturnValue({
+            get: mockGet,
+          }),
+        }),
+      });
+    });
+
+    it("should register a Pub/Sub watch and return historyId/expiration", async () => {
+      mockGmailClient.users.watch.mockResolvedValue({
+        data: { historyId: "12345", expiration: "1700000000000" },
+      });
+
+      const result = await provider.watch("account123", "projects/p/topics/gmail-push");
+
+      expect(mockGmailClient.users.watch).toHaveBeenCalledWith({
+        userId: "me",
+        requestBody: {
+          topicName: "projects/p/topics/gmail-push",
+          labelIds: ["INBOX"],
+        },
+      });
+      expect(result).toEqual({ historyId: "12345", expiration: 1700000000000 });
+    });
+
+    it("should default expiration when not returned by Gmail", async () => {
+      mockGmailClient.users.watch.mockResolvedValue({ data: {} });
+
+      const before = Date.now();
+      const result = await provider.watch("account123", "projects/p/topics/gmail-push");
+
+      expect(result.historyId).toBe("");
+      expect(result.expiration).toBeGreaterThan(before);
+    });
+
+    it("should stop an active watch", async () => {
+      mockGmailClient.users.stop.mockResolvedValue({});
+
+      await provider.stopWatch("account123");
+
+      expect(mockGmailClient.users.stop).toHaveBeenCalledWith({ userId: "me" });
     });
   });
 

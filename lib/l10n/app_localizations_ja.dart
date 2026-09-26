@@ -54,9 +54,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get archiveCandidatesPin => '保護する';
 
   @override
-  String get dashboardTitle => '受信箱スッキリ度';
-
-  @override
   String get dashboardArchivedCount => '累計アーカイブ件数';
 
   @override
@@ -64,6 +61,53 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dashboardPinnedCount => '保護件数';
+
+  @override
+  String get mailListTitle => 'メール一覧';
+
+  @override
+  String get mailListEmpty => '表示するメールがありません';
+
+  @override
+  String get mailListSortNewest => '新着順';
+
+  @override
+  String get mailListSortUnreadFirst => '未読優先';
+
+  @override
+  String get mailListSortSender => '送信者別';
+
+  @override
+  String get mailListGroupToggle => '送信者でグループ化';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count件選択中';
+  }
+
+  @override
+  String get mailListBulkArchive => 'アーカイブ';
+
+  @override
+  String get mailListBulkMarkRead => '既読にする';
+
+  @override
+  String get mailListUnknownSender => '（不明な送信者）';
+
+  @override
+  String get categoryAll => 'すべて';
+
+  @override
+  String get categoryPromotion => 'プロモーション';
+
+  @override
+  String get categoryNotification => '通知';
+
+  @override
+  String get categoryInvoice => '請求書';
+
+  @override
+  String get categoryOther => 'その他';
 
   @override
   String get ruleSettingsTitle => 'ルール設定';
