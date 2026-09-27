@@ -200,6 +200,42 @@ abstract class AppLocalizations {
   /// **'保護する'**
   String get archiveCandidatesPin;
 
+  /// No description provided for @mailListTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'メール一覧'**
+  String get mailListTitle;
+
+  /// No description provided for @mailListEmpty.
+  ///
+  /// In ja, this message translates to:
+  /// **'表示できるメールがありません'**
+  String get mailListEmpty;
+
+  /// No description provided for @mailListPinToggleOn.
+  ///
+  /// In ja, this message translates to:
+  /// **'保護する'**
+  String get mailListPinToggleOn;
+
+  /// No description provided for @mailListPinToggleOff.
+  ///
+  /// In ja, this message translates to:
+  /// **'保護を解除'**
+  String get mailListPinToggleOff;
+
+  /// No description provided for @settingsLocalCacheRetention.
+  ///
+  /// In ja, this message translates to:
+  /// **'アプリでの自動非表示までの日数'**
+  String get settingsLocalCacheRetention;
+
+  /// No description provided for @settingsLocalCacheRetentionDescription.
+  ///
+  /// In ja, this message translates to:
+  /// **'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません'**
+  String get settingsLocalCacheRetentionDescription;
+
   /// No description provided for @dashboardTitle.
   ///
   /// In ja, this message translates to:

@@ -56,6 +56,8 @@ export class GmailProvider implements MailProviderAdapter {
       .get();
     const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
 
+    // 再認可時、Googleはrefresh_tokenを再発行しないことがある（既に同意済みのため）。
+    // その場合はnullを保存し、accessToken失効時に再連携を促す。
     const ref = await admin.firestore().collection("linkedAccounts").add({
       userId,
       provider: "gmail",
@@ -64,8 +66,8 @@ export class GmailProvider implements MailProviderAdapter {
       oauthStatus: "connected",
       colorHex,
       lastScanAt: null,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
+      accessToken: tokens.access_token ?? null,
+      refreshToken: tokens.refresh_token ?? null,
     });
 
     return {

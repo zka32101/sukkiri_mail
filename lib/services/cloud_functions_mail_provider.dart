@@ -1,4 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/category_rule.dart';
 import '../models/email_meta.dart';
@@ -101,10 +102,45 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
 /// gmail.modify（Tier2） + gmail.labels（non-sensitive）のみ使用。
 /// gmail.readonly（restricted）/ gmail.insert（restricted）は使用しない。
 class GmailProvider extends CloudFunctionsMailProvider {
-  GmailProvider({super.functions});
+  GmailProvider({super.functions, GoogleSignIn? googleSignIn})
+    : _googleSignIn =
+          googleSignIn ??
+          GoogleSignIn(
+            scopes: const [
+              'https://www.googleapis.com/auth/gmail.modify',
+              'https://www.googleapis.com/auth/gmail.labels',
+            ],
+            // app1-6c108 プロジェクトのWebクライアント（Cloud Functions側でトークン交換に使用）。
+            serverClientId:
+                '663640153690-5q7jop7h1vmmgtr0i8gtsfjeg34m1dh2.apps.googleusercontent.com',
+          );
+
+  final GoogleSignIn _googleSignIn;
 
   @override
   MailProviderType get providerType => MailProviderType.gmail;
+
+  @override
+  Future<LinkedAccount> connect({required String userId}) async {
+    await _googleSignIn.signOut(); // 毎回同意画面を出し、確実にauthCodeを取得する
+    final account = await _googleSignIn.signIn();
+    if (account == null) {
+      throw Exception('Googleサインインがキャンセルされました');
+    }
+    final authCode = account.serverAuthCode;
+    if (authCode == null) {
+      throw Exception('serverAuthCodeを取得できませんでした（serverClientIdの設定を確認してください）');
+    }
+
+    final callable = _functions.httpsCallable('connectAccount');
+    final result = await callable.call<Map<String, dynamic>>({
+      'provider': _providerKey,
+      'userId': userId,
+      'authCode': authCode,
+    });
+    final data = Map<String, dynamic>.from(result.data as Map);
+    return LinkedAccount.fromMap(data['id'] as String, data);
+  }
 }
 
 /// Microsoft Graph API Mail.ReadWrite（delegated、個人アカウント同意のみで完結）。

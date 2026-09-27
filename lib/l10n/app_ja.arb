@@ -22,6 +22,14 @@
   "archiveCandidatesArchiveAll": "すべてアーカイブ",
   "archiveCandidatesPin": "保護する",
 
+  "mailListTitle": "メール一覧",
+  "mailListEmpty": "表示できるメールがありません",
+  "mailListPinToggleOn": "保護する",
+  "mailListPinToggleOff": "保護を解除",
+
+  "settingsLocalCacheRetention": "アプリでの自動非表示までの日数",
+  "settingsLocalCacheRetentionDescription": "アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません",
+
   "dashboardTitle": "受信箱スッキリ度",
   "dashboardArchivedCount": "累計アーカイブ件数",
   "dashboardFreedBytes": "解放したローカル容量",

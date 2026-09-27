@@ -14,6 +14,7 @@ class EmailMetaRepository {
   Stream<List<EmailMeta>> watchForAccount(
     String accountId, {
     EmailStatus? status,
+    LocalCacheStatus? localCacheStatus,
   }) {
     Query<Map<String, dynamic>> q = _col.where(
       'accountId',
@@ -22,9 +23,25 @@ class EmailMetaRepository {
     if (status != null) {
       q = q.where('status', isEqualTo: emailStatusToString(status));
     }
+    if (localCacheStatus != null) {
+      q = q.where(
+        'localCacheStatus',
+        isEqualTo: localCacheStatusToString(localCacheStatus),
+      );
+    }
     return q.snapshots().map(
       (snap) =>
           snap.docs.map((d) => EmailMeta.fromMap(d.id, d.data())).toList(),
+    );
+  }
+
+  /// メール一覧画面用：実Gmail側の状態(status)には触れず、アプリ表示からのみ
+  /// 経過日数で外された(localCacheStatus=purged)ものを除いた「今アプリに見えるべき」一覧。
+  Stream<List<EmailMeta>> watchVisibleForAccount(String accountId) {
+    return watchForAccount(
+      accountId,
+      status: EmailStatus.active,
+      localCacheStatus: LocalCacheStatus.cached,
     );
   }
 

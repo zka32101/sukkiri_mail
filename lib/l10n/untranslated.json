@@ -1,1 +1,91 @@
-{}
+{
+  "de": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ],
+
+  "es": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ],
+
+  "fr": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ],
+
+  "hi": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ],
+
+  "id": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ],
+
+  "ko": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ],
+
+  "pt": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ],
+
+  "pt_BR": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ],
+
+  "zh": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ],
+
+  "zh_Hant": [
+    "mailListTitle",
+    "mailListEmpty",
+    "mailListPinToggleOn",
+    "mailListPinToggleOff",
+    "settingsLocalCacheRetention",
+    "settingsLocalCacheRetentionDescription"
+  ]
+}

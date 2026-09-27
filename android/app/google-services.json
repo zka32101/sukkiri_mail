@@ -1,0 +1,126 @@
+{
+  "project_info": {
+    "project_number": "663640153690",
+    "project_id": "app1-6c108",
+    "storage_bucket": "app1-6c108.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663640153690:android:c0f711e3418af3debe4263",
+        "android_client_info": {
+          "package_name": "com.yourwish.cardrivals"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "663640153690-5q7jop7h1vmmgtr0i8gtsfjeg34m1dh2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz8Kg7hwRbh34FbKCguiLQe0oJDkPP62Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "663640153690-5q7jop7h1vmmgtr0i8gtsfjeg34m1dh2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "663640153690-7d5m9hq6ljkpbv0s1tm4qk5oeo56vrb7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.yourwish.sukkirimail"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663640153690:android:7f69297e25da0769be4263",
+        "android_client_info": {
+          "package_name": "com.yourwish.cometrueaifortune"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "663640153690-5q7jop7h1vmmgtr0i8gtsfjeg34m1dh2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz8Kg7hwRbh34FbKCguiLQe0oJDkPP62Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "663640153690-5q7jop7h1vmmgtr0i8gtsfjeg34m1dh2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "663640153690-7d5m9hq6ljkpbv0s1tm4qk5oeo56vrb7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.yourwish.sukkirimail"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:663640153690:android:3172b10eedb79283be4263",
+        "android_client_info": {
+          "package_name": "com.yourwish.sukkirimail"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "663640153690-rl7s2bc6ndjvlgsk8a3g6hsemth2t4g5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.yourwish.sukkirimail",
+            "certificate_hash": "9994fa1415a62183531809b5dd080bf7b0525816"
+          }
+        },
+        {
+          "client_id": "663640153690-5q7jop7h1vmmgtr0i8gtsfjeg34m1dh2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz8Kg7hwRbh34FbKCguiLQe0oJDkPP62Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "663640153690-5q7jop7h1vmmgtr0i8gtsfjeg34m1dh2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "663640153690-7d5m9hq6ljkpbv0s1tm4qk5oeo56vrb7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.yourwish.sukkirimail"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

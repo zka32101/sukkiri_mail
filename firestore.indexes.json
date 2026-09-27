@@ -9,6 +9,15 @@
       ]
     },
     {
+      "collectionGroup": "emailMeta",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "accountId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "localCacheStatus", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "archiveLogs",
       "queryScope": "COLLECTION",
       "fields": [

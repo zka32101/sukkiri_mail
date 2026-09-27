@@ -27,4 +27,8 @@ class UserRepository {
   Future<void> setPlan(String userId, UserPlan plan) {
     return _col.doc(userId).update({'plan': userPlanToString(plan)});
   }
+
+  Future<void> setLocalCacheRetentionDays(String userId, int days) {
+    return _col.doc(userId).update({'localCacheRetentionDays': days});
+  }
 }

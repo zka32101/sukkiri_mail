@@ -54,6 +54,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get archiveCandidatesPin => '보호하기';
 
   @override
+  String get mailListTitle => 'メール一覧';
+
+  @override
+  String get mailListEmpty => '表示できるメールがありません';
+
+  @override
+  String get mailListPinToggleOn => '保護する';
+
+  @override
+  String get mailListPinToggleOff => '保護を解除';
+
+  @override
+  String get settingsLocalCacheRetention => 'アプリでの自動非表示までの日数';
+
+  @override
+  String get settingsLocalCacheRetentionDescription =>
+      'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません';
+
+  @override
   String get dashboardTitle => '받은편지함 정리도';
 
   @override

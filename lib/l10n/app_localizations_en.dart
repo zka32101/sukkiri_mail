@@ -54,6 +54,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get archiveCandidatesPin => 'Protect';
 
   @override
+  String get mailListTitle => 'Inbox';
+
+  @override
+  String get mailListEmpty => 'No emails to show';
+
+  @override
+  String get mailListPinToggleOn => 'Pin';
+
+  @override
+  String get mailListPinToggleOff => 'Unpin';
+
+  @override
+  String get settingsLocalCacheRetention => 'Auto-hide from this app after';
+
+  @override
+  String get settingsLocalCacheRetentionDescription =>
+      'Only affects what this app shows — your real inbox is never changed';
+
+  @override
   String get dashboardTitle => 'Inbox tidiness';
 
   @override

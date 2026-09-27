@@ -22,6 +22,14 @@
   "archiveCandidatesArchiveAll": "Archive all",
   "archiveCandidatesPin": "Protect",
 
+  "mailListTitle": "Inbox",
+  "mailListEmpty": "No emails to show",
+  "mailListPinToggleOn": "Pin",
+  "mailListPinToggleOff": "Unpin",
+
+  "settingsLocalCacheRetention": "Auto-hide from this app after",
+  "settingsLocalCacheRetentionDescription": "Only affects what this app shows — your real inbox is never changed",
+
   "dashboardTitle": "Inbox tidiness",
   "dashboardArchivedCount": "Total archived",
   "dashboardFreedBytes": "Local storage freed",
