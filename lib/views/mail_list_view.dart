@@ -8,10 +8,13 @@ import '../theme/app_theme.dart';
 import '../viewmodels/core_providers.dart';
 import '../viewmodels/email_list_providers.dart';
 import '../viewmodels/linked_account_providers.dart';
+import 'account_link_view.dart';
 
 /// アプリ起動時に最初に表示する画面。実Gmail等の状態には触れず、
 /// 「今アプリに見えるべきメール」（=ローカル自動非表示（localCacheStatus=purged）
 /// になっていないもの）だけを一覧表示する。
+/// アカウント未連携でもこの画面自体は表示され（Onboardingの必須ゲートは廃止）、
+/// 連携はここまたはSettingsタブからいつでも行える。
 class MailListView extends ConsumerWidget {
   const MailListView({super.key});
 
@@ -24,7 +27,31 @@ class MailListView extends ConsumerWidget {
     if (accounts.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(l10n.mailListTitle)),
-        body: Center(child: Text(l10n.mailListEmpty)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.mail_outline, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.mailListEmpty,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AccountLinkView(),
+                    ),
+                  ),
+                  child: Text(l10n.settingsLinkedAccounts),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 

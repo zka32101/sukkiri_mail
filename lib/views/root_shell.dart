@@ -1,36 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
-import '../viewmodels/linked_account_providers.dart';
 import 'archive_restore_view.dart';
 import 'mail_list_view.dart';
 import 'mail_search_view.dart';
-import 'onboarding_view.dart';
 import 'rule_settings_view.dart';
 import 'settings_view.dart';
 import 'tidiness_dashboard_view.dart';
 
-/// アカウント未連携ならOnboarding→AccountLink→ScanResult→ArchiveCandidatesの
-/// Aha Moment動線へ、連携済みならメインシェル（ボトムナビ）へ分岐する。
-class RootShell extends ConsumerWidget {
+/// 起動直後に必ずメール一覧（メインシェル・ボトムナビ）を表示する。
+/// アカウント未連携でもここへ入り、連携はSettingsタブの「アカウントを追加」
+/// からいつでもたどれる（Onboardingの必須ゲートは廃止）。
+class RootShell extends StatelessWidget {
   const RootShell({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final accountsAsync = ref.watch(linkedAccountsProvider);
-
-    return accountsAsync.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
-      data: (accounts) {
-        if (accounts.isEmpty) {
-          return const OnboardingView();
-        }
-        return const _MainShell();
-      },
-    );
+  Widget build(BuildContext context) {
+    return const _MainShell();
   }
 }
 
