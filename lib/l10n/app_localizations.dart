@@ -224,6 +224,60 @@ abstract class AppLocalizations {
   /// **'保護を解除'**
   String get mailListPinToggleOff;
 
+  /// No description provided for @mailListBlockSender.
+  ///
+  /// In ja, this message translates to:
+  /// **'この差出人を今後取り込まない'**
+  String get mailListBlockSender;
+
+  /// No description provided for @mailListSortByAccount.
+  ///
+  /// In ja, this message translates to:
+  /// **'アカウント毎'**
+  String get mailListSortByAccount;
+
+  /// No description provided for @mailListSortByDate.
+  ///
+  /// In ja, this message translates to:
+  /// **'日付順（全アカウント）'**
+  String get mailListSortByDate;
+
+  /// No description provided for @mailDetailTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'メール詳細'**
+  String get mailDetailTitle;
+
+  /// No description provided for @mailDetailNoSubject.
+  ///
+  /// In ja, this message translates to:
+  /// **'(件名なし)'**
+  String get mailDetailNoSubject;
+
+  /// No description provided for @mailDetailShowFullBody.
+  ///
+  /// In ja, this message translates to:
+  /// **'本文を全文表示'**
+  String get mailDetailShowFullBody;
+
+  /// No description provided for @mailDetailOpenInMailApp.
+  ///
+  /// In ja, this message translates to:
+  /// **'Gmailで開く'**
+  String get mailDetailOpenInMailApp;
+
+  /// No description provided for @mailBlockSenderConfirm.
+  ///
+  /// In ja, this message translates to:
+  /// **'{sender} を今後取り込まないようにしますか？'**
+  String mailBlockSenderConfirm(String sender);
+
+  /// No description provided for @mailBlockSenderDone.
+  ///
+  /// In ja, this message translates to:
+  /// **'差出人をブロックしました'**
+  String get mailBlockSenderDone;
+
   /// No description provided for @settingsLocalCacheRetention.
   ///
   /// In ja, this message translates to:
@@ -284,6 +338,18 @@ abstract class AppLocalizations {
   /// **'ルールを追加'**
   String get ruleSettingsAddRule;
 
+  /// No description provided for @ruleSettingsSenderBlockPickSender.
+  ///
+  /// In ja, this message translates to:
+  /// **'取り込み済みの差出人から選択'**
+  String get ruleSettingsSenderBlockPickSender;
+
+  /// No description provided for @ruleSettingsSenderBlockNoSenders.
+  ///
+  /// In ja, this message translates to:
+  /// **'取り込み済みの差出人がありません'**
+  String get ruleSettingsSenderBlockNoSenders;
+
   /// No description provided for @archiveRestoreTitle.
   ///
   /// In ja, this message translates to:
@@ -331,6 +397,54 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'プラン'**
   String get settingsPlan;
+
+  /// No description provided for @settingsUsageGuide.
+  ///
+  /// In ja, this message translates to:
+  /// **'使い方'**
+  String get settingsUsageGuide;
+
+  /// No description provided for @usageGuideTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'スッキリメールの使い方'**
+  String get usageGuideTitle;
+
+  /// No description provided for @usageGuideIntro.
+  ///
+  /// In ja, this message translates to:
+  /// **'見なくていいメールを、見ないで済むようにするアプリです。実際のメールボックスは一切変更しません。'**
+  String get usageGuideIntro;
+
+  /// No description provided for @usageGuideBulletAutoHide.
+  ///
+  /// In ja, this message translates to:
+  /// **'アプリの表示だけを自動整理：設定した日数が経つと、このアプリの一覧からだけ非表示にします（実メールは消えません）'**
+  String get usageGuideBulletAutoHide;
+
+  /// No description provided for @usageGuideBulletDetail.
+  ///
+  /// In ja, this message translates to:
+  /// **'メールをタップすると詳細画面が開き、本文の全文表示や差出人ブロックができます'**
+  String get usageGuideBulletDetail;
+
+  /// No description provided for @usageGuideBulletBlock.
+  ///
+  /// In ja, this message translates to:
+  /// **'「この差出人を今後取り込まない」で、迷惑な送信元からのメールを次回以降取り込まないようにできます'**
+  String get usageGuideBulletBlock;
+
+  /// No description provided for @usageGuideBulletMultiAccount.
+  ///
+  /// In ja, this message translates to:
+  /// **'複数アカウントはアカウントカラーで区別。メール一覧の並び替えでアカウント毎/日付順を切り替えられます'**
+  String get usageGuideBulletMultiAccount;
+
+  /// No description provided for @usageGuideClose.
+  ///
+  /// In ja, this message translates to:
+  /// **'閉じる'**
+  String get usageGuideClose;
 
   /// No description provided for @paywallTitle.
   ///

@@ -93,7 +93,7 @@ export class ImapProvider implements MailProviderAdapter {
             category: categorizeMessage(subject, senderEmail),
             receivedAt: m.envelope?.date ? new Date(m.envelope.date).getTime() : Date.now(),
             hasAttachment: false,
-            snippet: subject.slice(0, 80),
+            snippet: subject,
             subject,
             senderEmail,
           });

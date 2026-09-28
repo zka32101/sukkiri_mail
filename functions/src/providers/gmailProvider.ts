@@ -18,6 +18,13 @@ import { categorizeMessage, pickNextAccountColor } from "../categorize";
  * `gmail-oauth-client-id` / `gmail-oauth-client-secret` として登録する。
  */
 export class GmailProvider implements MailProviderAdapter {
+  /**
+   * access_tokenの有効期限をFirestoreに保存していないため、google-auth-libraryは
+   * 期限切れを事前検知できず自動リフレッシュが働かない（401で失敗するだけ）。
+   * ここで明示的にリフレッシュし、新しいaccess_tokenをFirestoreへ書き戻す。
+   * refresh_token自体が失効している場合はoauthStatusを"expired"にし、
+   * ユーザーに再連携が必要なことを示す。
+   */
   private async getClient(accountId: string) {
     const doc = await db().collection("linkedAccounts").doc(accountId).get();
     const data = doc.data();
@@ -30,6 +37,28 @@ export class GmailProvider implements MailProviderAdapter {
       access_token: data.accessToken,
       refresh_token: data.refreshToken,
     });
+
+    if (data.refreshToken) {
+      try {
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        oauth2Client.setCredentials(credentials);
+        await db().collection("linkedAccounts").doc(accountId).update({
+          accessToken: credentials.access_token ?? data.accessToken,
+          oauthStatus: "connected",
+        });
+      } catch (e) {
+        console.error(`Gmail token refresh failed for account ${accountId}`, e);
+        await db()
+          .collection("linkedAccounts")
+          .doc(accountId)
+          .update({ oauthStatus: "expired" })
+          .catch(() => {
+            /* ignore */
+          });
+        throw new Error("oauth token expired; user must re-authenticate");
+      }
+    }
+
     return google.gmail({ version: "v1", auth: oauth2Client });
   }
 
@@ -86,9 +115,11 @@ export class GmailProvider implements MailProviderAdapter {
    */
   async scan(accountId: string): Promise<ScanResultItem[]> {
     const gmail = await this.getClient(accountId);
+    // 検索ボックス既定と同様にSpam/Trashは対象外（-in:spam -in:trash）。
+    // 迷惑メールとしてサーバー側に振り分け済みのものは取り込まない。
     const list = await gmail.users.messages.list({
       userId: "me",
-      q: "newer_than:30d",
+      q: "newer_than:30d -in:spam -in:trash",
       maxResults: 200,
     });
     const messages = list.data.messages ?? [];
@@ -103,10 +134,15 @@ export class GmailProvider implements MailProviderAdapter {
         metadataHeaders: ["Subject", "From"],
       });
       const headers = full.data.payload?.headers ?? [];
-      const subject = headers.find((h) => h.name === "Subject")?.value ?? "";
-      const from = headers.find((h) => h.name === "From")?.value ?? "";
+      // ヘッダー名の大文字小文字が送信元によって揺れることがあるため大小無視で照合する。
+      const findHeader = (name: string) =>
+        headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? "";
+      const subject = findHeader("Subject");
+      const from = findHeader("From");
       const senderEmail = (from.match(/<(.+)>/)?.[1] ?? from).trim();
-      const snippet = (full.data.snippet ?? "").slice(0, 80);
+      // Gmailのsnippetは元々短く要約済みのため、そのまま保持する
+      // （全文はメール詳細画面からfetchMessageBodyでオンデマンド取得する）。
+      const snippet = full.data.snippet ?? "";
 
       items.push({
         id: m.id,

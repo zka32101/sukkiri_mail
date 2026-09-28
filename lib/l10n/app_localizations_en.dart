@@ -66,6 +66,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailListPinToggleOff => 'Unpin';
 
   @override
+  String get mailListBlockSender => 'Stop importing this sender';
+
+  @override
+  String get mailListSortByAccount => 'By account';
+
+  @override
+  String get mailListSortByDate => 'By date (all accounts)';
+
+  @override
+  String get mailDetailTitle => 'Mail detail';
+
+  @override
+  String get mailDetailNoSubject => '(no subject)';
+
+  @override
+  String get mailDetailShowFullBody => 'Show full message';
+
+  @override
+  String get mailDetailOpenInMailApp => 'Open in Gmail';
+
+  @override
+  String mailBlockSenderConfirm(String sender) {
+    return 'Stop importing mail from $sender?';
+  }
+
+  @override
+  String get mailBlockSenderDone => 'Sender blocked';
+
+  @override
   String get settingsLocalCacheRetention => 'Auto-hide from this app after';
 
   @override
@@ -97,6 +126,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ruleSettingsAddRule => 'Add rule';
 
   @override
+  String get ruleSettingsSenderBlockPickSender =>
+      'Choose from imported senders';
+
+  @override
+  String get ruleSettingsSenderBlockNoSenders => 'No imported senders yet';
+
+  @override
   String get archiveRestoreTitle => 'Archived emails';
 
   @override
@@ -119,6 +155,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsPlan => 'Plan';
+
+  @override
+  String get settingsUsageGuide => 'How to use';
+
+  @override
+  String get usageGuideTitle => 'How TidyMail works';
+
+  @override
+  String get usageGuideIntro =>
+      'This app helps you stop seeing mail you don\'t need to. It never changes your real inbox.';
+
+  @override
+  String get usageGuideBulletAutoHide =>
+      'Auto-hide in this app only: after your chosen number of days, mail disappears from this app\'s list (your real inbox is untouched)';
+
+  @override
+  String get usageGuideBulletDetail =>
+      'Tap any mail to open its detail screen, where you can read the full message or block its sender';
+
+  @override
+  String get usageGuideBulletBlock =>
+      '\"Stop importing this sender\" keeps unwanted senders from being imported again';
+
+  @override
+  String get usageGuideBulletMultiAccount =>
+      'Multiple accounts are color-coded. Switch the mail list between per-account grouping and merged date order';
+
+  @override
+  String get usageGuideClose => 'Close';
 
   @override
   String get paywallTitle => 'TidyMail Pro';

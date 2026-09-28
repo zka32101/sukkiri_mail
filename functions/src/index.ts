@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { db } from "./db";
-import { MailProviderAdapter } from "./providers/mailProviderInterface";
+import { MailProviderAdapter, ScanResultItem } from "./providers/mailProviderInterface";
 import { GmailProvider } from "./providers/gmailProvider";
 import { OutlookProvider } from "./providers/outlookProvider";
 import { ImapProvider } from "./providers/imapProvider";
@@ -35,26 +35,21 @@ export const connectAccount = onCall(async (request) => {
 });
 
 /**
- * アカウントの過去30日分のメールを取得し、emailMeta（アプリのメール一覧が
- * 読む場所）へ保存する。連携直後に自動で1回呼ばれる想定（ユーザー操作は不要）。
+ * スキャン結果をemailMetaへ保存する共通ロジック。scanAccount（連携直後の手動1回）と
+ * rescanAllAccounts（毎日の自動再スキャン）の両方から呼ばれる。
  * 既存ドキュメントはmerge:trueで上書きするため、isPinned/localCacheStatus等
- * ユーザーが既に変更した状態は保持される。
+ * ユーザーが既に変更した状態は保持される（ただしsubject/senderEmail等の
+ * メタデータは毎回最新化され、旧スキャン分の欠損も自動で埋まる）。
  */
-export const scanAccount = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
-  const { provider, accountId } = request.data ?? {};
-  await assertAccountOwnership(accountId, uid);
-
-  const adapter = resolveProvider(provider);
-  const items = await adapter.scan(accountId);
-
+async function persistScanResults(
+  uid: string,
+  accountId: string,
+  items: ScanResultItem[],
+): Promise<void> {
+  if (items.length === 0) return;
   const firestore = db();
   const refs = items.map((item) => firestore.collection("emailMeta").doc(item.id));
-  // 既存ドキュメントかどうかで書き込む内容を分ける：isPinned/localCacheStatusは
-  // 新規作成時にだけ初期値を入れる。既存分にも毎回上書きすると、ユーザーが
-  // ピン留めした/非表示にした状態が再スキャンのたびに元に戻ってしまうため。
-  const existingDocs = refs.length > 0 ? await firestore.getAll(...refs) : [];
+  const existingDocs = await firestore.getAll(...refs);
   const existingIds = new Set(
     existingDocs.filter((d) => d.exists).map((d) => d.id),
   );
@@ -102,15 +97,57 @@ export const scanAccount = onCall(async (request) => {
       });
     }
   }
-  if (items.length > 0) {
-    await batch.commit();
-  }
+  await batch.commit();
 
   await firestore.collection("linkedAccounts").doc(accountId).update({
     lastScanAt: Date.now(),
   });
+}
+
+/**
+ * アカウントの過去30日分のメールを取得し、emailMeta（アプリのメール一覧が
+ * 読む場所）へ保存する。連携直後に自動で1回呼ばれる想定（ユーザー操作は不要）。
+ */
+export const scanAccount = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
+  const { provider, accountId } = request.data ?? {};
+  await assertAccountOwnership(accountId, uid);
+
+  const adapter = resolveProvider(provider);
+  const items = await adapter.scan(accountId);
+  await persistScanResults(uid, accountId, items);
   return { items, savedCount: items.length };
 });
+
+/**
+ * 全連携アカウントを毎日自動で再スキャンする。目的は2つ：
+ * ①新着メールを継続的に取り込む（連携直後の1回だけでは新しいメールが増えないため）
+ * ②スキャン仕様変更（件名/差出人の保存追加など）を、既にスキャン済みの過去メールにも
+ *   merge:trueの上書きで反映させる（再連携なしで欠損データを自動補完）。
+ */
+export const rescanAllAccounts = onSchedule(
+  { schedule: "every 24 hours", timeZone: "Asia/Tokyo" },
+  async () => {
+    const firestore = db();
+    const accountsSnap = await firestore.collection("linkedAccounts").get();
+
+    for (const accountDoc of accountsSnap.docs) {
+      const account = accountDoc.data();
+      const userId = account.userId as string | undefined;
+      const providerKey = account.provider as string | undefined;
+      if (!userId || !providerKey) continue;
+
+      try {
+        const adapter = resolveProvider(providerKey);
+        const items = await adapter.scan(accountDoc.id);
+        await persistScanResults(userId, accountDoc.id, items);
+      } catch (e) {
+        console.error(`rescanAllAccounts failed for account ${accountDoc.id}`, e);
+      }
+    }
+  },
+);
 
 /** 検出結果のうち選択されたメールをアーカイブする（サーバー側、可逆）。 */
 export const applyArchiveRules = onCall(async (request) => {

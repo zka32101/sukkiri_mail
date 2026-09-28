@@ -66,6 +66,35 @@ class AppLocalizationsId extends AppLocalizations {
   String get mailListPinToggleOff => '保護を解除';
 
   @override
+  String get mailListBlockSender => 'この差出人を今後取り込まない';
+
+  @override
+  String get mailListSortByAccount => 'アカウント毎';
+
+  @override
+  String get mailListSortByDate => '日付順（全アカウント）';
+
+  @override
+  String get mailDetailTitle => 'メール詳細';
+
+  @override
+  String get mailDetailNoSubject => '(件名なし)';
+
+  @override
+  String get mailDetailShowFullBody => '本文を全文表示';
+
+  @override
+  String get mailDetailOpenInMailApp => 'Gmailで開く';
+
+  @override
+  String mailBlockSenderConfirm(String sender) {
+    return '$sender を今後取り込まないようにしますか？';
+  }
+
+  @override
+  String get mailBlockSenderDone => '差出人をブロックしました';
+
+  @override
   String get settingsLocalCacheRetention => 'アプリでの自動非表示までの日数';
 
   @override
@@ -97,6 +126,12 @@ class AppLocalizationsId extends AppLocalizations {
   String get ruleSettingsAddRule => 'Tambah aturan';
 
   @override
+  String get ruleSettingsSenderBlockPickSender => '取り込み済みの差出人から選択';
+
+  @override
+  String get ruleSettingsSenderBlockNoSenders => '取り込み済みの差出人がありません';
+
+  @override
   String get archiveRestoreTitle => 'Email terarsip';
 
   @override
@@ -119,6 +154,34 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsPlan => 'Paket';
+
+  @override
+  String get settingsUsageGuide => '使い方';
+
+  @override
+  String get usageGuideTitle => 'スッキリメールの使い方';
+
+  @override
+  String get usageGuideIntro =>
+      '見なくていいメールを、見ないで済むようにするアプリです。実際のメールボックスは一切変更しません。';
+
+  @override
+  String get usageGuideBulletAutoHide =>
+      'アプリの表示だけを自動整理：設定した日数が経つと、このアプリの一覧からだけ非表示にします（実メールは消えません）';
+
+  @override
+  String get usageGuideBulletDetail => 'メールをタップすると詳細画面が開き、本文の全文表示や差出人ブロックができます';
+
+  @override
+  String get usageGuideBulletBlock =>
+      '「この差出人を今後取り込まない」で、迷惑な送信元からのメールを次回以降取り込まないようにできます';
+
+  @override
+  String get usageGuideBulletMultiAccount =>
+      '複数アカウントはアカウントカラーで区別。メール一覧の並び替えでアカウント毎/日付順を切り替えられます';
+
+  @override
+  String get usageGuideClose => '閉じる';
 
   @override
   String get paywallTitle => 'Kotak Rapi Pro';

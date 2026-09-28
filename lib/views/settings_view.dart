@@ -11,6 +11,7 @@ import '../viewmodels/core_providers.dart';
 import '../viewmodels/linked_account_providers.dart';
 import 'account_link_view.dart';
 import 'paywall_view.dart';
+import 'usage_guide_view.dart';
 
 class SettingsView extends ConsumerWidget {
   Future<void> _changeRetentionDays(
@@ -168,6 +169,14 @@ class SettingsView extends ConsumerWidget {
                 context,
               ).push(MaterialPageRoute(builder: (_) => const PaywallView())),
               child: Text(l10n.paywallCta),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: Text(l10n.settingsUsageGuide),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const UsageGuideView()),
             ),
           ),
         ],

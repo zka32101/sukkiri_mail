@@ -122,7 +122,15 @@ class GmailProvider extends CloudFunctionsMailProvider {
 
   @override
   Future<LinkedAccount> connect({required String userId}) async {
-    await _googleSignIn.signOut(); // 毎回同意画面を出し、確実にauthCodeを取得する
+    // signOut()はデバイス側のセッションを消すだけでGoogle側の同意は残るため、
+    // 2回目以降の連携ではrefresh_tokenが再発行されずaccess_token失効後に
+    // 二度とAPIを呼べなくなる。disconnect()でGoogle側の権限も取り消し、
+    // 毎回フルの同意フローを踏ませることで確実にrefresh_tokenを取得する。
+    try {
+      await _googleSignIn.disconnect();
+    } catch (_) {
+      // 初回連携時（そもそも同意していない）はdisconnect()が例外を投げるため無視する。
+    }
     final account = await _googleSignIn.signIn();
     if (account == null) {
       throw Exception('Googleサインインがキャンセルされました');

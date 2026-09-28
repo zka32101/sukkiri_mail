@@ -32,8 +32,8 @@
 
   "mailDetailTitle": "Mail detail",
   "mailDetailNoSubject": "(no subject)",
-  "mailDetailApplyCategoryRule": "Auto-organize this category",
-  "mailDetailApplyCategoryRuleDone": "Rule saved",
+  "mailDetailShowFullBody": "Show full message",
+  "mailDetailOpenInMailApp": "Open in Gmail",
   "mailBlockSenderConfirm": "Stop importing mail from {sender}?",
   "@mailBlockSenderConfirm": {
     "placeholders": { "sender": { "type": "String" } }
@@ -65,6 +65,15 @@
   "settingsAccountColor": "Account color",
   "settingsLinkedAccounts": "Linked accounts",
   "settingsPlan": "Plan",
+  "settingsUsageGuide": "How to use",
+
+  "usageGuideTitle": "How TidyMail works",
+  "usageGuideIntro": "This app helps you stop seeing mail you don't need to. It never changes your real inbox.",
+  "usageGuideBulletAutoHide": "Auto-hide in this app only: after your chosen number of days, mail disappears from this app's list (your real inbox is untouched)",
+  "usageGuideBulletDetail": "Tap any mail to open its detail screen, where you can read the full message or block its sender",
+  "usageGuideBulletBlock": "\"Stop importing this sender\" keeps unwanted senders from being imported again",
+  "usageGuideBulletMultiAccount": "Multiple accounts are color-coded. Switch the mail list between per-account grouping and merged date order",
+  "usageGuideClose": "Close",
 
   "paywallTitle": "TidyMail Pro",
   "paywallFeatureUnlimitedAccounts": "Unlimited linked accounts",

@@ -146,6 +146,7 @@ class _MergedEmailList extends ConsumerWidget {
         final (meta, account) = entries[index];
         return _EmailTile(
           meta: meta,
+          account: account,
           l10n: l10n,
           ref: ref,
           accountColor: AppTheme.accountColorFor(account.colorHex, brightness),
@@ -208,6 +209,7 @@ class _AccountEmailSection {
             children: sorted
                 .map((meta) => _EmailTile(
                       meta: meta,
+                      account: account,
                       l10n: l10n,
                       ref: ref,
                       accountColor: accountColor,
@@ -224,12 +226,14 @@ class _AccountEmailSection {
 class _EmailTile extends StatelessWidget {
   const _EmailTile({
     required this.meta,
+    required this.account,
     required this.l10n,
     required this.ref,
     required this.accountColor,
   });
 
   final EmailMeta meta;
+  final LinkedAccount account;
   final AppLocalizations l10n;
   final WidgetRef ref;
   final Color accountColor;
@@ -242,7 +246,9 @@ class _EmailTile extends StatelessWidget {
       ),
       child: ListTile(
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => MailDetailView(meta: meta)),
+          MaterialPageRoute(
+            builder: (_) => MailDetailView(meta: meta, account: account),
+          ),
         ),
         title: Text(
           meta.subject.isNotEmpty

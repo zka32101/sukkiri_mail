@@ -1,22 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/email_meta.dart';
+import '../models/linked_account.dart';
+import '../services/cloud_functions_mail_provider.dart';
 import '../viewmodels/core_providers.dart';
 import '../viewmodels/mail_actions.dart';
 
-/// メール一覧のタップ先。本文はオンデマンド取得の対象だが（fetchMessageBody）、
-/// ここではまず既に保持しているメタデータ（件名・差出人・スニペット等）を表示し、
-/// 一覧・詳細どちらからでも同じワンクリック操作（保護/差出人ブロック/カテゴリ整理）を
-/// 行えるようにする。
-class MailDetailView extends ConsumerWidget {
-  const MailDetailView({super.key, required this.meta});
+/// メール一覧のタップ先。件名・差出人・スニペットは常時保持しているメタデータから即表示し、
+/// 本文全文はここでのオンデマンド取得（fetchMessageBody）に限定する
+/// （一覧表示時点で全文を毎回取得するとAPI呼び出しが増えすぎるため）。
+class MailDetailView extends ConsumerStatefulWidget {
+  const MailDetailView({super.key, required this.meta, required this.account});
 
   final EmailMeta meta;
+  final LinkedAccount account;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MailDetailView> createState() => _MailDetailViewState();
+}
+
+class _MailDetailViewState extends ConsumerState<MailDetailView> {
+  String? _fullBody;
+  bool _loadingBody = false;
+  String? _bodyError;
+
+  EmailMeta get meta => widget.meta;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -55,23 +69,77 @@ class MailDetailView extends ConsumerWidget {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const Divider(height: 32),
-          Text(meta.snippet),
-          const SizedBox(height: 32),
-          if (meta.senderEmail.isNotEmpty)
+          Text(_fullBody ?? meta.snippet),
+          if (_bodyError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _bodyError!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+          const SizedBox(height: 12),
+          if (_fullBody == null)
+            OutlinedButton.icon(
+              icon: _loadingBody
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.article_outlined),
+              label: Text(l10n.mailDetailShowFullBody),
+              onPressed: _loadingBody ? null : _loadFullBody,
+            ),
+          if (widget.account.provider == MailProviderType.gmail) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.open_in_new),
+              label: Text(l10n.mailDetailOpenInMailApp),
+              onPressed: _openInGmail,
+            ),
+          ],
+          if (meta.senderEmail.isNotEmpty) ...[
+            const SizedBox(height: 12),
             OutlinedButton.icon(
               icon: const Icon(Icons.block),
               label: Text(l10n.mailListBlockSender),
               onPressed: () => _confirmBlockSender(context, ref, l10n),
             ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.rule),
-            label: Text(l10n.mailDetailApplyCategoryRule),
-            onPressed: () => _applyCategoryRule(context, ref, l10n),
-          ),
+          ],
         ],
       ),
     );
+  }
+
+  Future<void> _loadFullBody() async {
+    setState(() {
+      _loadingBody = true;
+      _bodyError = null;
+    });
+    try {
+      final provider = resolveMailProvider(widget.account.provider);
+      final body = await provider.fetchMessageBody(
+        account: widget.account,
+        messageId: meta.id,
+      );
+      final text = _stripHtml(body.html);
+      if (!mounted) return;
+      setState(() {
+        _fullBody = text.isEmpty ? meta.snippet : text;
+        _loadingBody = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _bodyError = '$e';
+        _loadingBody = false;
+      });
+    }
+  }
+
+  Future<void> _openInGmail() async {
+    final uri = Uri.parse('https://mail.google.com/mail/u/0/#all/${meta.id}');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _confirmBlockSender(
@@ -104,16 +172,18 @@ class MailDetailView extends ConsumerWidget {
     );
   }
 
-  Future<void> _applyCategoryRule(
-    BuildContext context,
-    WidgetRef ref,
-    AppLocalizations l10n,
-  ) async {
-    await applyCategoryRuleOneClick(ref, category: meta.category);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.mailDetailApplyCategoryRuleDone)),
-    );
+  static String _stripHtml(String html) {
+    if (html.isEmpty) return '';
+    var text = html
+        .replaceAll(RegExp(r'<(br|/p|/div)>', caseSensitive: false), '\n')
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"');
+    text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
+    return text;
   }
 
   static String _twoDigits(int n) => n.toString().padLeft(2, '0');

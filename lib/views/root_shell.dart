@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
 import 'archive_restore_view.dart';
@@ -7,6 +8,10 @@ import 'mail_search_view.dart';
 import 'rule_settings_view.dart';
 import 'settings_view.dart';
 import 'tidiness_dashboard_view.dart';
+import 'usage_guide_view.dart';
+
+/// 初回起動判定用フラグ。値を変えれば説明内容の大改訂時に再表示させられる。
+const _hasSeenUsageGuideKey = 'hasSeenUsageGuideV1';
 
 /// 起動直後に必ずメール一覧（メインシェル・ボトムナビ）を表示する。
 /// アカウント未連携でもここへ入り、連携はSettingsタブの「アカウントを追加」
@@ -29,6 +34,25 @@ class _MainShell extends StatefulWidget {
 
 class _MainShellState extends State<_MainShell> {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowUsageGuide());
+  }
+
+  Future<void> _maybeShowUsageGuide() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_hasSeenUsageGuideKey) == true) return;
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const UsageGuideView(),
+      ),
+    );
+    await prefs.setBool(_hasSeenUsageGuideKey, true);
+  }
 
   @override
   Widget build(BuildContext context) {
