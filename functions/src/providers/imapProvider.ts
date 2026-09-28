@@ -1,5 +1,5 @@
 import { ImapFlow } from "imapflow";
-import * as admin from "firebase-admin";
+import { db } from "../db";
 import {
   ConnectedAccountResult,
   MailProviderAdapter,
@@ -15,7 +15,7 @@ import { categorizeMessage, pickNextAccountColor } from "../categorize";
  */
 export class ImapProvider implements MailProviderAdapter {
   private async openClient(accountId: string): Promise<ImapFlow> {
-    const doc = await admin.firestore().collection("linkedAccounts").doc(accountId).get();
+    const doc = await db().collection("linkedAccounts").doc(accountId).get();
     const data = doc.data();
     if (!data) throw new Error("account not found");
     const client = new ImapFlow({
@@ -48,14 +48,13 @@ export class ImapProvider implements MailProviderAdapter {
     await testClient.connect();
     await testClient.logout();
 
-    const existing = await admin
-      .firestore()
+    const existing = await db()
       .collection("linkedAccounts")
       .where("userId", "==", userId)
       .get();
     const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
 
-    const ref = await admin.firestore().collection("linkedAccounts").add({
+    const ref = await db().collection("linkedAccounts").add({
       userId,
       provider: "imap",
       authMethod: "app_password",

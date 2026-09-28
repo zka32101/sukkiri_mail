@@ -26,6 +26,19 @@
   "mailListEmpty": "表示できるメールがありません",
   "mailListPinToggleOn": "保護する",
   "mailListPinToggleOff": "保護を解除",
+  "mailListBlockSender": "この差出人を今後取り込まない",
+  "mailListSortByAccount": "アカウント毎",
+  "mailListSortByDate": "日付順（全アカウント）",
+
+  "mailDetailTitle": "メール詳細",
+  "mailDetailNoSubject": "(件名なし)",
+  "mailDetailApplyCategoryRule": "このカテゴリを自動整理する",
+  "mailDetailApplyCategoryRuleDone": "ルールを設定しました",
+  "mailBlockSenderConfirm": "{sender} を今後取り込まないようにしますか？",
+  "@mailBlockSenderConfirm": {
+    "placeholders": { "sender": { "type": "String" } }
+  },
+  "mailBlockSenderDone": "差出人をブロックしました",
 
   "settingsLocalCacheRetention": "アプリでの自動非表示までの日数",
   "settingsLocalCacheRetentionDescription": "アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません",
@@ -39,6 +52,8 @@
   "ruleSettingsCategoryTab": "カテゴリルール",
   "ruleSettingsSenderBlockTab": "差出人ブロック",
   "ruleSettingsAddRule": "ルールを追加",
+  "ruleSettingsSenderBlockPickSender": "取り込み済みの差出人から選択",
+  "ruleSettingsSenderBlockNoSenders": "取り込み済みの差出人がありません",
 
   "archiveRestoreTitle": "アーカイブ済み一覧",
   "archiveRestoreRestore": "復元する",

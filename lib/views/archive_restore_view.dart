@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/linked_account.dart';
-import '../services/cloud_functions_mail_provider.dart';
 import '../viewmodels/email_search_providers.dart';
 import '../viewmodels/linked_account_providers.dart';
 
-/// アーカイブ済み一覧からの復元。誤操作時の安心材料として必須化（継続性の生命線）。
+/// アーカイブ済み一覧の表示のみ（復元機能は不要のため削除済み）。
 class ArchiveRestoreView extends ConsumerStatefulWidget {
   const ArchiveRestoreView({super.key});
 
@@ -67,18 +66,6 @@ class _ArchiveRestoreViewState extends ConsumerState<ArchiveRestoreView> {
                           meta.snippet,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: TextButton(
-                          onPressed: () async {
-                            final provider = resolveMailProvider(
-                              _selectedAccount!.provider,
-                            );
-                            await provider.restore(
-                              account: _selectedAccount!,
-                              emailIds: [meta.id],
-                            );
-                          },
-                          child: Text(l10n.archiveRestoreRestore),
                         ),
                       );
                     },

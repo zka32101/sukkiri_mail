@@ -11,15 +11,20 @@ class EmailMetaRepository {
   CollectionReference<Map<String, dynamic>> get _col =>
       _db.collection('emailMeta');
 
+  /// firestore.rulesのemailMeta読み取り許可は resource.data.userId ==
+  /// auth.uid のみ（他人のメタデータを覗けないようにするため）。Firestoreの
+  /// セキュリティルールはコレクションクエリ全体を静的に検証するため、
+  /// クエリ自体にuserIdの等価フィルタが無いと（accountId等だけでは）
+  /// permission-deniedで弾かれる。呼び出し側は必ず現在ログイン中のuidを渡すこと。
   Stream<List<EmailMeta>> watchForAccount(
     String accountId, {
+    required String userId,
     EmailStatus? status,
     LocalCacheStatus? localCacheStatus,
   }) {
-    Query<Map<String, dynamic>> q = _col.where(
-      'accountId',
-      isEqualTo: accountId,
-    );
+    Query<Map<String, dynamic>> q = _col
+        .where('accountId', isEqualTo: accountId)
+        .where('userId', isEqualTo: userId);
     if (status != null) {
       q = q.where('status', isEqualTo: emailStatusToString(status));
     }
@@ -37,19 +42,30 @@ class EmailMetaRepository {
 
   /// メール一覧画面用：実Gmail側の状態(status)には触れず、アプリ表示からのみ
   /// 経過日数で外された(localCacheStatus=purged)ものを除いた「今アプリに見えるべき」一覧。
-  Stream<List<EmailMeta>> watchVisibleForAccount(String accountId) {
+  Stream<List<EmailMeta>> watchVisibleForAccount(
+    String accountId, {
+    required String userId,
+  }) {
     return watchForAccount(
       accountId,
+      userId: userId,
       status: EmailStatus.active,
       localCacheStatus: LocalCacheStatus.cached,
     );
   }
 
   /// メタデータは件名・送信者・日時・カテゴリ・スニペットで常時検索可能（キャッシュ削除後も）。
-  Future<List<EmailMeta>> search(String accountId, String query) async {
+  Future<List<EmailMeta>> search(
+    String accountId,
+    String query, {
+    required String userId,
+  }) async {
     // Firestoreの部分一致検索は不可のため、簡易実装としてsnippetの前方一致で絞り込む。
     // 本番ではAlgolia等の全文検索インデックスに置き換え可能な設計にしておく。
-    final snap = await _col.where('accountId', isEqualTo: accountId).get();
+    final snap = await _col
+        .where('accountId', isEqualTo: accountId)
+        .where('userId', isEqualTo: userId)
+        .get();
     final all = snap.docs
         .map((d) => EmailMeta.fromMap(d.id, d.data()))
         .toList();
@@ -69,5 +85,18 @@ class EmailMetaRepository {
     return _col.doc(emailId).update({
       'localCacheStatus': localCacheStatusToString(status),
     });
+  }
+
+  /// 差出人ブロックルールの追加UI用：これまでに取り込まれた差出人アドレス一覧
+  /// （全アカウント横断、重複除去）。
+  Future<List<String>> distinctSenders(String userId) async {
+    final snap = await _col.where('userId', isEqualTo: userId).get();
+    final senders = snap.docs
+        .map((d) => d.data()['senderEmail'] as String? ?? '')
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList();
+    senders.sort();
+    return senders;
   }
 }

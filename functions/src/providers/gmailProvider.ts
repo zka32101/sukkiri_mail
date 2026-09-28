@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import * as admin from "firebase-admin";
+import { db } from "../db";
 import {
   ConnectedAccountResult,
   MailProviderAdapter,
@@ -19,7 +19,7 @@ import { categorizeMessage, pickNextAccountColor } from "../categorize";
  */
 export class GmailProvider implements MailProviderAdapter {
   private async getClient(accountId: string) {
-    const doc = await admin.firestore().collection("linkedAccounts").doc(accountId).get();
+    const doc = await db().collection("linkedAccounts").doc(accountId).get();
     const data = doc.data();
     if (!data) throw new Error("account not found");
 
@@ -49,8 +49,7 @@ export class GmailProvider implements MailProviderAdapter {
     const profile = await gmail.users.getProfile({ userId: "me" });
     const emailAddress = profile.data.emailAddress ?? "";
 
-    const existing = await admin
-      .firestore()
+    const existing = await db()
       .collection("linkedAccounts")
       .where("userId", "==", userId)
       .get();
@@ -58,7 +57,7 @@ export class GmailProvider implements MailProviderAdapter {
 
     // 再認可時、Googleはrefresh_tokenを再発行しないことがある（既に同意済みのため）。
     // その場合はnullを保存し、accessToken失効時に再連携を促す。
-    const ref = await admin.firestore().collection("linkedAccounts").add({
+    const ref = await db().collection("linkedAccounts").add({
       userId,
       provider: "gmail",
       authMethod: "oauth",
@@ -81,12 +80,16 @@ export class GmailProvider implements MailProviderAdapter {
     };
   }
 
+  /**
+   * 連携直後（および将来の定期再スキャン）に、過去30日分の受信メールを
+   * まとめて取得する。カテゴリでの絞り込みはしない（メール一覧は全件表示のため）。
+   */
   async scan(accountId: string): Promise<ScanResultItem[]> {
     const gmail = await this.getClient(accountId);
     const list = await gmail.users.messages.list({
       userId: "me",
-      q: "category:promotions OR category:updates",
-      maxResults: 50,
+      q: "newer_than:30d",
+      maxResults: 200,
     });
     const messages = list.data.messages ?? [];
 

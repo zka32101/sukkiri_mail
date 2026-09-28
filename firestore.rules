@@ -32,7 +32,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && resource != null &&
         resource.data.userId == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['categoryName', 'senderPatterns', 'isEnabled', 'priority']);
+          .hasOnly(['category', 'retentionDays', 'accountId']);
       allow delete: if isSignedIn() && resource != null &&
         resource.data.userId == request.auth.uid;
     }
@@ -45,7 +45,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && resource != null &&
         resource.data.userId == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['senderEmail', 'blockedAt', 'reason', 'isActive']);
+          .hasOnly(['pattern', 'matchType', 'accountId']);
       allow delete: if isSignedIn() && resource != null &&
         resource.data.userId == request.auth.uid;
     }

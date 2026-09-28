@@ -1,4 +1,4 @@
-import * as admin from "firebase-admin";
+import { db } from "../db";
 import {
   ConnectedAccountResult,
   MailProviderAdapter,
@@ -22,8 +22,7 @@ export class OutlookProvider implements MailProviderAdapter {
    * アクセストークンを取得。有効期限切れの場合は refresh token を使用して更新する。
    */
   private async getAccessToken(accountId: string): Promise<string> {
-    const doc = await admin
-      .firestore()
+    const doc = await db()
       .collection("linkedAccounts")
       .doc(accountId)
       .get();
@@ -92,8 +91,7 @@ export class OutlookProvider implements MailProviderAdapter {
         updates.refreshToken = newRefreshToken;
       }
 
-      await admin
-        .firestore()
+      await db()
         .collection("linkedAccounts")
         .doc(accountId)
         .update(updates);
@@ -109,8 +107,7 @@ export class OutlookProvider implements MailProviderAdapter {
       );
 
       // リフレッシュ失敗時は oauthStatus を "expired" に設定
-      await admin
-        .firestore()
+      await db()
         .collection("linkedAccounts")
         .doc(accountId)
         .update({ oauthStatus: "expired" })
@@ -167,8 +164,7 @@ export class OutlookProvider implements MailProviderAdapter {
     const me = await meRes.json();
     const emailAddress = me.mail ?? me.userPrincipalName ?? "";
 
-    const existing = await admin
-      .firestore()
+    const existing = await db()
       .collection("linkedAccounts")
       .where("userId", "==", userId)
       .get();
@@ -178,7 +174,7 @@ export class OutlookProvider implements MailProviderAdapter {
     const expiresIn = (tokens.expires_in as number) ?? 3600; // default: 1 hour
     const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-    const ref = await admin.firestore().collection("linkedAccounts").add({
+    const ref = await db().collection("linkedAccounts").add({
       userId,
       provider: "outlook",
       authMethod: "oauth",

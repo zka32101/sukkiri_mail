@@ -62,6 +62,8 @@ class EmailMeta {
   final LocalCacheStatus localCacheStatus;
   final String snippet; // 常時保持・数十文字。キャッシュ削除後も検索・一覧表示に使う
   final DateTime? lastFetchedAt; // オンデマンド取得の最終日時
+  final String subject;
+  final String senderEmail;
 
   const EmailMeta({
     required this.id,
@@ -74,6 +76,8 @@ class EmailMeta {
     this.isPinned = false,
     this.localCacheStatus = LocalCacheStatus.cached,
     this.lastFetchedAt,
+    this.subject = '',
+    this.senderEmail = '',
   });
 
   EmailMeta copyWith({
@@ -93,6 +97,8 @@ class EmailMeta {
       isPinned: isPinned ?? this.isPinned,
       localCacheStatus: localCacheStatus ?? this.localCacheStatus,
       lastFetchedAt: lastFetchedAt ?? this.lastFetchedAt,
+      subject: subject,
+      senderEmail: senderEmail,
     );
   }
 
@@ -120,6 +126,8 @@ class EmailMeta {
                 : DateTime.fromMillisecondsSinceEpoch(
                     (m['lastFetchedAt'] as num).toInt(),
                   )),
+      subject: m['subject'] as String? ?? '',
+      senderEmail: m['senderEmail'] as String? ?? '',
     );
   }
 
@@ -134,6 +142,8 @@ class EmailMeta {
       'localCacheStatus': localCacheStatusToString(localCacheStatus),
       'snippet': snippet,
       'lastFetchedAt': lastFetchedAt?.millisecondsSinceEpoch,
+      'subject': subject,
+      'senderEmail': senderEmail,
     };
   }
 }

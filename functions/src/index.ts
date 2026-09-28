@@ -1,21 +1,13 @@
 import * as admin from "firebase-admin";
-import { getFirestore } from "firebase-admin/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { db } from "./db";
 import { MailProviderAdapter } from "./providers/mailProviderInterface";
 import { GmailProvider } from "./providers/gmailProvider";
 import { OutlookProvider } from "./providers/outlookProvider";
 import { ImapProvider } from "./providers/imapProvider";
 
 admin.initializeApp();
-
-// このプロジェクト(app1-6c108)は複数アプリ共存のため、Firestoreは名前付き
-// データベース "sukkirimail" を使う（Flutter側もfirestoreProviderで同じ名前を
-// 指定している）。admin.firestore()は引数なしだと(default)DBを見てしまうため、
-// このアプリ用の読み書きは必ずこのヘルパー経由にする。
-function db() {
-  return getFirestore(admin.app(), "sukkirimail");
-}
 
 function resolveProvider(provider: string): MailProviderAdapter {
   switch (provider) {
@@ -42,7 +34,12 @@ export const connectAccount = onCall(async (request) => {
   return result;
 });
 
-/** アカウントをスキャンし、カテゴリ自動判定した検出結果を返す（Aha Moment用）。 */
+/**
+ * アカウントの過去30日分のメールを取得し、emailMeta（アプリのメール一覧が
+ * 読む場所）へ保存する。連携直後に自動で1回呼ばれる想定（ユーザー操作は不要）。
+ * 既存ドキュメントはmerge:trueで上書きするため、isPinned/localCacheStatus等
+ * ユーザーが既に変更した状態は保持される。
+ */
 export const scanAccount = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
@@ -51,12 +48,68 @@ export const scanAccount = onCall(async (request) => {
 
   const adapter = resolveProvider(provider);
   const items = await adapter.scan(accountId);
-  await admin
-    .firestore()
-    .collection("linkedAccounts")
-    .doc(accountId)
-    .update({ lastScanAt: Date.now() });
-  return { items };
+
+  const firestore = db();
+  const refs = items.map((item) => firestore.collection("emailMeta").doc(item.id));
+  // 既存ドキュメントかどうかで書き込む内容を分ける：isPinned/localCacheStatusは
+  // 新規作成時にだけ初期値を入れる。既存分にも毎回上書きすると、ユーザーが
+  // ピン留めした/非表示にした状態が再スキャンのたびに元に戻ってしまうため。
+  const existingDocs = refs.length > 0 ? await firestore.getAll(...refs) : [];
+  const existingIds = new Set(
+    existingDocs.filter((d) => d.exists).map((d) => d.id),
+  );
+
+  const blockRulesSnap = await firestore
+    .collection("senderBlockRules")
+    .where("userId", "==", uid)
+    .get();
+  const blockRules = blockRulesSnap.docs.map((d) => d.data());
+  const isBlocked = (senderEmail: string): boolean => {
+    const lower = senderEmail.toLowerCase();
+    return blockRules.some((rule) => {
+      if (rule.accountId && rule.accountId !== accountId) return false;
+      const pattern = String(rule.pattern ?? "").toLowerCase();
+      if (!pattern) return false;
+      if (rule.matchType === "domain") {
+        const domain = pattern.startsWith("@") ? pattern : `@${pattern}`;
+        return lower.endsWith(domain);
+      }
+      return lower === pattern;
+    });
+  };
+
+  const batch = firestore.batch();
+  for (const item of items) {
+    const ref = firestore.collection("emailMeta").doc(item.id);
+    const base = {
+      accountId: item.accountId,
+      userId: uid,
+      category: item.category,
+      receivedAt: item.receivedAt,
+      hasAttachment: item.hasAttachment,
+      snippet: item.snippet,
+      subject: item.subject,
+      senderEmail: item.senderEmail,
+      status: "active",
+    };
+    if (existingIds.has(item.id)) {
+      batch.set(ref, base, { merge: true });
+    } else {
+      batch.set(ref, {
+        ...base,
+        localCacheStatus: isBlocked(item.senderEmail) ? "blocked" : "cached",
+        isPinned: false,
+      });
+    }
+  }
+  if (items.length > 0) {
+    await batch.commit();
+  }
+
+  await firestore.collection("linkedAccounts").doc(accountId).update({
+    lastScanAt: Date.now(),
+  });
+  return { items, savedCount: items.length };
 });
 
 /** 検出結果のうち選択されたメールをアーカイブする（サーバー側、可逆）。 */
@@ -69,25 +122,13 @@ export const applyArchiveRules = onCall(async (request) => {
   const adapter = resolveProvider(provider);
   await adapter.archive(accountId, emailIds ?? []);
 
-  await admin.firestore().collection("archiveLogs").add({
+  await db().collection("archiveLogs").add({
     userId: uid,
     archivedAt: Date.now(),
     emailCount: (emailIds ?? []).length,
     category: "other",
     restoredAt: null,
   });
-  return { ok: true };
-});
-
-/** アーカイブ済みメールを受信箱に復元する。 */
-export const restoreEmail = onCall(async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError("unauthenticated", "sign-in required");
-  const { provider, accountId, emailIds } = request.data ?? {};
-  await assertAccountOwnership(accountId, uid);
-
-  const adapter = resolveProvider(provider);
-  await adapter.restore(accountId, emailIds ?? []);
   return { ok: true };
 });
 
@@ -103,7 +144,7 @@ export const fetchMessageBody = onCall(async (request) => {
 });
 
 async function assertAccountOwnership(accountId: string, uid: string): Promise<void> {
-  const doc = await admin.firestore().collection("linkedAccounts").doc(accountId).get();
+  const doc = await db().collection("linkedAccounts").doc(accountId).get();
   const data = doc.data();
   if (!data || data.userId !== uid) {
     throw new HttpsError("permission-denied", "not your account");

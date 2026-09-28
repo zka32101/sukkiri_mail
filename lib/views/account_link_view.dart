@@ -5,10 +5,10 @@ import '../l10n/app_localizations.dart';
 import '../models/linked_account.dart';
 import '../services/cloud_functions_mail_provider.dart';
 import '../viewmodels/auth_provider.dart';
-import 'scan_result_view.dart';
 
-/// Aha Moment動線 Step2: プロバイダ選択→OAuth同意/アプリパスワード入力。
-/// 初期実装優先順位：①Gmail（gmail.modify）②Outlook（Mail.ReadWrite）③汎用IMAP。
+/// プロバイダ選択→OAuth同意/アプリパスワード入力→連携完了後は自動で
+/// 過去30日分のメールを取得し、そのままメール一覧へ戻る（アーカイブ候補選択の
+/// ような中間確認画面は挟まない）。
 class AccountLinkView extends ConsumerStatefulWidget {
   const AccountLinkView({super.key});
 
@@ -25,10 +25,10 @@ class _AccountLinkViewState extends ConsumerState<AccountLinkView> {
       final userId = await ref.read(currentUserIdProvider.future);
       final provider = resolveMailProvider(type);
       final account = await provider.connect(userId: userId);
+      // 連携直後に自動で過去30日分を取得する（ユーザー操作は不要）。
+      await provider.scan(account: account);
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => ScanResultView(account: account)),
-      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));

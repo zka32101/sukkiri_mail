@@ -26,6 +26,19 @@
   "mailListEmpty": "No emails to show",
   "mailListPinToggleOn": "Pin",
   "mailListPinToggleOff": "Unpin",
+  "mailListBlockSender": "Stop importing this sender",
+  "mailListSortByAccount": "By account",
+  "mailListSortByDate": "By date (all accounts)",
+
+  "mailDetailTitle": "Mail detail",
+  "mailDetailNoSubject": "(no subject)",
+  "mailDetailApplyCategoryRule": "Auto-organize this category",
+  "mailDetailApplyCategoryRuleDone": "Rule saved",
+  "mailBlockSenderConfirm": "Stop importing mail from {sender}?",
+  "@mailBlockSenderConfirm": {
+    "placeholders": { "sender": { "type": "String" } }
+  },
+  "mailBlockSenderDone": "Sender blocked",
 
   "settingsLocalCacheRetention": "Auto-hide from this app after",
   "settingsLocalCacheRetentionDescription": "Only affects what this app shows — your real inbox is never changed",
@@ -39,6 +52,8 @@
   "ruleSettingsCategoryTab": "Category rules",
   "ruleSettingsSenderBlockTab": "Sender block",
   "ruleSettingsAddRule": "Add rule",
+  "ruleSettingsSenderBlockPickSender": "Choose from imported senders",
+  "ruleSettingsSenderBlockNoSenders": "No imported senders yet",
 
   "archiveRestoreTitle": "Archived emails",
   "archiveRestoreRestore": "Restore",
