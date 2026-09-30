@@ -159,7 +159,7 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
                 DropdownButtonFormField<String>(
                   isExpanded: true,
                   hint: Text(l10n.ruleSettingsSenderBlockPickSender),
-                  value: knownSenders.contains(controller.text)
+                  initialValue: knownSenders.contains(controller.text)
                       ? controller.text
                       : null,
                   items: knownSenders
