@@ -62,8 +62,11 @@ class EmailMeta {
   final LocalCacheStatus localCacheStatus;
   final String snippet; // 常時保持・数十文字。キャッシュ削除後も検索・一覧表示に使う
   final DateTime? lastFetchedAt; // オンデマンド取得の最終日時
-  final String subject;
-  final String senderEmail;
+  final String senderEmail; // 差出人ブロックルール判定・自動キャッシュ削除の対象特定に使う
+  final String subject; // 一覧表示用の件名。スキャン時にCloud Functions側で保存される
+  // 未読は経過日数によらず自動キャッシュ削除の対象外にする（LocalCacheServiceの最重要ガード）。
+  // フィールド欠落時は「未読扱い」で安全側に倒す（誤ってキャッシュを消さない）。
+  final bool isUnread;
 
   const EmailMeta({
     required this.id,
@@ -76,8 +79,9 @@ class EmailMeta {
     this.isPinned = false,
     this.localCacheStatus = LocalCacheStatus.cached,
     this.lastFetchedAt,
-    this.subject = '',
     this.senderEmail = '',
+    this.subject = '',
+    this.isUnread = true,
   });
 
   EmailMeta copyWith({
@@ -85,6 +89,7 @@ class EmailMeta {
     bool? isPinned,
     LocalCacheStatus? localCacheStatus,
     DateTime? lastFetchedAt,
+    bool? isUnread,
   }) {
     return EmailMeta(
       id: id,
@@ -97,8 +102,9 @@ class EmailMeta {
       isPinned: isPinned ?? this.isPinned,
       localCacheStatus: localCacheStatus ?? this.localCacheStatus,
       lastFetchedAt: lastFetchedAt ?? this.lastFetchedAt,
-      subject: subject,
       senderEmail: senderEmail,
+      subject: subject,
+      isUnread: isUnread ?? this.isUnread,
     );
   }
 
@@ -126,8 +132,9 @@ class EmailMeta {
                 : DateTime.fromMillisecondsSinceEpoch(
                     (m['lastFetchedAt'] as num).toInt(),
                   )),
-      subject: m['subject'] as String? ?? '',
       senderEmail: m['senderEmail'] as String? ?? '',
+      subject: m['subject'] as String? ?? '',
+      isUnread: m['isUnread'] as bool? ?? true,
     );
   }
 
@@ -142,8 +149,9 @@ class EmailMeta {
       'localCacheStatus': localCacheStatusToString(localCacheStatus),
       'snippet': snippet,
       'lastFetchedAt': lastFetchedAt?.millisecondsSinceEpoch,
-      'subject': subject,
       'senderEmail': senderEmail,
+      'subject': subject,
+      'isUnread': isUnread,
     };
   }
 }

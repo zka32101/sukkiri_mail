@@ -14,6 +14,8 @@ export interface ScanResultItem {
   snippet: string;
   subject: string;
   senderEmail: string;
+  // 未読メールは自動キャッシュ削除の対象外にするための判定に使う（LocalCacheServiceの最重要ガード）。
+  isUnread: boolean;
 }
 
 export interface ConnectedAccountResult {
@@ -34,7 +36,13 @@ export interface MessageBodyResult {
 
 export interface MailProviderAdapter {
   connect(userId: string, params: Record<string, unknown>): Promise<ConnectedAccountResult>;
-  scan(accountId: string): Promise<ScanResultItem[]>;
+  /**
+   * Scan emails with optional incremental support.
+   * @param accountId Account identifier
+   * @param lastScanAt Optional timestamp. If provided, returns only emails received after this time.
+   *                   If undefined/null, performs full scan.
+   */
+  scan(accountId: string, lastScanAt?: number | null): Promise<ScanResultItem[]>;
   archive(accountId: string, emailIds: string[]): Promise<void>;
   restore(accountId: string, emailIds: string[]): Promise<void>;
   fetchMessageBody(accountId: string, messageId: string): Promise<MessageBodyResult>;

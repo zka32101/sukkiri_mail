@@ -22,10 +22,29 @@
   "archiveCandidatesArchiveAll": "Alle archivieren",
   "archiveCandidatesPin": "Schützen",
 
-  "dashboardTitle": "Klarheit im Posteingang",
   "dashboardArchivedCount": "Insgesamt archiviert",
   "dashboardFreedBytes": "Freigegebener Speicherplatz",
   "dashboardPinnedCount": "Geschützte Mails",
+
+  "mailListTitle": "E-Mail-Liste",
+  "mailListEmpty": "Keine E-Mails vorhanden",
+  "mailListSortNewest": "Neueste zuerst",
+  "mailListSortUnreadFirst": "Ungelesene zuerst",
+  "mailListSortSender": "Nach Absender",
+  "mailListGroupToggle": "Nach Absender gruppieren",
+  "mailListSelectionCount": "{count} ausgewählt",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "Archivieren",
+  "mailListBulkMarkRead": "Als gelesen markieren",
+  "mailListUnknownSender": "(Unbekannter Absender)",
+
+  "categoryAll": "Alle",
+  "categoryPromotion": "Werbung",
+  "categoryNotification": "Benachrichtigungen",
+  "categoryInvoice": "Rechnungen",
+  "categoryOther": "Sonstige",
 
   "ruleSettingsTitle": "Regeln",
   "ruleSettingsCategoryTab": "Kategorieregeln",

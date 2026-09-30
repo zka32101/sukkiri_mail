@@ -200,6 +200,24 @@ abstract class AppLocalizations {
   /// **'保護する'**
   String get archiveCandidatesPin;
 
+  /// No description provided for @dashboardArchivedCount.
+  ///
+  /// In ja, this message translates to:
+  /// **'累計アーカイブ件数'**
+  String get dashboardArchivedCount;
+
+  /// No description provided for @dashboardFreedBytes.
+  ///
+  /// In ja, this message translates to:
+  /// **'解放したローカル容量'**
+  String get dashboardFreedBytes;
+
+  /// No description provided for @dashboardPinnedCount.
+  ///
+  /// In ja, this message translates to:
+  /// **'保護件数'**
+  String get dashboardPinnedCount;
+
   /// No description provided for @mailListTitle.
   ///
   /// In ja, this message translates to:
@@ -209,8 +227,56 @@ abstract class AppLocalizations {
   /// No description provided for @mailListEmpty.
   ///
   /// In ja, this message translates to:
-  /// **'表示できるメールがありません'**
+  /// **'表示するメールがありません'**
   String get mailListEmpty;
+
+  /// No description provided for @mailListSortNewest.
+  ///
+  /// In ja, this message translates to:
+  /// **'新着順'**
+  String get mailListSortNewest;
+
+  /// No description provided for @mailListSortUnreadFirst.
+  ///
+  /// In ja, this message translates to:
+  /// **'未読優先'**
+  String get mailListSortUnreadFirst;
+
+  /// No description provided for @mailListSortSender.
+  ///
+  /// In ja, this message translates to:
+  /// **'送信者別'**
+  String get mailListSortSender;
+
+  /// No description provided for @mailListGroupToggle.
+  ///
+  /// In ja, this message translates to:
+  /// **'送信者でグループ化'**
+  String get mailListGroupToggle;
+
+  /// No description provided for @mailListSelectionCount.
+  ///
+  /// In ja, this message translates to:
+  /// **'{count}件選択中'**
+  String mailListSelectionCount(int count);
+
+  /// No description provided for @mailListBulkArchive.
+  ///
+  /// In ja, this message translates to:
+  /// **'アーカイブ'**
+  String get mailListBulkArchive;
+
+  /// No description provided for @mailListBulkMarkRead.
+  ///
+  /// In ja, this message translates to:
+  /// **'既読にする'**
+  String get mailListBulkMarkRead;
+
+  /// No description provided for @mailListUnknownSender.
+  ///
+  /// In ja, this message translates to:
+  /// **'（不明な送信者）'**
+  String get mailListUnknownSender;
 
   /// No description provided for @mailListPinToggleOn.
   ///
@@ -229,18 +295,6 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'この差出人を今後取り込まない'**
   String get mailListBlockSender;
-
-  /// No description provided for @mailListSortByAccount.
-  ///
-  /// In ja, this message translates to:
-  /// **'アカウント毎'**
-  String get mailListSortByAccount;
-
-  /// No description provided for @mailListSortByDate.
-  ///
-  /// In ja, this message translates to:
-  /// **'日付順（全アカウント）'**
-  String get mailListSortByDate;
 
   /// No description provided for @mailDetailTitle.
   ///
@@ -290,29 +344,35 @@ abstract class AppLocalizations {
   /// **'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません'**
   String get settingsLocalCacheRetentionDescription;
 
-  /// No description provided for @dashboardTitle.
+  /// No description provided for @categoryAll.
   ///
   /// In ja, this message translates to:
-  /// **'受信箱スッキリ度'**
-  String get dashboardTitle;
+  /// **'すべて'**
+  String get categoryAll;
 
-  /// No description provided for @dashboardArchivedCount.
+  /// No description provided for @categoryPromotion.
   ///
   /// In ja, this message translates to:
-  /// **'累計アーカイブ件数'**
-  String get dashboardArchivedCount;
+  /// **'プロモーション'**
+  String get categoryPromotion;
 
-  /// No description provided for @dashboardFreedBytes.
+  /// No description provided for @categoryNotification.
   ///
   /// In ja, this message translates to:
-  /// **'解放したローカル容量'**
-  String get dashboardFreedBytes;
+  /// **'通知'**
+  String get categoryNotification;
 
-  /// No description provided for @dashboardPinnedCount.
+  /// No description provided for @categoryInvoice.
   ///
   /// In ja, this message translates to:
-  /// **'保護件数'**
-  String get dashboardPinnedCount;
+  /// **'請求書'**
+  String get categoryInvoice;
+
+  /// No description provided for @categoryOther.
+  ///
+  /// In ja, this message translates to:
+  /// **'その他'**
+  String get categoryOther;
 
   /// No description provided for @ruleSettingsTitle.
   ///
@@ -404,6 +464,36 @@ abstract class AppLocalizations {
   /// **'使い方'**
   String get settingsUsageGuide;
 
+  /// No description provided for @settingsSyncInterval.
+  ///
+  /// In ja, this message translates to:
+  /// **'自動取り込みの間隔'**
+  String get settingsSyncInterval;
+
+  /// No description provided for @settingsSyncIntervalHours.
+  ///
+  /// In ja, this message translates to:
+  /// **'{hours}時間ごと'**
+  String settingsSyncIntervalHours(int hours);
+
+  /// No description provided for @settingsAccountReauthRequired.
+  ///
+  /// In ja, this message translates to:
+  /// **'再連携が必要です'**
+  String get settingsAccountReauthRequired;
+
+  /// No description provided for @settingsAccountUnlink.
+  ///
+  /// In ja, this message translates to:
+  /// **'連携解除'**
+  String get settingsAccountUnlink;
+
+  /// No description provided for @settingsAccountUnlinkConfirm.
+  ///
+  /// In ja, this message translates to:
+  /// **'{email} の連携を解除しますか？取り込み済みのメールはアプリ上に残ります'**
+  String settingsAccountUnlinkConfirm(String email);
+
   /// No description provided for @usageGuideTitle.
   ///
   /// In ja, this message translates to:
@@ -445,6 +535,24 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'閉じる'**
   String get usageGuideClose;
+
+  /// No description provided for @notificationSettingsTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'通知する差出人'**
+  String get notificationSettingsTitle;
+
+  /// No description provided for @notificationSettingsDescription.
+  ///
+  /// In ja, this message translates to:
+  /// **'選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません'**
+  String get notificationSettingsDescription;
+
+  /// No description provided for @notificationSettingsEmpty.
+  ///
+  /// In ja, this message translates to:
+  /// **'まだ取り込まれたメールがありません'**
+  String get notificationSettingsEmpty;
 
   /// No description provided for @paywallTitle.
   ///
@@ -499,54 +607,6 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'購入処理に失敗しました。時間をおいて再度お試しください'**
   String get paywallPurchaseFailed;
-
-  /// No description provided for @settingsSyncInterval.
-  ///
-  /// In ja, this message translates to:
-  /// **'自動取り込みの間隔'**
-  String get settingsSyncInterval;
-
-  /// No description provided for @settingsSyncIntervalHours.
-  ///
-  /// In ja, this message translates to:
-  /// **'{hours}時間ごと'**
-  String settingsSyncIntervalHours(int hours);
-
-  /// No description provided for @settingsAccountReauthRequired.
-  ///
-  /// In ja, this message translates to:
-  /// **'再連携が必要です'**
-  String get settingsAccountReauthRequired;
-
-  /// No description provided for @settingsAccountUnlink.
-  ///
-  /// In ja, this message translates to:
-  /// **'連携解除'**
-  String get settingsAccountUnlink;
-
-  /// No description provided for @settingsAccountUnlinkConfirm.
-  ///
-  /// In ja, this message translates to:
-  /// **'{email} の連携を解除しますか？取り込み済みのメールはアプリ上に残ります'**
-  String settingsAccountUnlinkConfirm(String email);
-
-  /// No description provided for @notificationSettingsTitle.
-  ///
-  /// In ja, this message translates to:
-  /// **'通知する差出人'**
-  String get notificationSettingsTitle;
-
-  /// No description provided for @notificationSettingsDescription.
-  ///
-  /// In ja, this message translates to:
-  /// **'選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません'**
-  String get notificationSettingsDescription;
-
-  /// No description provided for @notificationSettingsEmpty.
-  ///
-  /// In ja, this message translates to:
-  /// **'まだ取り込まれたメールがありません'**
-  String get notificationSettingsEmpty;
 
   /// No description provided for @commonRetry.
   ///

@@ -1,30 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
-import '../viewmodels/auth_provider.dart';
-import '../viewmodels/core_providers.dart';
+import '../viewmodels/linked_account_providers.dart';
+import '../viewmodels/local_cache_eviction_providers.dart';
 import '../widgets/banner_ad_slot.dart';
 import 'archive_restore_view.dart';
 import 'mail_list_view.dart';
 import 'mail_search_view.dart';
+import 'onboarding_view.dart';
 import 'rule_settings_view.dart';
 import 'settings_view.dart';
-import 'usage_guide_view.dart';
 
-/// 初回起動判定用フラグ。値を変えれば説明内容の大改訂時に再表示させられる。
-const _hasSeenUsageGuideKey = 'hasSeenUsageGuideV1';
-
-/// 起動直後に必ずメール一覧（メインシェル・ボトムナビ）を表示する。
-/// アカウント未連携でもここへ入り、連携はSettingsタブの「アカウントを追加」
-/// からいつでもたどれる（Onboardingの必須ゲートは廃止）。
-class RootShell extends StatelessWidget {
+/// アカウント未連携ならOnboarding→AccountLink→ScanResult→ArchiveCandidatesの
+/// Aha Moment動線へ、連携済みならメインシェル（ボトムナビ）へ分岐する。
+class RootShell extends ConsumerWidget {
   const RootShell({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const _MainShell();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final accountsAsync = ref.watch(linkedAccountsProvider);
+
+    return accountsAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
+      data: (accounts) {
+        if (accounts.isEmpty) {
+          return const OnboardingView();
+        }
+        return const _MainShell();
+      },
+    );
   }
 }
 
@@ -39,36 +46,10 @@ class _MainShellState extends ConsumerState<_MainShell> {
   int _index = 0;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowUsageGuide());
-    _initNotifications();
-  }
-
-  Future<void> _initNotifications() async {
-    try {
-      final userId = await ref.read(currentUserIdProvider.future);
-      await ref.read(notificationServiceProvider).initialize(userId);
-    } catch (_) {
-      // 未ログイン等で失敗しても起動自体は継続する。
-    }
-  }
-
-  Future<void> _maybeShowUsageGuide() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_hasSeenUsageGuideKey) == true) return;
-    if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => const UsageGuideView(),
-      ),
-    );
-    await prefs.setBool(_hasSeenUsageGuideKey, true);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // メインシェルに到達するたび（アプリセッション中は初回のみ実行・以降は結果をキャッシュ）、
+    // ローカルキャッシュの自動削除（Must4）をバックグラウンドで実行する。UIはブロックしない。
+    ref.watch(localCacheEvictionSweepProvider);
     final l10n = AppLocalizations.of(context)!;
     final pages = const [
       MailListView(),

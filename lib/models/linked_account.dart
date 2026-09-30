@@ -57,6 +57,11 @@ class LinkedAccount {
   final String? imapHost; // IMAP系のみ
   final DateTime? lastScanAt;
   final String colorHex;
+  final String? scanStatus; // in_progress/completed/failed
+  final String? scanError;
+  final DateTime? scanStartedAt;
+  final DateTime? scanCompletedAt;
+  final int? scanItemCount;
 
   const LinkedAccount({
     required this.id,
@@ -68,12 +73,22 @@ class LinkedAccount {
     this.oauthStatus,
     this.imapHost,
     this.lastScanAt,
+    this.scanStatus,
+    this.scanError,
+    this.scanStartedAt,
+    this.scanCompletedAt,
+    this.scanItemCount,
   });
 
   LinkedAccount copyWith({
     String? oauthStatus,
     DateTime? lastScanAt,
     String? colorHex,
+    String? scanStatus,
+    String? scanError,
+    DateTime? scanStartedAt,
+    DateTime? scanCompletedAt,
+    int? scanItemCount,
   }) {
     return LinkedAccount(
       id: id,
@@ -85,6 +100,11 @@ class LinkedAccount {
       oauthStatus: oauthStatus ?? this.oauthStatus,
       lastScanAt: lastScanAt ?? this.lastScanAt,
       colorHex: colorHex ?? this.colorHex,
+      scanStatus: scanStatus ?? this.scanStatus,
+      scanError: scanError ?? this.scanError,
+      scanStartedAt: scanStartedAt ?? this.scanStartedAt,
+      scanCompletedAt: scanCompletedAt ?? this.scanCompletedAt,
+      scanItemCount: scanItemCount ?? this.scanItemCount,
     );
   }
 
@@ -105,6 +125,23 @@ class LinkedAccount {
                 : DateTime.fromMillisecondsSinceEpoch(
                     (m['lastScanAt'] as num).toInt(),
                   )),
+      scanStatus: m['scanStatus'] as String?,
+      scanError: m['scanError'] as String?,
+      scanStartedAt: m['scanStartedAt'] == null
+          ? null
+          : (m['scanStartedAt'] is DateTime
+                ? m['scanStartedAt'] as DateTime
+                : DateTime.fromMillisecondsSinceEpoch(
+                    (m['scanStartedAt'] as num).toInt(),
+                  )),
+      scanCompletedAt: m['scanCompletedAt'] == null
+          ? null
+          : (m['scanCompletedAt'] is DateTime
+                ? m['scanCompletedAt'] as DateTime
+                : DateTime.fromMillisecondsSinceEpoch(
+                    (m['scanCompletedAt'] as num).toInt(),
+                  )),
+      scanItemCount: m['scanItemCount'] as int?,
     );
   }
 
@@ -118,8 +155,24 @@ class LinkedAccount {
       'imapHost': imapHost,
       'colorHex': colorHex,
       'lastScanAt': lastScanAt?.millisecondsSinceEpoch,
+      'scanStatus': scanStatus,
+      'scanError': scanError,
+      'scanStartedAt': scanStartedAt?.millisecondsSinceEpoch,
+      'scanCompletedAt': scanCompletedAt?.millisecondsSinceEpoch,
+      'scanItemCount': scanItemCount,
     };
   }
+
+  // Firestoreドキュメントの同一性（id）で値等価を判定する。これが無いと、
+  // linkedAccountsProviderが新しいスナップショットのたびに毎回新規インスタンスを
+  // 生成するため（同じアカウントでも==で一致しなくなり）、DropdownButtonの選択状態や
+  // FutureProvider.family<..., LinkedAccount>のキャッシュキーが本来同じアカウントを
+  // 指しているのに一致しないという不具合を引き起こしていた。
+  @override
+  bool operator ==(Object other) => other is LinkedAccount && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 /// 登録済みアカウント一覧から、パレットの中で未使用の色を選ぶ。

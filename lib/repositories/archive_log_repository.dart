@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/archive_log.dart';
+import '../services/app_firestore.dart';
 
 class ArchiveLogRepository {
   final FirebaseFirestore _db;
 
-  ArchiveLogRepository({FirebaseFirestore? db})
-    : _db = db ?? FirebaseFirestore.instance;
+  ArchiveLogRepository({FirebaseFirestore? db}) : _db = db ?? appFirestore();
 
   CollectionReference<Map<String, dynamic>> get _col =>
       _db.collection('archiveLogs');
@@ -20,19 +20,5 @@ class ArchiveLogRepository {
           (snap) =>
               snap.docs.map((d) => ArchiveLog.fromMap(d.id, d.data())).toList(),
         );
-  }
-
-  Future<int> totalArchivedCount(String userId) async {
-    final snap = await _col.where('userId', isEqualTo: userId).get();
-    return snap.docs.fold<int>(
-      0,
-      (total, d) => total + ((d.data()['emailCount'] as num?)?.toInt() ?? 0),
-    );
-  }
-
-  Future<void> markRestored(String logId, DateTime restoredAt) {
-    return _col.doc(logId).update({
-      'restoredAt': restoredAt.millisecondsSinceEpoch,
-    });
   }
 }

@@ -55,10 +55,45 @@ class AppLocalizationsDe extends AppLocalizations {
   String get archiveCandidatesPin => 'Schützen';
 
   @override
-  String get mailListTitle => 'メール一覧';
+  String get dashboardArchivedCount => 'Insgesamt archiviert';
 
   @override
-  String get mailListEmpty => '表示できるメールがありません';
+  String get dashboardFreedBytes => 'Freigegebener Speicherplatz';
+
+  @override
+  String get dashboardPinnedCount => 'Geschützte Mails';
+
+  @override
+  String get mailListTitle => 'E-Mail-Liste';
+
+  @override
+  String get mailListEmpty => 'Keine E-Mails vorhanden';
+
+  @override
+  String get mailListSortNewest => 'Neueste zuerst';
+
+  @override
+  String get mailListSortUnreadFirst => 'Ungelesene zuerst';
+
+  @override
+  String get mailListSortSender => 'Nach Absender';
+
+  @override
+  String get mailListGroupToggle => 'Nach Absender gruppieren';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count ausgewählt';
+  }
+
+  @override
+  String get mailListBulkArchive => 'Archivieren';
+
+  @override
+  String get mailListBulkMarkRead => 'Als gelesen markieren';
+
+  @override
+  String get mailListUnknownSender => '(Unbekannter Absender)';
 
   @override
   String get mailListPinToggleOn => '保護する';
@@ -68,12 +103,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get mailListBlockSender => 'この差出人を今後取り込まない';
-
-  @override
-  String get mailListSortByAccount => 'アカウント毎';
-
-  @override
-  String get mailListSortByDate => '日付順（全アカウント）';
 
   @override
   String get mailDetailTitle => 'メール詳細';
@@ -103,16 +132,19 @@ class AppLocalizationsDe extends AppLocalizations {
       'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません';
 
   @override
-  String get dashboardTitle => 'Klarheit im Posteingang';
+  String get categoryAll => 'Alle';
 
   @override
-  String get dashboardArchivedCount => 'Insgesamt archiviert';
+  String get categoryPromotion => 'Werbung';
 
   @override
-  String get dashboardFreedBytes => 'Freigegebener Speicherplatz';
+  String get categoryNotification => 'Benachrichtigungen';
 
   @override
-  String get dashboardPinnedCount => 'Geschützte Mails';
+  String get categoryInvoice => 'Rechnungen';
+
+  @override
+  String get categoryOther => 'Sonstige';
 
   @override
   String get ruleSettingsTitle => 'Regeln';
@@ -160,6 +192,25 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsUsageGuide => '使い方';
 
   @override
+  String get settingsSyncInterval => 'Intervall für automatischen Abruf';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'Alle $hours Stunden';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'Erneute Verbindung erforderlich';
+
+  @override
+  String get settingsAccountUnlink => 'Verknüpfung aufheben';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return 'Verbindung zu $email aufheben? Bereits importierte E-Mails bleiben in der App erhalten.';
+  }
+
+  @override
   String get usageGuideTitle => 'スッキリメールの使い方';
 
   @override
@@ -183,6 +234,16 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get usageGuideClose => '閉じる';
+
+  @override
+  String get notificationSettingsTitle => 'Absender für Benachrichtigungen';
+
+  @override
+  String get notificationSettingsDescription =>
+      'Du wirst nur über neue E-Mails der ausgewählten Absender benachrichtigt. Ist keiner ausgewählt, werden keine Benachrichtigungen gesendet.';
+
+  @override
+  String get notificationSettingsEmpty => 'Noch keine E-Mails importiert';
 
   @override
   String get paywallTitle => 'Klarpost Pro';
@@ -213,35 +274,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get paywallPurchaseFailed =>
       'Kauf fehlgeschlagen. Bitte versuchen Sie es später erneut';
-
-  @override
-  String get settingsSyncInterval => 'Intervall für automatischen Abruf';
-
-  @override
-  String settingsSyncIntervalHours(int hours) {
-    return 'Alle $hours Stunden';
-  }
-
-  @override
-  String get settingsAccountReauthRequired => 'Erneute Verbindung erforderlich';
-
-  @override
-  String get settingsAccountUnlink => 'Verknüpfung aufheben';
-
-  @override
-  String settingsAccountUnlinkConfirm(String email) {
-    return 'Verbindung zu $email aufheben? Bereits importierte E-Mails bleiben in der App erhalten.';
-  }
-
-  @override
-  String get notificationSettingsTitle => 'Absender für Benachrichtigungen';
-
-  @override
-  String get notificationSettingsDescription =>
-      'Du wirst nur über neue E-Mails der ausgewählten Absender benachrichtigt. Ist keiner ausgewählt, werden keine Benachrichtigungen gesendet.';
-
-  @override
-  String get notificationSettingsEmpty => 'Noch keine E-Mails importiert';
 
   @override
   String get commonRetry => 'Wiederholen';

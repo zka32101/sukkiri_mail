@@ -39,6 +39,22 @@
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Google Sign-In（Gmail連携）用。Google Cloud Console（プロジェクト app1-6c108）で
+	     発行したiOS用OAuthクライアントID。CFBundleURLSchemesはこのクライアントIDのドット区切りを
+	     逆順にした値（REVERSED_CLIENT_ID）で、GoogleSignInSDKが認可コールバックを受け取るために使う。 -->
+	<key>GIDClientID</key>
+	<string>663640153690-7d5m9hq6ljkpbv0s1tm4qk5oeo56vrb7.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.663640153690-7d5m9hq6ljkpbv0s1tm4qk5oeo56vrb7</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

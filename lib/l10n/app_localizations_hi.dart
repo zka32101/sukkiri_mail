@@ -55,10 +55,45 @@ class AppLocalizationsHi extends AppLocalizations {
   String get archiveCandidatesPin => 'सुरक्षित करें';
 
   @override
-  String get mailListTitle => 'メール一覧';
+  String get dashboardArchivedCount => 'कुल संग्रहित';
 
   @override
-  String get mailListEmpty => '表示できるメールがありません';
+  String get dashboardFreedBytes => 'मुक्त हुआ स्थानीय स्थान';
+
+  @override
+  String get dashboardPinnedCount => 'सुरक्षित मेल';
+
+  @override
+  String get mailListTitle => 'मेल सूची';
+
+  @override
+  String get mailListEmpty => 'दिखाने के लिए कोई मेल नहीं';
+
+  @override
+  String get mailListSortNewest => 'नवीनतम पहले';
+
+  @override
+  String get mailListSortUnreadFirst => 'अपठित पहले';
+
+  @override
+  String get mailListSortSender => 'प्रेषक के अनुसार';
+
+  @override
+  String get mailListGroupToggle => 'प्रेषक के अनुसार समूहित करें';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count चयनित';
+  }
+
+  @override
+  String get mailListBulkArchive => 'संग्रहित करें';
+
+  @override
+  String get mailListBulkMarkRead => 'पढ़ा हुआ चिह्नित करें';
+
+  @override
+  String get mailListUnknownSender => '(अज्ञात प्रेषक)';
 
   @override
   String get mailListPinToggleOn => '保護する';
@@ -68,12 +103,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get mailListBlockSender => 'この差出人を今後取り込まない';
-
-  @override
-  String get mailListSortByAccount => 'アカウント毎';
-
-  @override
-  String get mailListSortByDate => '日付順（全アカウント）';
 
   @override
   String get mailDetailTitle => 'メール詳細';
@@ -103,16 +132,19 @@ class AppLocalizationsHi extends AppLocalizations {
       'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません';
 
   @override
-  String get dashboardTitle => 'इनबॉक्स की सफ़ाई';
+  String get categoryAll => 'सभी';
 
   @override
-  String get dashboardArchivedCount => 'कुल संग्रहित';
+  String get categoryPromotion => 'प्रचार';
 
   @override
-  String get dashboardFreedBytes => 'मुक्त हुआ स्थानीय स्थान';
+  String get categoryNotification => 'सूचनाएं';
 
   @override
-  String get dashboardPinnedCount => 'सुरक्षित मेल';
+  String get categoryInvoice => 'चालान';
+
+  @override
+  String get categoryOther => 'अन्य';
 
   @override
   String get ruleSettingsTitle => 'नियम';
@@ -160,6 +192,25 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settingsUsageGuide => '使い方';
 
   @override
+  String get settingsSyncInterval => 'ऑटो-सिंक अंतराल';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'हर $hours घंटे में';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'पुनः कनेक्ट करना आवश्यक है';
+
+  @override
+  String get settingsAccountUnlink => 'लिंक हटाएं';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '$email को अनलिंक करें? पहले से आयातित मेल ऐप में बनी रहेगी।';
+  }
+
+  @override
   String get usageGuideTitle => 'スッキリメールの使い方';
 
   @override
@@ -183,6 +234,16 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get usageGuideClose => '閉じる';
+
+  @override
+  String get notificationSettingsTitle => 'सूचना के लिए प्रेषक';
+
+  @override
+  String get notificationSettingsDescription =>
+      'आपको केवल चुने गए प्रेषकों से नई मेल की सूचना मिलेगी। यदि कोई नहीं चुना गया है, तो कोई सूचना नहीं भेजी जाएगी।';
+
+  @override
+  String get notificationSettingsEmpty => 'अभी तक कोई मेल आयात नहीं हुई';
 
   @override
   String get paywallTitle => 'साफ़ मेल Pro';
@@ -213,35 +274,6 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get paywallPurchaseFailed =>
       'खरीदारी विफल रही। कृपया बाद में पुनः प्रयास करें';
-
-  @override
-  String get settingsSyncInterval => 'ऑटो-सिंक अंतराल';
-
-  @override
-  String settingsSyncIntervalHours(int hours) {
-    return 'हर $hours घंटे में';
-  }
-
-  @override
-  String get settingsAccountReauthRequired => 'पुनः कनेक्ट करना आवश्यक है';
-
-  @override
-  String get settingsAccountUnlink => 'लिंक हटाएं';
-
-  @override
-  String settingsAccountUnlinkConfirm(String email) {
-    return '$email को अनलिंक करें? पहले से आयातित मेल ऐप में बनी रहेगी।';
-  }
-
-  @override
-  String get notificationSettingsTitle => 'सूचना के लिए प्रेषक';
-
-  @override
-  String get notificationSettingsDescription =>
-      'आपको केवल चुने गए प्रेषकों से नई मेल की सूचना मिलेगी। यदि कोई नहीं चुना गया है, तो कोई सूचना नहीं भेजी जाएगी।';
-
-  @override
-  String get notificationSettingsEmpty => 'अभी तक कोई मेल आयात नहीं हुई';
 
   @override
   String get commonRetry => 'पुनः प्रयास करें';

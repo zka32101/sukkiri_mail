@@ -1,53 +1,123 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../l10n/app_localizations.dart';
-import '../viewmodels/subscription_providers.dart';
+import '../viewmodels/auth_provider.dart';
+import '../viewmodels/core_providers.dart';
 
-/// 無料=広告表示・アカウント2つ・手動アーカイブ
-/// 有料(月額$3)=広告非表示・無制限アカウント・自動アーカイブルール・復元無制限。
-/// 【要確認】RevenueCatダッシュボード側で"ad_free"エンタイトルメント・
-/// 月額$3のProduct/Offering登録が別途必要（未登録の間はofferingsが空でCTAが押せない）。
-class PaywallView extends ConsumerWidget {
+/// 無料=アカウント2つ・手動アーカイブ／有料=無制限・自動アーカイブルール・復元無制限。
+/// RevenueCatの設定手順はlib/services/purchases_service.dartのコメントを参照。
+class PaywallView extends ConsumerStatefulWidget {
   const PaywallView({super.key});
 
-  Future<void> _purchase(
-    BuildContext context,
-    WidgetRef ref,
-    Package package,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-    final service = ref.read(subscriptionServiceProvider);
+  @override
+  ConsumerState<PaywallView> createState() => _PaywallViewState();
+}
+
+class _PaywallViewState extends ConsumerState<PaywallView> {
+  bool _loading = true;
+  bool _configured = false;
+  bool _purchasing = false;
+  Offering? _offering;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
     try {
-      await service.purchasePackage(package);
-      await ref.read(adFreeProvider.notifier).refresh();
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.paywallPurchaseSuccess)));
+      final userId = await ref.read(currentUserIdProvider.future);
+      final service = ref.read(purchasesServiceProvider);
+      final configured = await service.configure(userId);
+      if (!configured) {
+        if (!mounted) return;
+        setState(() {
+          _configured = false;
+          _loading = false;
+        });
+        return;
+      }
+      final offerings = await service.getOfferings();
+      if (!mounted) return;
+      setState(() {
+        _configured = true;
+        _offering = offerings.current;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _purchase(Package package) async {
+    setState(() => _purchasing = true);
+    try {
+      final service = ref.read(purchasesServiceProvider);
+      final isPro = await service.purchase(package);
+      if (!mounted) return;
+      if (isPro) {
+        // Firestore上のplanフィールドの正式な更新はRevenueCat Webhook経由で
+        // 非同期に行われる（数秒〜数十秒のラグが出ることがある）。ここでは
+        // 購入自体が成功したことをユーザーに伝え、画面を閉じるだけにとどめる。
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Proへのアップグレードが完了しました')),
+        );
         Navigator.of(context).pop();
       }
-    } on PurchasesErrorCode catch (e) {
-      if (e == PurchasesErrorCode.purchaseCancelledError) return;
-      if (context.mounted) {
+    } catch (e) {
+      if (!mounted) return;
+      final message = _describePurchaseError(e);
+      if (message != null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(l10n.paywallPurchaseFailed)));
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.paywallPurchaseFailed)));
-      }
+    } finally {
+      if (mounted) setState(() => _purchasing = false);
+    }
+  }
+
+  /// ユーザーによる購入キャンセルはエラー表示不要。それ以外は内容をそのまま表示する。
+  String? _describePurchaseError(Object e) {
+    if (e is PlatformException) {
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      if (code == PurchasesErrorCode.purchaseCancelledError) return null;
+    }
+    return '$e';
+  }
+
+  Future<void> _restore() async {
+    setState(() => _purchasing = true);
+    try {
+      final service = ref.read(purchasesServiceProvider);
+      final isPro = await service.restore();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isPro ? '購入履歴を復元しました' : '復元可能な購入履歴が見つかりませんでした'),
+        ),
+      );
+      if (isPro) Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _purchasing = false);
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final offeringsAsync = ref.watch(offeringsProvider);
+    final package = _offering?.availablePackages.isNotEmpty == true
+        ? _offering!.availablePackages.first
+        : null;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.paywallTitle)),
@@ -61,41 +131,47 @@ class PaywallView extends ConsumerWidget {
             _FeatureRow(text: l10n.paywallFeatureAutoRules),
             _FeatureRow(text: l10n.paywallFeatureUnlimitedRestore),
             const Spacer(),
-            offeringsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => SizedBox(
+            if (_loading)
+              const Center(child: CircularProgressIndicator())
+            else if (!_configured)
+              const Text(
+                '課金機能は現在準備中です。',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              )
+            else ...[
+              if (package != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    package.storeProduct.priceString,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: null,
+                  onPressed: (_purchasing || package == null)
+                      ? null
+                      : () => _purchase(package),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Text(l10n.paywallCta),
+                    child: _purchasing
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(l10n.paywallCta),
                   ),
                 ),
               ),
-              data: (offerings) {
-                final package = offerings?.current?.availablePackages
-                    .firstOrNull;
-                return SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: package == null
-                        ? null
-                        : () => _purchase(context, ref, package),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: Text(
-                        package == null
-                            ? l10n.paywallCta
-                            : l10n.paywallCtaWithPrice(
-                                package.storeProduct.priceString,
-                              ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+              TextButton(
+                onPressed: _purchasing ? null : _restore,
+                child: const Text('購入履歴を復元'),
+              ),
+            ],
           ],
         ),
       ),

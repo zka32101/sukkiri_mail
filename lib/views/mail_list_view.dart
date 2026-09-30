@@ -2,326 +2,390 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
+import '../models/category_rule.dart';
 import '../models/email_meta.dart';
 import '../models/linked_account.dart';
+import '../services/cloud_functions_mail_provider.dart';
 import '../theme/app_theme.dart';
 import '../viewmodels/core_providers.dart';
-import '../viewmodels/email_list_providers.dart';
+import '../viewmodels/dashboard_providers.dart';
 import '../viewmodels/linked_account_providers.dart';
-import '../viewmodels/mail_actions.dart';
-import 'account_link_view.dart';
-import 'mail_detail_view.dart';
+import '../viewmodels/mail_list_providers.dart';
 
-/// メール一覧の並び順：アカウント毎（グルーピング表示）か、全アカウント混在で日付順か。
-enum MailListSortMode { byAccount, byDateAcrossAccounts }
-
-final mailListSortModeProvider =
-    StateProvider<MailListSortMode>((ref) => MailListSortMode.byAccount);
-
-/// アプリ起動時に最初に表示する画面。実Gmail等の状態には触れず、
-/// 「今アプリに見えるべきメール」（=ローカル自動非表示（localCacheStatus=purged）
-/// になっていないもの）だけを一覧表示する。
-/// アカウント未連携でもこの画面自体は表示され（Onboardingの必須ゲートは廃止）、
-/// 連携はここまたはSettingsタブからいつでも行える。
-class MailListView extends ConsumerWidget {
+/// 「アーカイブすること」ではなく「メールを見やすく管理すること」を主目的にした
+/// メイン画面。カテゴリ絞り込み・並び替え・送信者グルーピング・複数選択での
+/// 一括操作（アーカイブ/既読化）を提供する。
+class MailListView extends ConsumerStatefulWidget {
   const MailListView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final accounts = ref.watch(linkedAccountsProvider).valueOrNull ?? [];
-    final brightness = Theme.of(context).brightness;
-    final sortMode = ref.watch(mailListSortModeProvider);
+  ConsumerState<MailListView> createState() => _MailListViewState();
+}
 
-    if (accounts.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: Text(l10n.mailListTitle)),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.mail_outline, size: 48),
-                const SizedBox(height: 16),
-                Text(
-                  l10n.mailListEmpty,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const AccountLinkView(),
-                    ),
+class _MailListViewState extends ConsumerState<MailListView> {
+  // LinkedAccountのインスタンス自体ではなくidだけを状態として保持する理由は
+  // archive_restore_view.dartと同じ（LinkedAccountは値等価を実装していないため）。
+  String? _selectedAccountId;
+  MailCategory? _selectedCategory; // null = すべて
+  MailListSortOrder _sortOrder = MailListSortOrder.newest;
+  bool _groupBySender = false;
+  bool _selectionMode = false;
+  final Set<String> _selectedIds = {};
+
+  void _exitSelectionMode() {
+    setState(() {
+      _selectionMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  void _toggleSelection(String emailId) {
+    setState(() {
+      if (_selectedIds.contains(emailId)) {
+        _selectedIds.remove(emailId);
+      } else {
+        _selectedIds.add(emailId);
+      }
+      if (_selectedIds.isEmpty) {
+        _selectionMode = false;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final accountsAsync = ref.watch(linkedAccountsProvider);
+
+    return Scaffold(
+      appBar: _selectionMode
+          ? _buildSelectionAppBar(l10n)
+          : AppBar(
+              title: Text(l10n.mailListTitle),
+              actions: [
+                IconButton(
+                  tooltip: l10n.mailListGroupToggle,
+                  icon: Icon(
+                    _groupBySender
+                        ? Icons.person
+                        : Icons.person_outline,
                   ),
-                  child: Text(l10n.settingsLinkedAccounts),
+                  onPressed: () =>
+                      setState(() => _groupBySender = !_groupBySender),
+                ),
+                PopupMenuButton<MailListSortOrder>(
+                  icon: const Icon(Icons.sort),
+                  initialValue: _sortOrder,
+                  onSelected: (order) => setState(() => _sortOrder = order),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: MailListSortOrder.newest,
+                      child: Text(l10n.mailListSortNewest),
+                    ),
+                    PopupMenuItem(
+                      value: MailListSortOrder.unreadFirst,
+                      child: Text(l10n.mailListSortUnreadFirst),
+                    ),
+                    PopupMenuItem(
+                      value: MailListSortOrder.sender,
+                      child: Text(l10n.mailListSortSender),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-        ),
-      );
-    }
+      body: accountsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('$e')),
+        data: (accounts) {
+          if (accounts.isEmpty) return const SizedBox.shrink();
+          final selected = accounts.firstWhere(
+            (a) => a.id == _selectedAccountId,
+            orElse: () => accounts.first,
+          );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.mailListTitle),
-        actions: [
-          PopupMenuButton<MailListSortMode>(
-            icon: const Icon(Icons.sort),
-            initialValue: sortMode,
-            onSelected: (mode) =>
-                ref.read(mailListSortModeProvider.notifier).state = mode,
-            itemBuilder: (context) => [
-              CheckedPopupMenuItem(
-                value: MailListSortMode.byAccount,
-                checked: sortMode == MailListSortMode.byAccount,
-                child: Text(l10n.mailListSortByAccount),
-              ),
-              CheckedPopupMenuItem(
-                value: MailListSortMode.byDateAcrossAccounts,
-                checked: sortMode == MailListSortMode.byDateAcrossAccounts,
-                child: Text(l10n.mailListSortByDate),
-              ),
+          return Column(
+            children: [
+              if (accounts.length > 1)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    value: selected.id,
+                    items: accounts
+                        .map(
+                          (a) => DropdownMenuItem(
+                            value: a.id,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircleAvatar(
+                                  radius: 6,
+                                  backgroundColor: AppTheme.accountColorFor(
+                                    a.colorHex,
+                                    Theme.of(context).brightness,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(a.emailAddress),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() {
+                      _selectedAccountId = v;
+                      _exitSelectionMode();
+                    }),
+                  ),
+                ),
+              _buildStatsBar(l10n),
+              _buildCategoryChips(l10n),
+              const Divider(height: 1),
+              Expanded(child: _buildMailList(l10n, selected)),
             ],
-          ),
-        ],
-      ),
-      body: sortMode == MailListSortMode.byAccount
-          ? ListView(
-              children: accounts
-                  .expand(
-                    (account) => _AccountEmailSection(
-                      account: account,
-                      brightness: brightness,
-                    ).buildTiles(context, ref),
-                  )
-                  .toList(),
-            )
-          : _MergedEmailList(accounts: accounts, brightness: brightness),
-    );
-  }
-}
-
-/// 全アカウント混在・日付順表示。各行はアカウントカラーの左枠線で
-/// どのアカウントのメールかひと目でわかるようにする。
-class _MergedEmailList extends ConsumerWidget {
-  const _MergedEmailList({required this.accounts, required this.brightness});
-
-  final List<LinkedAccount> accounts;
-  final Brightness brightness;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final accountsById = {for (final a in accounts) a.id: a};
-
-    final entries = <(EmailMeta, LinkedAccount)>[];
-    var anyLoading = false;
-    for (final account in accounts) {
-      final async = ref.watch(visibleEmailsProvider(account.id));
-      async.when(
-        loading: () => anyLoading = true,
-        error: (_, _) {},
-        data: (metas) {
-          for (final meta in metas) {
-            entries.add((meta, accountsById[account.id]!));
-          }
+          );
         },
-      );
-    }
-    entries.sort((a, b) => b.$1.receivedAt.compareTo(a.$1.receivedAt));
-
-    if (entries.isEmpty) {
-      if (anyLoading) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      return Center(child: Text(l10n.mailListEmpty));
-    }
-
-    return ListView.builder(
-      itemCount: entries.length,
-      itemBuilder: (context, index) {
-        final (meta, account) = entries[index];
-        return _EmailTile(
-          meta: meta,
-          account: account,
-          l10n: l10n,
-          ref: ref,
-          accountColor: AppTheme.accountColorFor(account.colorHex, brightness),
-        );
-      },
+      ),
     );
   }
-}
 
-class _AccountEmailSection {
-  _AccountEmailSection({required this.account, required this.brightness});
+  PreferredSizeWidget _buildSelectionAppBar(AppLocalizations l10n) {
+    return AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: _exitSelectionMode,
+      ),
+      title: Text(l10n.mailListSelectionCount(_selectedIds.length)),
+      actions: [
+        IconButton(
+          tooltip: l10n.mailListBulkMarkRead,
+          icon: const Icon(Icons.mark_email_read_outlined),
+          onPressed: _bulkMarkRead,
+        ),
+        IconButton(
+          tooltip: l10n.mailListBulkArchive,
+          icon: const Icon(Icons.archive_outlined),
+          onPressed: _bulkArchive,
+        ),
+      ],
+    );
+  }
 
-  final LinkedAccount account;
-  final Brightness brightness;
-
-  List<Widget> buildTiles(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final emailsAsync = ref.watch(visibleEmailsProvider(account.id));
-    final accountColor = AppTheme.accountColorFor(account.colorHex, brightness);
-
-    return [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+  Widget _buildStatsBar(AppLocalizations l10n) {
+    final statsAsync = ref.watch(tidinessStatsProvider);
+    return statsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, _) => const SizedBox.shrink(),
+      data: (stats) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            CircleAvatar(
-              radius: 6,
-              backgroundColor: accountColor,
-            ),
-            const SizedBox(width: 8),
             Text(
-              account.emailAddress,
-              style: Theme.of(context).textTheme.labelLarge,
+              '${l10n.dashboardArchivedCount}: ${stats.archivedCount}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            Text(
+              '${l10n.dashboardPinnedCount}: ${stats.pinnedCount}',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
       ),
-      emailsAsync.when(
-        loading: () => const Padding(
-          padding: EdgeInsets.all(16),
-          child: LinearProgressIndicator(),
-        ),
-        error: (e, _) => Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text('$e'),
-        ),
-        data: (metas) {
-          if (metas.isEmpty) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                l10n.mailListEmpty,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            );
-          }
-          final sorted = [...metas]
-            ..sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
-          return Column(
-            children: sorted
-                .map((meta) => _EmailTile(
-                      meta: meta,
-                      account: account,
-                      l10n: l10n,
-                      ref: ref,
-                      accountColor: accountColor,
-                    ))
-                .toList(),
+    );
+  }
+
+  Widget _buildCategoryChips(AppLocalizations l10n) {
+    final entries = <(MailCategory?, String)>[
+      (null, l10n.categoryAll),
+      (MailCategory.promotion, l10n.categoryPromotion),
+      (MailCategory.notification, l10n.categoryNotification),
+      (MailCategory.invoice, l10n.categoryInvoice),
+      (MailCategory.other, l10n.categoryOther),
+    ];
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        itemCount: entries.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final (category, label) = entries[index];
+          final isSelected = _selectedCategory == category;
+          return ChoiceChip(
+            label: Text(label),
+            selected: isSelected,
+            onSelected: (_) => setState(() => _selectedCategory = category),
           );
         },
       ),
-      const Divider(height: 24),
-    ];
+    );
   }
-}
 
-class _EmailTile extends StatelessWidget {
-  const _EmailTile({
-    required this.meta,
-    required this.account,
-    required this.l10n,
-    required this.ref,
-    required this.accountColor,
-  });
+  Widget _buildMailList(AppLocalizations l10n, LinkedAccount account) {
+    final params = MailListParams(
+      accountId: account.id,
+      category: _selectedCategory,
+    );
+    final mailsAsync = ref.watch(activeMailsProvider(params));
 
-  final EmailMeta meta;
-  final LinkedAccount account;
-  final AppLocalizations l10n;
-  final WidgetRef ref;
-  final Color accountColor;
+    return mailsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('$e')),
+      data: (mails) {
+        if (mails.isEmpty) {
+          return Center(child: Text(l10n.mailListEmpty));
+        }
+        final sorted = sortMails(mails, _sortOrder);
 
-  @override
-  Widget build(BuildContext context) {
+        if (!_groupBySender) {
+          return ListView.builder(
+            itemCount: sorted.length,
+            itemBuilder: (context, index) =>
+                _buildMailTile(l10n, account, sorted[index]),
+          );
+        }
+
+        final groups = groupBySender(sorted);
+        final items = <Widget>[];
+        for (final entry in groups.entries) {
+          final senderLabel = entry.key.isEmpty
+              ? l10n.mailListUnknownSender
+              : entry.key;
+          items.add(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(
+                '$senderLabel (${entry.value.length})',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+          );
+          for (final mail in entry.value) {
+            items.add(_buildMailTile(l10n, account, mail));
+          }
+        }
+        return ListView(children: items);
+      },
+    );
+  }
+
+  Widget _buildMailTile(
+    AppLocalizations l10n,
+    LinkedAccount account,
+    EmailMeta mail,
+  ) {
+    final isSelected = _selectedIds.contains(mail.id);
+    final titleText = mail.subject.isNotEmpty ? mail.subject : mail.snippet;
+    final titleStyle = mail.isUnread
+        ? const TextStyle(fontWeight: FontWeight.bold)
+        : null;
+    // アカウントごとに一覧の色分けができるよう、左端にアカウントカラーのバーを表示する。
+    // 色自体は設定画面（settings_view.dart）でユーザーが自由に変更できる。
+    final accountColor = AppTheme.accountColorFor(
+      account.colorHex,
+      Theme.of(context).brightness,
+    );
+
     return Container(
       decoration: BoxDecoration(
         border: Border(left: BorderSide(color: accountColor, width: 4)),
       ),
       child: ListTile(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => MailDetailView(meta: meta, account: account),
-          ),
-        ),
-        title: Text(
-          meta.subject.isNotEmpty
-              ? meta.subject
-              : (meta.snippet.isEmpty ? l10n.mailDetailNoSubject : meta.snippet),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontSize: 15),
-        ),
+        selected: isSelected,
+        leading: _selectionMode
+            ? Checkbox(
+                value: isSelected,
+                onChanged: (_) => _toggleSelection(mail.id),
+              )
+            : CircleIcon(isUnread: mail.isUnread, color: accountColor),
+        title: Text(titleText, maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
         subtitle: Text(
-          meta.senderEmail.isEmpty
-              ? _formatDate(meta.receivedAt)
-              : '${meta.senderEmail} ・ ${_formatDate(meta.receivedAt)}',
+          '${mail.senderEmail}  ·  ${mail.snippet}',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (meta.senderEmail.isNotEmpty)
-              IconButton(
-                icon: const Icon(Icons.block),
-                tooltip: l10n.mailListBlockSender,
-                onPressed: () => _blockSender(context),
-              ),
-            IconButton(
-              icon: Icon(
-                meta.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-              ),
-              tooltip: meta.isPinned
-                  ? l10n.mailListPinToggleOff
-                  : l10n.mailListPinToggleOn,
-              onPressed: () => ref
-                  .read(emailMetaRepositoryProvider)
-                  .setPinned(meta.id, !meta.isPinned),
-            ),
-          ],
+        trailing: mail.isPinned ? const Icon(Icons.push_pin, size: 18) : null,
+        onTap: () async {
+          if (_selectionMode) {
+            _toggleSelection(mail.id);
+            return;
+          }
+          if (mail.isUnread) {
+            try {
+              await ref.read(emailMetaRepositoryProvider).setUnread(mail.id, false);
+            } catch (_) {
+              // 既読化はタップの副作用に過ぎないため、失敗してもエラー表示はしない
+              // （メール自体は正しく表示されており、ユーザー操作を妨げる必要がない）。
+            }
+          }
+        },
+        onLongPress: () {
+          setState(() {
+            _selectionMode = true;
+            _selectedIds.add(mail.id);
+          });
+        },
+      ),
+    );
+  }
+
+  Future<void> _bulkArchive() async {
+    final accounts = ref.read(linkedAccountsProvider).value;
+    if (accounts == null || accounts.isEmpty) return;
+    final account = accounts.firstWhere(
+      (a) => a.id == _selectedAccountId,
+      orElse: () => accounts.first,
+    );
+
+    final ids = _selectedIds.toList();
+    _exitSelectionMode();
+    try {
+      final provider = resolveMailProvider(account.provider);
+      await provider.archive(account: account, emailIds: ids);
+      ref.invalidate(tidinessStatsProvider);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _bulkMarkRead() async {
+    final ids = _selectedIds.toList();
+    _exitSelectionMode();
+    try {
+      await ref.read(emailMetaRepositoryProvider).setUnreadBatch(ids, false);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+}
+
+/// 未読/既読を示す小さなドット。色はアカウントカラー（未指定ならテーマの強調色）。
+class CircleIcon extends StatelessWidget {
+  const CircleIcon({super.key, required this.isUnread, this.color});
+
+  final bool isUnread;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isUnread) {
+      return const SizedBox(width: 24, height: 24);
+    }
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: color ?? Theme.of(context).colorScheme.primary,
+          shape: BoxShape.circle,
         ),
       ),
     );
-  }
-
-  Future<void> _blockSender(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        content: Text(l10n.mailBlockSenderConfirm(meta.senderEmail)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.commonConfirm),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
-
-    await blockSenderOneClick(ref, senderEmail: meta.senderEmail);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.mailBlockSenderDone)),
-    );
-  }
-
-  static String _twoDigits(int n) => n.toString().padLeft(2, '0');
-
-  String _formatDate(DateTime d) {
-    return '${d.year}/${_twoDigits(d.month)}/${_twoDigits(d.day)}';
   }
 }

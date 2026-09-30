@@ -33,7 +33,12 @@ abstract class MailProvider {
   MailProviderType get providerType;
 
   /// OAuth同意 or アプリパスワード検証を行い、アカウントを連携する。
-  Future<LinkedAccount> connect({required String userId});
+  /// [params] はプロバイダ固有の認証情報（IMAPのemailAddress/appPassword/imapHost、
+  /// OAuthのauthCode等）。connectAccount Cloud Functionへそのまま転送される。
+  Future<LinkedAccount> connect({
+    required String userId,
+    Map<String, dynamic> params = const {},
+  });
 
   /// アカウントをスキャンし、カテゴリ自動判定した検出結果を返す（Aha Moment用）。
   Future<List<ScanResultItem>> scan({required LinkedAccount account});

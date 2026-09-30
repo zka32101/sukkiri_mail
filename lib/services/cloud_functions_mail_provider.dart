@@ -1,28 +1,65 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/category_rule.dart';
 import '../models/email_meta.dart';
 import '../models/linked_account.dart';
+import 'local_cache_service.dart';
 import 'mail_provider.dart';
 
 /// Gmail/Outlook/IMAP共通の実装基盤。
 /// OAuthトークン・IMAPアプリパスワードはCloud Functions側（Secret Manager）でのみ保持し、
 /// クライアントには平文で渡さない。クライアントはCallable Functions越しに命令するだけ。
+///
+/// ローカルキャッシング戦略を実装：
+/// - メール本文: 24時間TTL でSQLiteキャッシュ
+/// - 添付ファイル: 7日TTLで保持（本文と一緒に24h後に期限切れになる）
 abstract class CloudFunctionsMailProvider implements MailProvider {
-  CloudFunctionsMailProvider({FirebaseFunctions? functions})
-    : _functions = functions ?? FirebaseFunctions.instance;
+  CloudFunctionsMailProvider({
+    FirebaseFunctions? functions,
+    LocalCacheService? cacheService,
+  })
+    : _functions = functions ?? FirebaseFunctions.instance,
+      _cacheService = cacheService ?? LocalCacheService();
 
   final FirebaseFunctions _functions;
+  final LocalCacheService _cacheService;
 
   String get _providerKey => mailProviderTypeToString(providerType);
 
+  /// Decompresses gzip-compressed HTML that was base64-encoded by Cloud Functions.
+  /// Returns original decompressed HTML string, or the input string if not compressed.
+  @visibleForTesting
+  String decompressHtml(String html, bool isCompressed) {
+    if (!isCompressed) return html;
+
+    try {
+      // Decode base64
+      final bytes = base64Decode(html);
+      // Decompress gzip
+      final decompressed = gzip.decode(bytes);
+      // Convert back to UTF-8 string
+      return utf8.decode(decompressed);
+    } catch (e) {
+      // If decompression fails, log and return original
+      debugPrint('[fetchMessageBody] Decompression failed: $e');
+      return html;
+    }
+  }
+
   @override
-  Future<LinkedAccount> connect({required String userId}) async {
+  Future<LinkedAccount> connect({
+    required String userId,
+    Map<String, dynamic> params = const {},
+  }) async {
     final callable = _functions.httpsCallable('connectAccount');
     final result = await callable.call<Map<String, dynamic>>({
       'provider': _providerKey,
       'userId': userId,
+      ...params,
     });
     final data = Map<String, dynamic>.from(result.data as Map);
     return LinkedAccount.fromMap(data['id'] as String, data);
@@ -83,6 +120,17 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
     required LinkedAccount account,
     required String messageId,
   }) async {
+    // ①キャッシュをチェック（24時間以内なら Cloud Functions 呼び出しをスキップ）。
+    final cached = await _cacheService.getMessageBodyCache(messageId, account.id);
+    if (cached != null) {
+      return MessageBody(
+        messageId: messageId,
+        html: cached.html,
+        attachmentNames: cached.attachmentNames,
+      );
+    }
+
+    // ②キャッシュなし（または期限切れ）→ Cloud Functions から取得。
     final callable = _functions.httpsCallable('fetchMessageBody');
     final result = await callable.call<Map<String, dynamic>>({
       'provider': _providerKey,
@@ -90,11 +138,32 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
       'messageId': messageId,
     });
     final data = Map<String, dynamic>.from(result.data as Map);
+    var html = data['html'] as String? ?? '';
+    final attachmentNames = (data['attachmentNames'] as List<dynamic>? ?? [])
+        .cast<String>();
+    final isCompressed = (data['isCompressed'] as bool?) ?? false;
+    final originalSize = data['originalSize'] as int?;
+    final compressedSize = data['compressedSize'] as int?;
+
+    // ②-b: Decompress HTML if it was compressed by Cloud Functions
+    html = decompressHtml(html, isCompressed);
+
+    // ③取得結果をキャッシュに保存（次回同じメール閲覧時はスキップ）。
+    // Store decompressed HTML in cache (marked as no longer compressed since we decompressed it)
+    await _cacheService.cacheMessageBody(
+      messageId: messageId,
+      accountId: account.id,
+      html: html,
+      attachmentNames: attachmentNames,
+      isCompressed: false, // Already decompressed, so mark as not compressed
+      originalSize: originalSize,
+      compressedSize: compressedSize,
+    );
+
     return MessageBody(
       messageId: messageId,
-      html: data['html'] as String? ?? '',
-      attachmentNames: (data['attachmentNames'] as List<dynamic>? ?? [])
-          .cast<String>(),
+      html: html,
+      attachmentNames: attachmentNames,
     );
   }
 }
@@ -102,58 +171,21 @@ abstract class CloudFunctionsMailProvider implements MailProvider {
 /// gmail.modify（Tier2） + gmail.labels（non-sensitive）のみ使用。
 /// gmail.readonly（restricted）/ gmail.insert（restricted）は使用しない。
 class GmailProvider extends CloudFunctionsMailProvider {
-  GmailProvider({super.functions, GoogleSignIn? googleSignIn})
-    : _googleSignIn =
-          googleSignIn ??
-          GoogleSignIn(
-            scopes: const [
-              'https://www.googleapis.com/auth/gmail.modify',
-              'https://www.googleapis.com/auth/gmail.labels',
-            ],
-            // app1-6c108 プロジェクトのWebクライアント（Cloud Functions側でトークン交換に使用）。
-            serverClientId:
-                '663640153690-5q7jop7h1vmmgtr0i8gtsfjeg34m1dh2.apps.googleusercontent.com',
-          );
-
-  final GoogleSignIn _googleSignIn;
+  GmailProvider({
+    super.functions,
+    super.cacheService,
+  });
 
   @override
   MailProviderType get providerType => MailProviderType.gmail;
-
-  @override
-  Future<LinkedAccount> connect({required String userId}) async {
-    // signOut()はデバイス側のセッションを消すだけでGoogle側の同意は残るため、
-    // 2回目以降の連携ではrefresh_tokenが再発行されずaccess_token失効後に
-    // 二度とAPIを呼べなくなる。disconnect()でGoogle側の権限も取り消し、
-    // 毎回フルの同意フローを踏ませることで確実にrefresh_tokenを取得する。
-    try {
-      await _googleSignIn.disconnect();
-    } catch (_) {
-      // 初回連携時（そもそも同意していない）はdisconnect()が例外を投げるため無視する。
-    }
-    final account = await _googleSignIn.signIn();
-    if (account == null) {
-      throw Exception('Googleサインインがキャンセルされました');
-    }
-    final authCode = account.serverAuthCode;
-    if (authCode == null) {
-      throw Exception('serverAuthCodeを取得できませんでした（serverClientIdの設定を確認してください）');
-    }
-
-    final callable = _functions.httpsCallable('connectAccount');
-    final result = await callable.call<Map<String, dynamic>>({
-      'provider': _providerKey,
-      'userId': userId,
-      'authCode': authCode,
-    });
-    final data = Map<String, dynamic>.from(result.data as Map);
-    return LinkedAccount.fromMap(data['id'] as String, data);
-  }
 }
 
 /// Microsoft Graph API Mail.ReadWrite（delegated、個人アカウント同意のみで完結）。
 class OutlookProvider extends CloudFunctionsMailProvider {
-  OutlookProvider({super.functions});
+  OutlookProvider({
+    super.functions,
+    super.cacheService,
+  });
 
   @override
   MailProviderType get providerType => MailProviderType.outlook;
@@ -161,7 +193,10 @@ class OutlookProvider extends CloudFunctionsMailProvider {
 
 /// 標準IMAP/SMTP（Yahoo!メール・iCloud等）、アプリ専用パスワード方式。OAuth審査対象外。
 class ImapProvider extends CloudFunctionsMailProvider {
-  ImapProvider({super.functions});
+  ImapProvider({
+    super.functions,
+    super.cacheService,
+  });
 
   @override
   MailProviderType get providerType => MailProviderType.imap;

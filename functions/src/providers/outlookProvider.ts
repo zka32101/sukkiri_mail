@@ -1,4 +1,3 @@
-import { db } from "../db";
 import {
   ConnectedAccountResult,
   MailProviderAdapter,
@@ -6,9 +5,20 @@ import {
   ScanResultItem,
 } from "./mailProviderInterface";
 import { getSecret } from "../secrets";
-import { categorizeMessage, pickNextAccountColor } from "../categorize";
+import { categorizeMessage } from "../categorize";
+import { db } from "../firestore";
+import { upsertLinkedAccount } from "../linkedAccountUpsert";
+import {
+  LinkedAccountDoc,
+  MicrosoftTokenResponse,
+  MicrosoftUserProfile,
+  MicrosoftGraphMessage,
+} from "../types";
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
+
+/** messageリソースのwebhookサブスクリプション最大有効期間（約4230分）に対し、余裕を見た2.5日。 */
+const SUBSCRIPTION_LIFETIME_MS = 2.5 * 24 * 60 * 60 * 1000;
 
 /**
  * Microsoft Graph API Mail.ReadWrite（delegated、個人アカウント同意のみで完結）。
@@ -16,6 +26,10 @@ const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
  *
  * 【要確認】Azure App registration（クライアントID/シークレット）はユーザー作業待ち。
  * 取得後 Secret Manager に `outlook-oauth-client-id` / `outlook-oauth-client-secret`。
+ * リダイレクトURIは `https://login.microsoftonline.com/common/oauth2/nativeclient`
+ * （Microsoft提供のネイティブアプリ向け固定URI）をAzure Portal側で登録すること。
+ * クライアント（Flutter）側は同じclient_id（非秘密）をFirebase Remote Configの
+ * `outlook_oauth_client_id` としても登録する必要がある（lib/views/account_link_view.dart参照）。
  */
 export class OutlookProvider implements MailProviderAdapter {
   /**
@@ -26,12 +40,10 @@ export class OutlookProvider implements MailProviderAdapter {
       .collection("linkedAccounts")
       .doc(accountId)
       .get();
-    const data = doc.data();
+    const data = doc.data() as LinkedAccountDoc | undefined;
     if (!data) throw new Error("account not found");
 
-    const accessToken = data.accessToken as string | undefined;
-    const refreshToken = data.refreshToken as string | undefined;
-    const expiresAt = data.tokenExpiresAt as number | undefined;
+    const { accessToken, refreshToken, tokenExpiresAt: expiresAt } = data;
 
     // トークン有効期限をチェック（有効期限の 5 分前に更新）
     const now = Date.now();
@@ -72,10 +84,8 @@ export class OutlookProvider implements MailProviderAdapter {
         throw new Error(`Token refresh failed: ${tokenRes.status}`);
       }
 
-      const tokens = await tokenRes.json();
-      const newAccessToken = tokens.access_token as string | undefined;
-      const newRefreshToken = tokens.refresh_token as string | undefined;
-      const expiresIn = tokens.expires_in as number | undefined; // seconds
+      const tokens = (await tokenRes.json()) as MicrosoftTokenResponse;
+      const { access_token: newAccessToken, refresh_token: newRefreshToken, expires_in: expiresIn } = tokens;
 
       if (!newAccessToken) {
         throw new Error("access token not returned from refresh");
@@ -96,7 +106,7 @@ export class OutlookProvider implements MailProviderAdapter {
         .doc(accountId)
         .update(updates);
 
-      console.log(`[Outlook] Token refreshed for account ${accountId}`);
+      console.info(`[Outlook] Token refreshed for account ${accountId}`);
       return newAccessToken;
     } catch (error) {
       const errorMessage =
@@ -119,7 +129,7 @@ export class OutlookProvider implements MailProviderAdapter {
     }
   }
 
-  private async graphFetch(accountId: string, path: string, init?: RequestInit) {
+  private async graphRequest(accountId: string, path: string, init?: RequestInit): Promise<Response> {
     const token = await this.getAccessToken(accountId);
     const res = await fetch(`${GRAPH_BASE}${path}`, {
       ...init,
@@ -130,6 +140,11 @@ export class OutlookProvider implements MailProviderAdapter {
       },
     });
     if (!res.ok) throw new Error(`Graph API error: ${res.status} ${await res.text()}`);
+    return res;
+  }
+
+  private async graphFetch(accountId: string, path: string, init?: RequestInit) {
+    const res = await this.graphRequest(accountId, path, init);
     return res.json();
   }
 
@@ -156,36 +171,48 @@ export class OutlookProvider implements MailProviderAdapter {
         }),
       }
     );
-    const tokens = await tokenRes.json();
+    if (!tokenRes.ok) {
+      throw new Error(`Outlook token exchange failed: ${tokenRes.status} ${await tokenRes.text()}`);
+    }
+    const tokens = (await tokenRes.json()) as MicrosoftTokenResponse;
+    if (!tokens.access_token) {
+      throw new Error("Outlook token exchange did not return an access token");
+    }
 
     const meRes = await fetch(`${GRAPH_BASE}/me`, {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
-    const me = await meRes.json();
+    if (!meRes.ok) {
+      throw new Error(`Outlook profile fetch failed: ${meRes.status} ${await meRes.text()}`);
+    }
+    const me = (await meRes.json()) as MicrosoftUserProfile;
     const emailAddress = me.mail ?? me.userPrincipalName ?? "";
-
-    const existing = await db()
-      .collection("linkedAccounts")
-      .where("userId", "==", userId)
-      .get();
-    const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
+    if (!emailAddress) {
+      throw new Error("Outlook profile did not include an email address");
+    }
 
     // token の有効期限を計算（expires_in は秒数）
-    const expiresIn = (tokens.expires_in as number) ?? 3600; // default: 1 hour
+    const expiresIn = tokens.expires_in ?? 3600; // default: 1 hour
     const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-    const ref = await db().collection("linkedAccounts").add({
+    // トランザクション内で「既存なら再利用・新規なら無料プラン上限チェック→
+    // カラー割当→書き込み」をアトミックに行う（詳細はlinkedAccountUpsert.ts参照）。
+    const { ref, colorHex } = await upsertLinkedAccount(
       userId,
-      provider: "outlook",
-      authMethod: "oauth",
+      "outlook",
       emailAddress,
-      oauthStatus: "connected",
-      colorHex,
-      lastScanAt: null,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      tokenExpiresAt,
-    });
+      (isNew) => ({
+        userId,
+        provider: "outlook",
+        authMethod: "oauth",
+        emailAddress,
+        oauthStatus: "connected",
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        tokenExpiresAt,
+        ...(isNew ? { lastScanAt: null } : {}),
+      })
+    );
 
     return {
       id: ref.id,
@@ -198,24 +225,32 @@ export class OutlookProvider implements MailProviderAdapter {
     };
   }
 
-  async scan(accountId: string): Promise<ScanResultItem[]> {
-    const data = await this.graphFetch(
-      accountId,
-      "/me/mailFolders/inbox/messages?$top=50&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments"
+  async scan(accountId: string, lastScanAt?: number | null): Promise<ScanResultItem[]> {
+    // Build filter for incremental scanning
+    let query = "/me/mailFolders/inbox/messages?$top=100&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead";
+    if (lastScanAt) {
+      // Convert milliseconds to ISO 8601 format for Graph API
+      const filterDate = new Date(lastScanAt).toISOString();
+      query = `/me/mailFolders/inbox/messages?$top=100&$filter=receivedDateTime gt ${filterDate}&$select=id,subject,from,receivedDateTime,bodyPreview,hasAttachments,isRead`;
+    }
+
+    const data = await this.graphFetch(accountId, query) as { value: MicrosoftGraphMessage[] };
+    const items: ScanResultItem[] = await Promise.all(
+      (data.value ?? []).map(async (m) => {
+        const senderEmail = m.from?.emailAddress?.address ?? "";
+        return {
+          id: m.id,
+          accountId,
+          category: await categorizeMessage(m.subject ?? "", senderEmail),
+          receivedAt: new Date(m.receivedDateTime).getTime(),
+          hasAttachment: !!m.hasAttachments,
+          snippet: (m.bodyPreview ?? "").slice(0, 80),
+          subject: m.subject ?? "",
+          senderEmail,
+          isUnread: !m.isRead,
+        };
+      })
     );
-    const items: ScanResultItem[] = (data.value ?? []).map((m: any) => {
-      const senderEmail = m.from?.emailAddress?.address ?? "";
-      return {
-        id: m.id,
-        accountId,
-        category: categorizeMessage(m.subject ?? "", senderEmail),
-        receivedAt: new Date(m.receivedDateTime).getTime(),
-        hasAttachment: !!m.hasAttachments,
-        snippet: m.bodyPreview ?? "",
-        subject: m.subject ?? "",
-        senderEmail,
-      };
-    });
     return items;
   }
 
@@ -238,14 +273,57 @@ export class OutlookProvider implements MailProviderAdapter {
     }
   }
 
+  /**
+   * Microsoft Graph webhookサブスクリプションを作成し、受信箱の変更をリアルタイム通知させる。
+   * messageリソースの最大有効期間は約4230分（≒2.94日）のため、余裕を見て2.5日で作成する。
+   */
+  async createSubscription(
+    accountId: string,
+    notificationUrl: string,
+    clientState: string
+  ): Promise<{ subscriptionId: string; expiresAt: number }> {
+    const expirationDateTime = new Date(Date.now() + SUBSCRIPTION_LIFETIME_MS).toISOString();
+    const data = (await this.graphFetch(accountId, "/subscriptions", {
+      method: "POST",
+      body: JSON.stringify({
+        changeType: "created",
+        notificationUrl,
+        resource: "me/mailFolders('Inbox')/messages",
+        expirationDateTime,
+        clientState,
+      }),
+    })) as { id: string; expirationDateTime: string };
+
+    return {
+      subscriptionId: data.id,
+      expiresAt: new Date(data.expirationDateTime).getTime(),
+    };
+  }
+
+  /** 既存のwebhookサブスクリプションの有効期限を延長する。 */
+  async renewSubscription(accountId: string, subscriptionId: string): Promise<{ expiresAt: number }> {
+    const expirationDateTime = new Date(Date.now() + SUBSCRIPTION_LIFETIME_MS).toISOString();
+    const data = (await this.graphFetch(accountId, `/subscriptions/${subscriptionId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ expirationDateTime }),
+    })) as { expirationDateTime: string };
+
+    return { expiresAt: new Date(data.expirationDateTime).getTime() };
+  }
+
+  /** webhookサブスクリプションを削除する（アカウント連携解除時に呼び出す）。 */
+  async deleteSubscription(accountId: string, subscriptionId: string): Promise<void> {
+    await this.graphRequest(accountId, `/subscriptions/${subscriptionId}`, { method: "DELETE" });
+  }
+
   async fetchMessageBody(accountId: string, messageId: string): Promise<MessageBodyResult> {
-    const data = await this.graphFetch(
+    const data = (await this.graphFetch(
       accountId,
       `/me/messages/${messageId}?$select=body,attachments`
-    );
+    )) as Pick<MicrosoftGraphMessage, "body" | "attachments">;
     return {
       html: data.body?.content ?? "",
-      attachmentNames: (data.attachments ?? []).map((a: any) => a.name),
+      attachmentNames: (data.attachments ?? []).map((a) => a.name),
     };
   }
 }

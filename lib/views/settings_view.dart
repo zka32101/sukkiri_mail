@@ -3,65 +3,46 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/linked_account.dart';
-import '../models/user.dart';
 import '../theme/app_theme.dart';
-import '../viewmodels/app_user_providers.dart';
-import '../viewmodels/auth_provider.dart';
 import '../viewmodels/core_providers.dart';
 import '../viewmodels/linked_account_providers.dart';
 import 'account_link_view.dart';
-import 'notification_settings_view.dart';
 import 'paywall_view.dart';
 import 'usage_guide_view.dart';
 
 class SettingsView extends ConsumerWidget {
-  Future<void> _changeRetentionDays(
+  const SettingsView({super.key});
+
+  Future<void> _unlinkAccount(
     BuildContext context,
     WidgetRef ref,
-    int current,
+    LinkedAccount account,
   ) async {
-    int days = current;
-    final result = await showDialog<bool>(
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('自動非表示までの日数'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Slider(
-                value: days.toDouble(),
-                min: 1,
-                max: 365,
-                divisions: 364,
-                label: '$days日',
-                onChanged: (v) => setDialogState(() => days = v.round()),
-              ),
-              Text('$days日'),
-            ],
+      builder: (context) => AlertDialog(
+        content: Text(l10n.settingsAccountUnlinkConfirm(account.emailAddress)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.commonCancel),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('キャンセル'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('決定'),
-            ),
-          ],
-        ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.commonConfirm),
+          ),
+        ],
       ),
     );
-    if (result != true) return;
-    final userId = await ref.read(currentUserIdProvider.future);
-    await ref
-        .read(userRepositoryProvider)
-        .setLocalCacheRetentionDays(userId, days);
-    ref.invalidate(currentAppUserProvider);
+    if (confirmed != true) return;
+    try {
+      await ref.read(linkedAccountRepositoryProvider).remove(account.id);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
-
-  const SettingsView({super.key});
 
   Future<void> _changeColor(
     BuildContext context,
@@ -106,67 +87,6 @@ class SettingsView extends ConsumerWidget {
     }
   }
 
-  Future<void> _confirmUnlink(
-    BuildContext context,
-    WidgetRef ref,
-    LinkedAccount account,
-  ) async {
-    final l10n = AppLocalizations.of(context)!;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        content: Text(l10n.settingsAccountUnlinkConfirm(account.emailAddress)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.commonConfirm),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    try {
-      await ref.read(linkedAccountRepositoryProvider).remove(account.id);
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
-  }
-
-  Future<void> _changeSyncInterval(
-    BuildContext context,
-    WidgetRef ref,
-    int current,
-  ) async {
-    const options = [1, 3, 6, 12, 24];
-    final picked = await showDialog<int>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text(AppLocalizations.of(context)!.settingsSyncInterval),
-        children: options
-            .map(
-              (h) => RadioListTile<int>(
-                value: h,
-                groupValue: current,
-                title: Text(
-                  AppLocalizations.of(context)!.settingsSyncIntervalHours(h),
-                ),
-                onChanged: (v) => Navigator.pop(context, v),
-              ),
-            )
-            .toList(),
-      ),
-    );
-    if (picked == null) return;
-    final userId = await ref.read(currentUserIdProvider.future);
-    await ref.read(userRepositoryProvider).setSyncIntervalHours(userId, picked);
-    ref.invalidate(currentAppUserProvider);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
@@ -187,52 +107,33 @@ class SettingsView extends ConsumerWidget {
             data: (accounts) => Column(
               children: [
                 ...accounts.map(
-                  (a) => Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
+                  (a) => ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppTheme.accountColorFor(
+                        a.colorHex,
+                        brightness,
+                      ),
                     ),
-                    child: Row(
+                    title: Text(a.emailAddress),
+                    subtitle: Text(
+                      a.oauthStatus == 'expired'
+                          ? l10n.settingsAccountReauthRequired
+                          : a.provider.name,
+                      style: a.oauthStatus == 'expired'
+                          ? TextStyle(color: Theme.of(context).colorScheme.error)
+                          : null,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircleAvatar(
-                          backgroundColor: AppTheme.accountColorFor(
-                            a.colorHex,
-                            brightness,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                a.emailAddress,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                a.oauthStatus == 'expired'
-                                    ? l10n.settingsAccountReauthRequired
-                                    : a.provider.name,
-                                style: a.oauthStatus == 'expired'
-                                    ? TextStyle(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.error,
-                                      )
-                                    : Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.palette_outlined),
-                          tooltip: l10n.settingsAccountColor,
+                        TextButton(
                           onPressed: () => _changeColor(context, ref, a),
+                          child: Text(l10n.settingsAccountColor),
                         ),
                         IconButton(
                           icon: const Icon(Icons.link_off),
                           tooltip: l10n.settingsAccountUnlink,
-                          onPressed: () => _confirmUnlink(context, ref, a),
+                          onPressed: () => _unlinkAccount(context, ref, a),
                         ),
                       ],
                     ),
@@ -249,36 +150,6 @@ class SettingsView extends ConsumerWidget {
             ),
           ),
           const Divider(),
-          Consumer(
-            builder: (context, ref, _) {
-              final userAsync = ref.watch(currentAppUserProvider);
-              final days =
-                  userAsync.valueOrNull?.localCacheRetentionDays ??
-                      kDefaultLocalCacheRetentionDays;
-              return ListTile(
-                title: Text(l10n.settingsLocalCacheRetention),
-                subtitle: Text(
-                  '$days日 ・ ${l10n.settingsLocalCacheRetentionDescription}',
-                ),
-                onTap: () => _changeRetentionDays(context, ref, days),
-              );
-            },
-          ),
-          const Divider(),
-          Consumer(
-            builder: (context, ref, _) {
-              final userAsync = ref.watch(currentAppUserProvider);
-              final hours =
-                  userAsync.valueOrNull?.syncIntervalHours ??
-                      kDefaultSyncIntervalHours;
-              return ListTile(
-                title: Text(l10n.settingsSyncInterval),
-                subtitle: Text(l10n.settingsSyncIntervalHours(hours)),
-                onTap: () => _changeSyncInterval(context, ref, hours),
-              );
-            },
-          ),
-          const Divider(),
           ListTile(
             title: Text(l10n.settingsPlan),
             trailing: FilledButton(
@@ -286,16 +157,6 @@ class SettingsView extends ConsumerWidget {
                 context,
               ).push(MaterialPageRoute(builder: (_) => const PaywallView())),
               child: Text(l10n.paywallCta),
-            ),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: Text(l10n.notificationSettingsTitle),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const NotificationSettingsView(),
-              ),
             ),
           ),
           const Divider(),

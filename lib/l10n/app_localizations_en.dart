@@ -54,10 +54,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get archiveCandidatesPin => 'Protect';
 
   @override
-  String get mailListTitle => 'Inbox';
+  String get dashboardArchivedCount => 'Total archived';
+
+  @override
+  String get dashboardFreedBytes => 'Local storage freed';
+
+  @override
+  String get dashboardPinnedCount => 'Protected emails';
+
+  @override
+  String get mailListTitle => 'Mail list';
 
   @override
   String get mailListEmpty => 'No emails to show';
+
+  @override
+  String get mailListSortNewest => 'Newest';
+
+  @override
+  String get mailListSortUnreadFirst => 'Unread first';
+
+  @override
+  String get mailListSortSender => 'By sender';
+
+  @override
+  String get mailListGroupToggle => 'Group by sender';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get mailListBulkArchive => 'Archive';
+
+  @override
+  String get mailListBulkMarkRead => 'Mark as read';
+
+  @override
+  String get mailListUnknownSender => '(Unknown sender)';
 
   @override
   String get mailListPinToggleOn => 'Pin';
@@ -67,12 +102,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailListBlockSender => 'Stop importing this sender';
-
-  @override
-  String get mailListSortByAccount => 'By account';
-
-  @override
-  String get mailListSortByDate => 'By date (all accounts)';
 
   @override
   String get mailDetailTitle => 'Mail detail';
@@ -102,16 +131,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Only affects what this app shows — your real inbox is never changed';
 
   @override
-  String get dashboardTitle => 'Inbox tidiness';
+  String get categoryAll => 'All';
 
   @override
-  String get dashboardArchivedCount => 'Total archived';
+  String get categoryPromotion => 'Promotions';
 
   @override
-  String get dashboardFreedBytes => 'Local storage freed';
+  String get categoryNotification => 'Notifications';
 
   @override
-  String get dashboardPinnedCount => 'Protected emails';
+  String get categoryInvoice => 'Invoices';
+
+  @override
+  String get categoryOther => 'Other';
 
   @override
   String get ruleSettingsTitle => 'Rules';
@@ -160,6 +192,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsUsageGuide => 'How to use';
 
   @override
+  String get settingsSyncInterval => 'Auto-sync interval';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'Every $hours hours';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'Reconnection needed';
+
+  @override
+  String get settingsAccountUnlink => 'Unlink';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return 'Unlink $email? Already imported mail will remain in the app.';
+  }
+
+  @override
   String get usageGuideTitle => 'How TidyMail works';
 
   @override
@@ -184,6 +235,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get usageGuideClose => 'Close';
+
+  @override
+  String get notificationSettingsTitle => 'Notify for senders';
+
+  @override
+  String get notificationSettingsDescription =>
+      'You\'ll only be notified about new mail from the senders you select. If none are selected, no notifications are sent.';
+
+  @override
+  String get notificationSettingsEmpty => 'No emails imported yet';
 
   @override
   String get paywallTitle => 'TidyMail Pro';
@@ -213,35 +274,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallPurchaseFailed => 'Purchase failed. Please try again later';
-
-  @override
-  String get settingsSyncInterval => 'Auto-sync interval';
-
-  @override
-  String settingsSyncIntervalHours(int hours) {
-    return 'Every $hours hours';
-  }
-
-  @override
-  String get settingsAccountReauthRequired => 'Reconnection needed';
-
-  @override
-  String get settingsAccountUnlink => 'Unlink';
-
-  @override
-  String settingsAccountUnlinkConfirm(String email) {
-    return 'Unlink $email? Already imported mail will remain in the app.';
-  }
-
-  @override
-  String get notificationSettingsTitle => 'Notify for senders';
-
-  @override
-  String get notificationSettingsDescription =>
-      'You\'ll only be notified about new mail from the senders you select. If none are selected, no notifications are sent.';
-
-  @override
-  String get notificationSettingsEmpty => 'No emails imported yet';
 
   @override
   String get commonRetry => 'Retry';

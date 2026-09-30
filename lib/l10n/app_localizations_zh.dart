@@ -53,10 +53,45 @@ class AppLocalizationsZh extends AppLocalizations {
   String get archiveCandidatesPin => '保護';
 
   @override
-  String get mailListTitle => 'メール一覧';
+  String get dashboardArchivedCount => '累計封存件數';
 
   @override
-  String get mailListEmpty => '表示できるメールがありません';
+  String get dashboardFreedBytes => '已釋放的本機空間';
+
+  @override
+  String get dashboardPinnedCount => '已保護件數';
+
+  @override
+  String get mailListTitle => '郵件清單';
+
+  @override
+  String get mailListEmpty => '沒有可顯示的郵件';
+
+  @override
+  String get mailListSortNewest => '最新優先';
+
+  @override
+  String get mailListSortUnreadFirst => '未讀優先';
+
+  @override
+  String get mailListSortSender => '依寄件人';
+
+  @override
+  String get mailListGroupToggle => '依寄件人分組';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '已選擇$count項';
+  }
+
+  @override
+  String get mailListBulkArchive => '封存';
+
+  @override
+  String get mailListBulkMarkRead => '標記為已讀';
+
+  @override
+  String get mailListUnknownSender => '（未知寄件人）';
 
   @override
   String get mailListPinToggleOn => '保護する';
@@ -66,12 +101,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mailListBlockSender => 'この差出人を今後取り込まない';
-
-  @override
-  String get mailListSortByAccount => 'アカウント毎';
-
-  @override
-  String get mailListSortByDate => '日付順（全アカウント）';
 
   @override
   String get mailDetailTitle => 'メール詳細';
@@ -101,16 +130,19 @@ class AppLocalizationsZh extends AppLocalizations {
       'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません';
 
   @override
-  String get dashboardTitle => '收件匣清爽度';
+  String get categoryAll => '全部';
 
   @override
-  String get dashboardArchivedCount => '累計封存件數';
+  String get categoryPromotion => '促銷';
 
   @override
-  String get dashboardFreedBytes => '已釋放的本機空間';
+  String get categoryNotification => '通知';
 
   @override
-  String get dashboardPinnedCount => '已保護件數';
+  String get categoryInvoice => '帳單';
+
+  @override
+  String get categoryOther => '其他';
 
   @override
   String get ruleSettingsTitle => '規則設定';
@@ -158,6 +190,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsUsageGuide => '使い方';
 
   @override
+  String get settingsSyncInterval => '自动同步间隔';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return '每 $hours 小时';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => '需要重新连接';
+
+  @override
+  String get settingsAccountUnlink => '解除关联';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '要解除 $email 的关联吗？已导入的邮件仍会保留在应用中。';
+  }
+
+  @override
   String get usageGuideTitle => 'スッキリメールの使い方';
 
   @override
@@ -181,6 +232,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get usageGuideClose => '閉じる';
+
+  @override
+  String get notificationSettingsTitle => '通知的发件人';
+
+  @override
+  String get notificationSettingsDescription =>
+      '仅当所选发件人有新邮件时才会通知您。如果未选择任何发件人，将不会发送通知。';
+
+  @override
+  String get notificationSettingsEmpty => '尚未导入任何邮件';
 
   @override
   String get paywallTitle => '清爽信箱 Pro';
@@ -210,35 +271,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get paywallPurchaseFailed => '购买失败，请稍后重试';
-
-  @override
-  String get settingsSyncInterval => '自动同步间隔';
-
-  @override
-  String settingsSyncIntervalHours(int hours) {
-    return '每 $hours 小时';
-  }
-
-  @override
-  String get settingsAccountReauthRequired => '需要重新连接';
-
-  @override
-  String get settingsAccountUnlink => '解除关联';
-
-  @override
-  String settingsAccountUnlinkConfirm(String email) {
-    return '要解除 $email 的关联吗？已导入的邮件仍会保留在应用中。';
-  }
-
-  @override
-  String get notificationSettingsTitle => '通知的发件人';
-
-  @override
-  String get notificationSettingsDescription =>
-      '仅当所选发件人有新邮件时才会通知您。如果未选择任何发件人，将不会发送通知。';
-
-  @override
-  String get notificationSettingsEmpty => '尚未导入任何邮件';
 
   @override
   String get commonRetry => '重试';
@@ -308,9 +340,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get archiveCandidatesPin => '保護';
 
   @override
-  String get dashboardTitle => '收件匣清爽度';
-
-  @override
   String get dashboardArchivedCount => '累計封存件數';
 
   @override
@@ -318,6 +347,53 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get dashboardPinnedCount => '已保護件數';
+
+  @override
+  String get mailListTitle => '郵件清單';
+
+  @override
+  String get mailListEmpty => '沒有可顯示的郵件';
+
+  @override
+  String get mailListSortNewest => '最新優先';
+
+  @override
+  String get mailListSortUnreadFirst => '未讀優先';
+
+  @override
+  String get mailListSortSender => '依寄件人';
+
+  @override
+  String get mailListGroupToggle => '依寄件人分組';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '已選擇$count項';
+  }
+
+  @override
+  String get mailListBulkArchive => '封存';
+
+  @override
+  String get mailListBulkMarkRead => '標記為已讀';
+
+  @override
+  String get mailListUnknownSender => '（未知寄件人）';
+
+  @override
+  String get categoryAll => '全部';
+
+  @override
+  String get categoryPromotion => '促銷';
+
+  @override
+  String get categoryNotification => '通知';
+
+  @override
+  String get categoryInvoice => '帳單';
+
+  @override
+  String get categoryOther => '其他';
 
   @override
   String get ruleSettingsTitle => '規則設定';
@@ -356,35 +432,6 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get settingsPlan => '方案';
 
   @override
-  String get paywallTitle => '清爽信箱 Pro';
-
-  @override
-  String get paywallFeatureAdFree => '無廣告';
-
-  @override
-  String get paywallFeatureUnlimitedAccounts => '無限連結帳號';
-
-  @override
-  String get paywallFeatureAutoRules => '自動封存規則';
-
-  @override
-  String get paywallFeatureUnlimitedRestore => '無限次還原';
-
-  @override
-  String get paywallCta => '升級為 Pro';
-
-  @override
-  String paywallCtaWithPrice(String price) {
-    return '以 $price/月 升級為 Pro';
-  }
-
-  @override
-  String get paywallPurchaseSuccess => '已成功升級為 Pro';
-
-  @override
-  String get paywallPurchaseFailed => '購買失敗，請稍後再試';
-
-  @override
   String get settingsSyncInterval => '自動同步間隔';
 
   @override
@@ -412,6 +459,35 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get notificationSettingsEmpty => '尚未匯入任何郵件';
+
+  @override
+  String get paywallTitle => '清爽信箱 Pro';
+
+  @override
+  String get paywallFeatureAdFree => '無廣告';
+
+  @override
+  String get paywallFeatureUnlimitedAccounts => '無限連結帳號';
+
+  @override
+  String get paywallFeatureAutoRules => '自動封存規則';
+
+  @override
+  String get paywallFeatureUnlimitedRestore => '無限次還原';
+
+  @override
+  String get paywallCta => '升級為 Pro';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return '以 $price/月 升級為 Pro';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => '已成功升級為 Pro';
+
+  @override
+  String get paywallPurchaseFailed => '購買失敗，請稍後再試';
 
   @override
   String get commonRetry => '重試';

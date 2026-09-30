@@ -46,13 +46,21 @@ class CategoryRule {
 
   static const String action = 'archive';
 
-  CategoryRule copyWith({int? retentionDays, String? accountId}) {
+  /// accountIdを明示的にnull（全アカウント共通）へ戻したい場合はclearAccountId: true
+  /// を指定する。`accountId: accountId ?? this.accountId`という単純な実装だと、
+  /// nullを渡した場合と省略した場合を区別できず、accountIdをnullへ戻す手段が
+  /// 無くなってしまう（copyWithにおける典型的な落とし穴）。
+  CategoryRule copyWith({
+    int? retentionDays,
+    String? accountId,
+    bool clearAccountId = false,
+  }) {
     return CategoryRule(
       id: id,
       userId: userId,
       category: category,
       retentionDays: retentionDays ?? this.retentionDays,
-      accountId: accountId ?? this.accountId,
+      accountId: clearAccountId ? null : (accountId ?? this.accountId),
     );
   }
 

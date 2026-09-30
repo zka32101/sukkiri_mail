@@ -54,10 +54,45 @@ class AppLocalizationsId extends AppLocalizations {
   String get archiveCandidatesPin => 'Lindungi';
 
   @override
-  String get mailListTitle => 'メール一覧';
+  String get dashboardArchivedCount => 'Total diarsipkan';
 
   @override
-  String get mailListEmpty => '表示できるメールがありません';
+  String get dashboardFreedBytes => 'Ruang lokal yang dibebaskan';
+
+  @override
+  String get dashboardPinnedCount => 'Email terlindungi';
+
+  @override
+  String get mailListTitle => 'Daftar email';
+
+  @override
+  String get mailListEmpty => 'Tidak ada email untuk ditampilkan';
+
+  @override
+  String get mailListSortNewest => 'Terbaru';
+
+  @override
+  String get mailListSortUnreadFirst => 'Belum dibaca dahulu';
+
+  @override
+  String get mailListSortSender => 'Berdasarkan pengirim';
+
+  @override
+  String get mailListGroupToggle => 'Kelompokkan berdasarkan pengirim';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count dipilih';
+  }
+
+  @override
+  String get mailListBulkArchive => 'Arsipkan';
+
+  @override
+  String get mailListBulkMarkRead => 'Tandai sudah dibaca';
+
+  @override
+  String get mailListUnknownSender => '(Pengirim tidak diketahui)';
 
   @override
   String get mailListPinToggleOn => '保護する';
@@ -67,12 +102,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get mailListBlockSender => 'この差出人を今後取り込まない';
-
-  @override
-  String get mailListSortByAccount => 'アカウント毎';
-
-  @override
-  String get mailListSortByDate => '日付順（全アカウント）';
 
   @override
   String get mailDetailTitle => 'メール詳細';
@@ -102,16 +131,19 @@ class AppLocalizationsId extends AppLocalizations {
       'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません';
 
   @override
-  String get dashboardTitle => 'Kerapian kotak masuk';
+  String get categoryAll => 'Semua';
 
   @override
-  String get dashboardArchivedCount => 'Total diarsipkan';
+  String get categoryPromotion => 'Promosi';
 
   @override
-  String get dashboardFreedBytes => 'Ruang lokal yang dibebaskan';
+  String get categoryNotification => 'Notifikasi';
 
   @override
-  String get dashboardPinnedCount => 'Email terlindungi';
+  String get categoryInvoice => 'Faktur';
+
+  @override
+  String get categoryOther => 'Lainnya';
 
   @override
   String get ruleSettingsTitle => 'Aturan';
@@ -159,6 +191,25 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsUsageGuide => '使い方';
 
   @override
+  String get settingsSyncInterval => 'Interval sinkronisasi otomatis';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'Setiap $hours jam';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'Perlu sambungkan ulang';
+
+  @override
+  String get settingsAccountUnlink => 'Putuskan tautan';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return 'Putuskan tautan $email? Email yang sudah diimpor akan tetap ada di aplikasi.';
+  }
+
+  @override
   String get usageGuideTitle => 'スッキリメールの使い方';
 
   @override
@@ -182,6 +233,16 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get usageGuideClose => '閉じる';
+
+  @override
+  String get notificationSettingsTitle => 'Pengirim untuk notifikasi';
+
+  @override
+  String get notificationSettingsDescription =>
+      'Anda hanya akan diberi tahu tentang email baru dari pengirim yang dipilih. Jika tidak ada yang dipilih, notifikasi tidak akan dikirim.';
+
+  @override
+  String get notificationSettingsEmpty => 'Belum ada email yang diimpor';
 
   @override
   String get paywallTitle => 'Kotak Rapi Pro';
@@ -212,35 +273,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get paywallPurchaseFailed =>
       'Pembelian gagal. Silakan coba lagi nanti';
-
-  @override
-  String get settingsSyncInterval => 'Interval sinkronisasi otomatis';
-
-  @override
-  String settingsSyncIntervalHours(int hours) {
-    return 'Setiap $hours jam';
-  }
-
-  @override
-  String get settingsAccountReauthRequired => 'Perlu sambungkan ulang';
-
-  @override
-  String get settingsAccountUnlink => 'Putuskan tautan';
-
-  @override
-  String settingsAccountUnlinkConfirm(String email) {
-    return 'Putuskan tautan $email? Email yang sudah diimpor akan tetap ada di aplikasi.';
-  }
-
-  @override
-  String get notificationSettingsTitle => 'Pengirim untuk notifikasi';
-
-  @override
-  String get notificationSettingsDescription =>
-      'Anda hanya akan diberi tahu tentang email baru dari pengirim yang dipilih. Jika tidak ada yang dipilih, notifikasi tidak akan dikirim.';
-
-  @override
-  String get notificationSettingsEmpty => 'Belum ada email yang diimpor';
 
   @override
   String get commonRetry => 'Coba lagi';

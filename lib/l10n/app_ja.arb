@@ -22,13 +22,26 @@
   "archiveCandidatesArchiveAll": "すべてアーカイブ",
   "archiveCandidatesPin": "保護する",
 
+  "dashboardArchivedCount": "累計アーカイブ件数",
+  "dashboardFreedBytes": "解放したローカル容量",
+  "dashboardPinnedCount": "保護件数",
+
   "mailListTitle": "メール一覧",
-  "mailListEmpty": "表示できるメールがありません",
+  "mailListEmpty": "表示するメールがありません",
+  "mailListSortNewest": "新着順",
+  "mailListSortUnreadFirst": "未読優先",
+  "mailListSortSender": "送信者別",
+  "mailListGroupToggle": "送信者でグループ化",
+  "mailListSelectionCount": "{count}件選択中",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "アーカイブ",
+  "mailListBulkMarkRead": "既読にする",
+  "mailListUnknownSender": "（不明な送信者）",
   "mailListPinToggleOn": "保護する",
   "mailListPinToggleOff": "保護を解除",
   "mailListBlockSender": "この差出人を今後取り込まない",
-  "mailListSortByAccount": "アカウント毎",
-  "mailListSortByDate": "日付順（全アカウント）",
 
   "mailDetailTitle": "メール詳細",
   "mailDetailNoSubject": "(件名なし)",
@@ -43,10 +56,11 @@
   "settingsLocalCacheRetention": "アプリでの自動非表示までの日数",
   "settingsLocalCacheRetentionDescription": "アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません",
 
-  "dashboardTitle": "受信箱スッキリ度",
-  "dashboardArchivedCount": "累計アーカイブ件数",
-  "dashboardFreedBytes": "解放したローカル容量",
-  "dashboardPinnedCount": "保護件数",
+  "categoryAll": "すべて",
+  "categoryPromotion": "プロモーション",
+  "categoryNotification": "通知",
+  "categoryInvoice": "請求書",
+  "categoryOther": "その他",
 
   "ruleSettingsTitle": "ルール設定",
   "ruleSettingsCategoryTab": "カテゴリルール",
@@ -66,6 +80,17 @@
   "settingsLinkedAccounts": "連携アカウント",
   "settingsPlan": "プラン",
   "settingsUsageGuide": "使い方",
+  "settingsSyncInterval": "自動取り込みの間隔",
+  "settingsSyncIntervalHours": "{hours}時間ごと",
+  "@settingsSyncIntervalHours": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "settingsAccountReauthRequired": "再連携が必要です",
+  "settingsAccountUnlink": "連携解除",
+  "settingsAccountUnlinkConfirm": "{email} の連携を解除しますか？取り込み済みのメールはアプリ上に残ります",
+  "@settingsAccountUnlinkConfirm": {
+    "placeholders": { "email": { "type": "String" } }
+  },
 
   "usageGuideTitle": "スッキリメールの使い方",
   "usageGuideIntro": "見なくていいメールを、見ないで済むようにするアプリです。実際のメールボックスは一切変更しません。",
@@ -74,6 +99,10 @@
   "usageGuideBulletBlock": "「この差出人を今後取り込まない」で、迷惑な送信元からのメールを次回以降取り込まないようにできます",
   "usageGuideBulletMultiAccount": "複数アカウントはアカウントカラーで区別。メール一覧の並び替えでアカウント毎/日付順を切り替えられます",
   "usageGuideClose": "閉じる",
+
+  "notificationSettingsTitle": "通知する差出人",
+  "notificationSettingsDescription": "選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません",
+  "notificationSettingsEmpty": "まだ取り込まれたメールがありません",
 
   "paywallTitle": "スッキリメール Pro",
   "paywallFeatureAdFree": "広告非表示",
@@ -88,20 +117,6 @@
   "paywallPurchaseSuccess": "Proへのアップグレードが完了しました",
   "paywallPurchaseFailed": "購入処理に失敗しました。時間をおいて再度お試しください",
 
-  "settingsSyncInterval": "自動取り込みの間隔",
-  "settingsSyncIntervalHours": "{hours}時間ごと",
-  "@settingsSyncIntervalHours": {
-    "placeholders": { "hours": { "type": "int" } }
-  },
-  "settingsAccountReauthRequired": "再連携が必要です",
-  "settingsAccountUnlink": "連携解除",
-  "settingsAccountUnlinkConfirm": "{email} の連携を解除しますか？取り込み済みのメールはアプリ上に残ります",
-  "@settingsAccountUnlinkConfirm": {
-    "placeholders": { "email": { "type": "String" } }
-  },
-  "notificationSettingsTitle": "通知する差出人",
-  "notificationSettingsDescription": "選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません",
-  "notificationSettingsEmpty": "まだ取り込まれたメールがありません",
   "commonRetry": "再試行",
   "commonCancel": "キャンセル",
   "commonConfirm": "確認",

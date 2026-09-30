@@ -54,10 +54,45 @@ class AppLocalizationsKo extends AppLocalizations {
   String get archiveCandidatesPin => '보호하기';
 
   @override
-  String get mailListTitle => 'メール一覧';
+  String get dashboardArchivedCount => '누적 보관 건수';
 
   @override
-  String get mailListEmpty => '表示できるメールがありません';
+  String get dashboardFreedBytes => '확보한 저장공간';
+
+  @override
+  String get dashboardPinnedCount => '보호된 메일 수';
+
+  @override
+  String get mailListTitle => '메일 목록';
+
+  @override
+  String get mailListEmpty => '표시할 메일이 없습니다';
+
+  @override
+  String get mailListSortNewest => '최신순';
+
+  @override
+  String get mailListSortUnreadFirst => '읽지 않은 메일 우선';
+
+  @override
+  String get mailListSortSender => '보낸 사람별';
+
+  @override
+  String get mailListGroupToggle => '보낸 사람별로 그룹화';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count개 선택됨';
+  }
+
+  @override
+  String get mailListBulkArchive => '보관';
+
+  @override
+  String get mailListBulkMarkRead => '읽음으로 표시';
+
+  @override
+  String get mailListUnknownSender => '(알 수 없는 발신자)';
 
   @override
   String get mailListPinToggleOn => '保護する';
@@ -67,12 +102,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get mailListBlockSender => 'この差出人を今後取り込まない';
-
-  @override
-  String get mailListSortByAccount => 'アカウント毎';
-
-  @override
-  String get mailListSortByDate => '日付順（全アカウント）';
 
   @override
   String get mailDetailTitle => 'メール詳細';
@@ -102,16 +131,19 @@ class AppLocalizationsKo extends AppLocalizations {
       'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません';
 
   @override
-  String get dashboardTitle => '받은편지함 정리도';
+  String get categoryAll => '전체';
 
   @override
-  String get dashboardArchivedCount => '누적 보관 건수';
+  String get categoryPromotion => '프로모션';
 
   @override
-  String get dashboardFreedBytes => '확보한 저장공간';
+  String get categoryNotification => '알림';
 
   @override
-  String get dashboardPinnedCount => '보호된 메일 수';
+  String get categoryInvoice => '청구서';
+
+  @override
+  String get categoryOther => '기타';
 
   @override
   String get ruleSettingsTitle => '규칙 설정';
@@ -159,6 +191,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsUsageGuide => '使い方';
 
   @override
+  String get settingsSyncInterval => '자동 동기화 간격';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return '$hours시간마다';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => '재연결이 필요합니다';
+
+  @override
+  String get settingsAccountUnlink => '연결 해제';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '$email 연결을 해제하시겠습니까? 이미 가져온 메일은 앱에 남아 있습니다.';
+  }
+
+  @override
   String get usageGuideTitle => 'スッキリメールの使い方';
 
   @override
@@ -182,6 +233,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get usageGuideClose => '閉じる';
+
+  @override
+  String get notificationSettingsTitle => '알림 받을 발신자';
+
+  @override
+  String get notificationSettingsDescription =>
+      '선택한 발신자의 새 메일에 대해서만 알림을 받습니다. 선택하지 않으면 알림이 전송되지 않습니다.';
+
+  @override
+  String get notificationSettingsEmpty => '아직 가져온 메일이 없습니다';
 
   @override
   String get paywallTitle => '상쾌메일 Pro';
@@ -211,35 +272,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get paywallPurchaseFailed => '구매에 실패했습니다. 나중에 다시 시도해주세요';
-
-  @override
-  String get settingsSyncInterval => '자동 동기화 간격';
-
-  @override
-  String settingsSyncIntervalHours(int hours) {
-    return '$hours시간마다';
-  }
-
-  @override
-  String get settingsAccountReauthRequired => '재연결이 필요합니다';
-
-  @override
-  String get settingsAccountUnlink => '연결 해제';
-
-  @override
-  String settingsAccountUnlinkConfirm(String email) {
-    return '$email 연결을 해제하시겠습니까? 이미 가져온 메일은 앱에 남아 있습니다.';
-  }
-
-  @override
-  String get notificationSettingsTitle => '알림 받을 발신자';
-
-  @override
-  String get notificationSettingsDescription =>
-      '선택한 발신자의 새 메일에 대해서만 알림을 받습니다. 선택하지 않으면 알림이 전송되지 않습니다.';
-
-  @override
-  String get notificationSettingsEmpty => '아직 가져온 메일이 없습니다';
 
   @override
   String get commonRetry => '다시 시도';

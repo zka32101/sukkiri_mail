@@ -55,10 +55,45 @@ class AppLocalizationsEs extends AppLocalizations {
   String get archiveCandidatesPin => 'Proteger';
 
   @override
-  String get mailListTitle => 'メール一覧';
+  String get dashboardArchivedCount => 'Total archivado';
 
   @override
-  String get mailListEmpty => '表示できるメールがありません';
+  String get dashboardFreedBytes => 'Espacio local liberado';
+
+  @override
+  String get dashboardPinnedCount => 'Correos protegidos';
+
+  @override
+  String get mailListTitle => 'Lista de correos';
+
+  @override
+  String get mailListEmpty => 'No hay correos para mostrar';
+
+  @override
+  String get mailListSortNewest => 'Más recientes';
+
+  @override
+  String get mailListSortUnreadFirst => 'No leídos primero';
+
+  @override
+  String get mailListSortSender => 'Por remitente';
+
+  @override
+  String get mailListGroupToggle => 'Agrupar por remitente';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count seleccionados';
+  }
+
+  @override
+  String get mailListBulkArchive => 'Archivar';
+
+  @override
+  String get mailListBulkMarkRead => 'Marcar como leído';
+
+  @override
+  String get mailListUnknownSender => '(Remitente desconocido)';
 
   @override
   String get mailListPinToggleOn => '保護する';
@@ -68,12 +103,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get mailListBlockSender => 'この差出人を今後取り込まない';
-
-  @override
-  String get mailListSortByAccount => 'アカウント毎';
-
-  @override
-  String get mailListSortByDate => '日付順（全アカウント）';
 
   @override
   String get mailDetailTitle => 'メール詳細';
@@ -103,16 +132,19 @@ class AppLocalizationsEs extends AppLocalizations {
       'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません';
 
   @override
-  String get dashboardTitle => 'Nivel de orden de tu bandeja';
+  String get categoryAll => 'Todos';
 
   @override
-  String get dashboardArchivedCount => 'Total archivado';
+  String get categoryPromotion => 'Promociones';
 
   @override
-  String get dashboardFreedBytes => 'Espacio local liberado';
+  String get categoryNotification => 'Notificaciones';
 
   @override
-  String get dashboardPinnedCount => 'Correos protegidos';
+  String get categoryInvoice => 'Facturas';
+
+  @override
+  String get categoryOther => 'Otros';
 
   @override
   String get ruleSettingsTitle => 'Reglas';
@@ -160,6 +192,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsUsageGuide => '使い方';
 
   @override
+  String get settingsSyncInterval => 'Intervalo de sincronización automática';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'Cada $hours horas';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'Se requiere reconexión';
+
+  @override
+  String get settingsAccountUnlink => 'Desvincular';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '¿Desvincular $email? El correo ya importado permanecerá en la app.';
+  }
+
+  @override
   String get usageGuideTitle => 'スッキリメールの使い方';
 
   @override
@@ -183,6 +234,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get usageGuideClose => '閉じる';
+
+  @override
+  String get notificationSettingsTitle => 'Remitentes para notificar';
+
+  @override
+  String get notificationSettingsDescription =>
+      'Solo se te notificará sobre correos nuevos de los remitentes seleccionados. Si no seleccionas ninguno, no se enviarán notificaciones.';
+
+  @override
+  String get notificationSettingsEmpty => 'Aún no se han importado correos';
 
   @override
   String get paywallTitle => 'Bandeja Ligera Pro';
@@ -213,35 +274,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get paywallPurchaseFailed =>
       'Error en la compra. Inténtalo de nuevo más tarde';
-
-  @override
-  String get settingsSyncInterval => 'Intervalo de sincronización automática';
-
-  @override
-  String settingsSyncIntervalHours(int hours) {
-    return 'Cada $hours horas';
-  }
-
-  @override
-  String get settingsAccountReauthRequired => 'Se requiere reconexión';
-
-  @override
-  String get settingsAccountUnlink => 'Desvincular';
-
-  @override
-  String settingsAccountUnlinkConfirm(String email) {
-    return '¿Desvincular $email? El correo ya importado permanecerá en la app.';
-  }
-
-  @override
-  String get notificationSettingsTitle => 'Remitentes para notificar';
-
-  @override
-  String get notificationSettingsDescription =>
-      'Solo se te notificará sobre correos nuevos de los remitentes seleccionados. Si no seleccionas ninguno, no se enviarán notificaciones.';
-
-  @override
-  String get notificationSettingsEmpty => 'Aún no se han importado correos';
 
   @override
   String get commonRetry => 'Reintentar';

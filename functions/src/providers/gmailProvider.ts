@@ -1,5 +1,4 @@
 import { google, gmail_v1 } from "googleapis";
-import { db } from "../db";
 import {
   ConnectedAccountResult,
   MailProviderAdapter,
@@ -7,7 +6,10 @@ import {
   ScanResultItem,
 } from "./mailProviderInterface";
 import { getSecret } from "../secrets";
-import { categorizeMessage, pickNextAccountColor } from "../categorize";
+import { categorizeMessage } from "../categorize";
+import { db } from "../firestore";
+import { upsertLinkedAccount } from "../linkedAccountUpsert";
+import { LinkedAccountDoc } from "../types";
 
 type GmailMessagePart = gmail_v1.Schema$MessagePart;
 
@@ -48,51 +50,62 @@ function escapeHtml(text: string): string {
  * 【要確認】OAuthクライアントID/シークレットはGoogle Cloud Console側の
  * OAuth同意画面登録（ユーザー作業）待ち。取得後 Secret Manager に
  * `gmail-oauth-client-id` / `gmail-oauth-client-secret` として登録する。
+ * クライアント（Flutter）側は同じOAuthクライアントの「Web」タイプclient_id（非秘密）を
+ * Firebase Remote Configの `gmail_oauth_server_client_id` としても登録する必要がある
+ * （GoogleSignInのserverAuthCode取得に必須。lib/views/account_link_view.dart参照）。
  */
 export class GmailProvider implements MailProviderAdapter {
   /**
-   * access_tokenの有効期限をFirestoreに保存していないため、google-auth-libraryは
-   * 期限切れを事前検知できず自動リフレッシュが働かない（401で失敗するだけ）。
-   * ここで明示的にリフレッシュし、新しいaccess_tokenをFirestoreへ書き戻す。
-   * refresh_token自体が失効している場合はoauthStatusを"expired"にし、
-   * ユーザーに再連携が必要なことを示す。
+   * アクセストークンを取得。有効期限切れ（または期限情報が無い）場合は
+   * refresh tokenを使って更新し、結果をFirestoreへ永続化する。
+   * googleapisライブラリの自動リフレッシュ（401時の内部リトライ）だけに頼ると、
+   * 更新後のトークンがFirestoreに書き戻されず、以降の全呼び出しで毎回401→リフレッシュを
+   * 繰り返す上、refresh token自体が失効した場合にoauthStatusが更新されず
+   * クライアントが再認証を促せない。outlookProvider.getAccessToken()と同じ方針にする。
    */
   private async getClient(accountId: string) {
     const doc = await db().collection("linkedAccounts").doc(accountId).get();
-    const data = doc.data();
+    const data = doc.data() as LinkedAccountDoc | undefined;
     if (!data) throw new Error("account not found");
 
     const clientId = await getSecret("gmail-oauth-client-id");
     const clientSecret = await getSecret("gmail-oauth-client-secret");
     const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-    if (!data.refreshToken) {
-      // refresh_tokenが無いと期限切れのaccess_tokenをそのまま使うことになり、
-      // 401が出続けてもoauthStatusがexpiredへ更新されずユーザーに気づかれない
-      // （実際に発生した事故）。refresh_token欠如はここで即座にexpired扱いにする。
-      await db()
-        .collection("linkedAccounts")
-        .doc(accountId)
-        .update({ oauthStatus: "expired" })
-        .catch(() => {
-          /* ignore */
-        });
-      throw new Error("oauth refresh token missing; user must re-authenticate");
+
+    const accessToken = data.accessToken;
+    const refreshToken = data.refreshToken;
+    const expiresAt = data.tokenExpiresAt;
+    const now = Date.now();
+    const bufferTime = 5 * 60 * 1000; // 5分
+
+    if (expiresAt && now < expiresAt - bufferTime && accessToken) {
+      oauth2Client.setCredentials({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      return google.gmail({ version: "v1", auth: oauth2Client });
     }
 
-    oauth2Client.setCredentials({
-      access_token: data.accessToken,
-      refresh_token: data.refreshToken,
-    });
+    if (!refreshToken) {
+      throw new Error("refresh token not found; user must re-authenticate");
+    }
 
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
     try {
       const { credentials } = await oauth2Client.refreshAccessToken();
       oauth2Client.setCredentials(credentials);
-      await db().collection("linkedAccounts").doc(accountId).update({
-        accessToken: credentials.access_token ?? data.accessToken,
-        oauthStatus: "connected",
-      });
-    } catch (e) {
-      console.error(`Gmail token refresh failed for account ${accountId}`, e);
+      await db()
+        .collection("linkedAccounts")
+        .doc(accountId)
+        .update({
+          accessToken: credentials.access_token,
+          tokenExpiresAt: credentials.expiry_date ?? now + 3600 * 1000,
+          ...(credentials.refresh_token
+            ? { refreshToken: credentials.refresh_token }
+            : {}),
+        });
+      return google.gmail({ version: "v1", auth: oauth2Client });
+    } catch (error) {
       await db()
         .collection("linkedAccounts")
         .doc(accountId)
@@ -102,15 +115,13 @@ export class GmailProvider implements MailProviderAdapter {
         });
       throw new Error("oauth token expired; user must re-authenticate");
     }
-
-    return google.gmail({ version: "v1", auth: oauth2Client });
   }
 
   async connect(userId: string, params: Record<string, unknown>): Promise<ConnectedAccountResult> {
     // 実際のOAuthコード交換はクライアント側のgoogle_sign_inで得たauthCodeを
     // ここでトークンに交換し、accessToken/refreshTokenをFirestore（非公開フィールド）に保存する。
-    const authCode = params.authCode as string | undefined;
-    if (!authCode) throw new Error("authCode is required");
+    if (typeof params.authCode !== "string") throw new Error("authCode is required");
+    const authCode = params.authCode;
 
     const clientId = await getSecret("gmail-oauth-client-id");
     const clientSecret = await getSecret("gmail-oauth-client-secret");
@@ -121,42 +132,26 @@ export class GmailProvider implements MailProviderAdapter {
     const gmail = google.gmail({ version: "v1", auth: oauth2Client });
     const profile = await gmail.users.getProfile({ userId: "me" });
     const emailAddress = profile.data.emailAddress ?? "";
+    const tokenExpiresAt = tokens.expiry_date ?? Date.now() + 3600 * 1000;
 
-    const existing = await db()
-      .collection("linkedAccounts")
-      .where("userId", "==", userId)
-      .get();
-    // 同一メールアドレス・同一プロバイダの既存連携があれば新規作成せず更新する
-    // （以前は常に新規addしていたため、再連携のたびに重複ドキュメントが増え、
-    // 古い重複がrefreshToken:nullのまま残って401が直らない不具合があった）。
-    const existingDoc = existing.docs.find(
-      (d) => d.data().provider === "gmail" && d.data().emailAddress === emailAddress,
-    );
-    const colorHex =
-      existingDoc?.data().colorHex ??
-      pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
-
-    // 再認可時、Googleはrefresh_tokenを再発行しないことがある（既に同意済みのため）。
-    // その場合は既存のrefreshTokenを維持する（nullで上書きしない）。
-    const refreshToken = tokens.refresh_token ?? existingDoc?.data().refreshToken ?? null;
-    const payload = {
+    // トランザクション内で「既存なら再利用・新規なら無料プラン上限チェック→
+    // カラー割当→書き込み」をアトミックに行う（詳細はlinkedAccountUpsert.ts参照）。
+    const { ref, colorHex } = await upsertLinkedAccount(
       userId,
-      provider: "gmail",
-      authMethod: "oauth",
+      "gmail",
       emailAddress,
-      oauthStatus: "connected",
-      colorHex,
-      lastScanAt: existingDoc?.data().lastScanAt ?? null,
-      accessToken: tokens.access_token ?? null,
-      refreshToken,
-    };
-
-    const ref = existingDoc
-      ? existingDoc.ref
-      : await db().collection("linkedAccounts").add(payload);
-    if (existingDoc) {
-      await existingDoc.ref.set(payload, { merge: true });
-    }
+      (isNew) => ({
+        userId,
+        provider: "gmail",
+        authMethod: "oauth",
+        emailAddress,
+        oauthStatus: "connected",
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        tokenExpiresAt,
+        ...(isNew ? { lastScanAt: null } : {}),
+      })
+    );
 
     return {
       id: ref.id,
@@ -169,52 +164,56 @@ export class GmailProvider implements MailProviderAdapter {
     };
   }
 
-  /**
-   * 連携直後（および将来の定期再スキャン）に、過去30日分の受信メールを
-   * まとめて取得する。カテゴリでの絞り込みはしない（メール一覧は全件表示のため）。
-   */
-  async scan(accountId: string): Promise<ScanResultItem[]> {
+  async scan(accountId: string, lastScanAt?: number | null): Promise<ScanResultItem[]> {
     const gmail = await this.getClient(accountId);
-    // 検索ボックス既定と同様にSpam/Trashは対象外（-in:spam -in:trash）。
-    // 迷惑メールとしてサーバー側に振り分け済みのものは取り込まない。
+
+    // Build query: incremental if lastScanAt provided, full scan otherwise
+    let q = "category:promotions OR category:updates";
+    if (lastScanAt) {
+      // Gmail API uses Unix timestamps (seconds), convert from milliseconds
+      const afterTimestamp = Math.floor(lastScanAt / 1000);
+      q = `${q} after:${afterTimestamp}`;
+    }
+
     const list = await gmail.users.messages.list({
       userId: "me",
-      q: "newer_than:30d -in:spam -in:trash",
-      maxResults: 200,
+      q,
+      maxResults: 100, // Increased from 50 for better efficiency
     });
     const messages = list.data.messages ?? [];
 
-    const items: ScanResultItem[] = [];
-    for (const m of messages) {
-      if (!m.id) continue;
-      const full = await gmail.users.messages.get({
-        userId: "me",
-        id: m.id,
-        format: "metadata",
-        metadataHeaders: ["Subject", "From"],
-      });
-      const headers = full.data.payload?.headers ?? [];
-      // ヘッダー名の大文字小文字が送信元によって揺れることがあるため大小無視で照合する。
-      const findHeader = (name: string) =>
-        headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? "";
-      const subject = findHeader("Subject");
-      const from = findHeader("From");
-      const senderEmail = (from.match(/<(.+)>/)?.[1] ?? from).trim();
-      // Gmailのsnippetは元々短く要約済みのため、そのまま保持する
-      // （全文はメール詳細画面からfetchMessageBodyでオンデマンド取得する）。
-      const snippet = full.data.snippet ?? "";
+    // Parallelize message fetching and categorization for better performance
+    const items: ScanResultItem[] = await Promise.all(
+      messages
+        .filter((m) => !!m.id)
+        .map(async (m) => {
+          const full = await gmail.users.messages.get({
+            userId: "me",
+            id: m.id!,
+            format: "metadata",
+            metadataHeaders: ["Subject", "From"],
+          });
+          const headers = full.data.payload?.headers ?? [];
+          const subject = headers.find((h) => h.name === "Subject")?.value ?? "";
+          const from = headers.find((h) => h.name === "From")?.value ?? "";
+          const senderEmail = (from.match(/<(.+)>/)?.[1] ?? from).trim();
+          const snippet = (full.data.snippet ?? "").slice(0, 80);
+          // labelIdsはformatに関わらず常に返る。UNREADラベルの有無で未読判定する。
+          const isUnread = (full.data.labelIds ?? []).includes("UNREAD");
 
-      items.push({
-        id: m.id,
-        accountId,
-        category: categorizeMessage(subject, senderEmail),
-        receivedAt: Number(full.data.internalDate ?? Date.now()),
-        hasAttachment: false,
-        snippet,
-        subject,
-        senderEmail,
-      });
-    }
+          return {
+            id: m.id!,
+            accountId,
+            category: await categorizeMessage(subject, senderEmail),
+            receivedAt: Number(full.data.internalDate ?? Date.now()),
+            hasAttachment: false,
+            snippet,
+            subject,
+            senderEmail,
+            isUnread,
+          };
+        })
+    );
     return items;
   }
 
@@ -239,6 +238,31 @@ export class GmailProvider implements MailProviderAdapter {
         requestBody: { addLabelIds: ["INBOX"] },
       });
     }
+  }
+
+  /**
+   * Gmail Pub/Sub watchを登録し、以後のメールボックス変更をリアルタイム通知させる。
+   * 有効期限は最大7日間のため、期限前に再度呼び出して更新する必要がある。
+   */
+  async watch(accountId: string, topicName: string): Promise<{ historyId: string; expiration: number }> {
+    const gmail = await this.getClient(accountId);
+    const res = await gmail.users.watch({
+      userId: "me",
+      requestBody: {
+        topicName,
+        labelIds: ["INBOX"],
+      },
+    });
+    return {
+      historyId: res.data.historyId ?? "",
+      expiration: Number(res.data.expiration ?? Date.now() + 7 * 24 * 60 * 60 * 1000),
+    };
+  }
+
+  /** Gmail Pub/Sub watchを解除する（アカウント連携解除時に呼び出す）。 */
+  async stopWatch(accountId: string): Promise<void> {
+    const gmail = await this.getClient(accountId);
+    await gmail.users.stop({ userId: "me" });
   }
 
   async fetchMessageBody(accountId: string, messageId: string): Promise<MessageBodyResult> {

@@ -22,13 +22,26 @@
   "archiveCandidatesArchiveAll": "Archive all",
   "archiveCandidatesPin": "Protect",
 
-  "mailListTitle": "Inbox",
+  "dashboardArchivedCount": "Total archived",
+  "dashboardFreedBytes": "Local storage freed",
+  "dashboardPinnedCount": "Protected emails",
+
+  "mailListTitle": "Mail list",
   "mailListEmpty": "No emails to show",
+  "mailListSortNewest": "Newest",
+  "mailListSortUnreadFirst": "Unread first",
+  "mailListSortSender": "By sender",
+  "mailListGroupToggle": "Group by sender",
+  "mailListSelectionCount": "{count} selected",
+  "@mailListSelectionCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "mailListBulkArchive": "Archive",
+  "mailListBulkMarkRead": "Mark as read",
+  "mailListUnknownSender": "(Unknown sender)",
   "mailListPinToggleOn": "Pin",
   "mailListPinToggleOff": "Unpin",
   "mailListBlockSender": "Stop importing this sender",
-  "mailListSortByAccount": "By account",
-  "mailListSortByDate": "By date (all accounts)",
 
   "mailDetailTitle": "Mail detail",
   "mailDetailNoSubject": "(no subject)",
@@ -43,10 +56,11 @@
   "settingsLocalCacheRetention": "Auto-hide from this app after",
   "settingsLocalCacheRetentionDescription": "Only affects what this app shows — your real inbox is never changed",
 
-  "dashboardTitle": "Inbox tidiness",
-  "dashboardArchivedCount": "Total archived",
-  "dashboardFreedBytes": "Local storage freed",
-  "dashboardPinnedCount": "Protected emails",
+  "categoryAll": "All",
+  "categoryPromotion": "Promotions",
+  "categoryNotification": "Notifications",
+  "categoryInvoice": "Invoices",
+  "categoryOther": "Other",
 
   "ruleSettingsTitle": "Rules",
   "ruleSettingsCategoryTab": "Category rules",
@@ -66,6 +80,17 @@
   "settingsLinkedAccounts": "Linked accounts",
   "settingsPlan": "Plan",
   "settingsUsageGuide": "How to use",
+  "settingsSyncInterval": "Auto-sync interval",
+  "settingsSyncIntervalHours": "Every {hours} hours",
+  "@settingsSyncIntervalHours": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "settingsAccountReauthRequired": "Reconnection needed",
+  "settingsAccountUnlink": "Unlink",
+  "settingsAccountUnlinkConfirm": "Unlink {email}? Already imported mail will remain in the app.",
+  "@settingsAccountUnlinkConfirm": {
+    "placeholders": { "email": { "type": "String" } }
+  },
 
   "usageGuideTitle": "How TidyMail works",
   "usageGuideIntro": "This app helps you stop seeing mail you don't need to. It never changes your real inbox.",
@@ -74,6 +99,10 @@
   "usageGuideBulletBlock": "\"Stop importing this sender\" keeps unwanted senders from being imported again",
   "usageGuideBulletMultiAccount": "Multiple accounts are color-coded. Switch the mail list between per-account grouping and merged date order",
   "usageGuideClose": "Close",
+
+  "notificationSettingsTitle": "Notify for senders",
+  "notificationSettingsDescription": "You'll only be notified about new mail from the senders you select. If none are selected, no notifications are sent.",
+  "notificationSettingsEmpty": "No emails imported yet",
 
   "paywallTitle": "TidyMail Pro",
   "paywallFeatureAdFree": "Ad-free",
@@ -88,36 +117,7 @@
   "paywallPurchaseSuccess": "Upgraded to Pro successfully",
   "paywallPurchaseFailed": "Purchase failed. Please try again later",
 
-  "settingsSyncInterval": "Auto-sync interval",
-
-  "settingsSyncIntervalHours": "Every {hours} hours",
-
-  "@settingsSyncIntervalHours": {
-
-    "placeholders": { "hours": { "type": "int" } }
-
-  },
-
-  "settingsAccountReauthRequired": "Reconnection needed",
-
-  "settingsAccountUnlink": "Unlink",
-
-  "settingsAccountUnlinkConfirm": "Unlink {email}? Already imported mail will remain in the app.",
-
-  "@settingsAccountUnlinkConfirm": {
-
-    "placeholders": { "email": { "type": "String" } }
-
-  },
-
-  "notificationSettingsTitle": "Notify for senders",
-
-  "notificationSettingsDescription": "You'll only be notified about new mail from the senders you select. If none are selected, no notifications are sent.",
-
-  "notificationSettingsEmpty": "No emails imported yet",
-
   "commonRetry": "Retry",
-
   "commonCancel": "Cancel",
   "commonConfirm": "Confirm",
   "commonBack": "Back",

@@ -1,12 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/sender_block_rule.dart';
+import '../services/app_firestore.dart';
 
 class SenderBlockRuleRepository {
   final FirebaseFirestore _db;
 
   SenderBlockRuleRepository({FirebaseFirestore? db})
-    : _db = db ?? FirebaseFirestore.instance;
+    : _db = db ?? appFirestore();
 
   CollectionReference<Map<String, dynamic>> get _col =>
       _db.collection('senderBlockRules');

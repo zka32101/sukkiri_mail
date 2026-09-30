@@ -1,0 +1,224 @@
+name: Android CI (sukkiri_mail)
+
+# APK/AABをビルドする。Ubuntuランナーのため macOS(iOS)ほどコストが高くなく、
+# PR時の自動ビルドも許容する（ios.ymlのコスト最適化方針とは異なる）。
+#
+# build-android: 常時（PR/push/手動）。key.properties が無いためdebug署名でビルドする
+# （android/app/build.gradle.kts のフォールバック挙動）。コンパイル可否の確認用。
+#
+# build-android-signed: リリース署名済みのAPK/AABをビルドする。手動実行(workflow_dispatch)限定
+# （iOSのTestFlightアップロードジョブと同様、配信物を作るジョブは自動起動しない）。
+# 以下のRepository Secretsが必要（未設定の場合はこのジョブをスキップする）:
+#   ANDROID_KEYSTORE_BASE64   … keystoreファイル(.jks)をbase64化した文字列
+#   ANDROID_KEYSTORE_PASSWORD … ストアパスワード
+#   ANDROID_KEY_ALIAS         … 鍵のエイリアス
+#   ANDROID_KEY_PASSWORD      … 鍵のパスワード（PKCS12形式ではストアパスワードと同一）
+# Settings > Secrets and variables > Actions から登録すること。
+#
+# ビルド成功後、GDRIVE_SERVICE_ACCOUNT_JSON が設定されていればGoogle Driveの
+# 「apk」フォルダ（マイドライブ直下、GDRIVE_APK_FOLDER_ID）へ署名付きAPK/AABを
+# 自動アップロード（同名ファイルが既にあれば内容を上書き）する。未設定の場合はスキップする。
+#   GDRIVE_SERVICE_ACCOUNT_JSON … Drive APIが有効なGCPサービスアカウントのJSON鍵（そのまま）
+# サービスアカウントのclient_emailに対して、対象フォルダの編集者権限を共有しておくこと。
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  # ローカルにkeystoreファイルが見当たらない場合でも、Google Cloud ConsoleでAndroid用
+  # OAuthクライアントを登録するのに必要なSHA-1/SHA-256フィンガープリントを確認できるよう、
+  # Repository Secretsに登録済みのkeystoreから直接算出する。手動実行(workflow_dispatch)限定。
+  # パスワード自体はログに出力しない（keytoolの標準出力にフィンガープリントのみが載る）。
+  print-release-sha1:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decode keystore and print SHA-1/SHA-256 fingerprint
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "ANDROID_KEYSTORE_BASE64 が未設定のため、フィンガープリントを算出できません。"
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > /tmp/release.jks
+          # -storepass "$VAR" だとパスワードがプロセスの起動引数としてそのまま渡り、
+          # 同一ランナー上の他プロセスからは`ps`/`/proc/<pid>/cmdline`で見えてしまう
+          # （GitHub Actionsのログマスキングはstdoutに出力された値しか隠せない）。
+          # -storepass:env はkeytoolに環境変数名だけを渡し、値自体は起動引数に
+          # 現れないため、この経路での露出を避けられる。
+          keytool -list -v -keystore /tmp/release.jks -alias "$ANDROID_KEY_ALIAS" -storepass:env ANDROID_KEYSTORE_PASSWORD \
+            | grep -E "Alias name:|SHA1:|SHA256:"
+
+      # keytoolがエイリアス/パスワード誤り等で失敗すると(bash -eにより)途中で
+      # ステップが終了し、上のステップ内の`rm -f`まで到達しないまま複合化済みの
+      # keystoreがランナーに残ってしまう。build-android-signedジョブのクリーンアップ
+      # ステップと同様、常に実行されるよう独立したステップ+if: always()にする。
+      - name: Clean up decoded keystore
+        if: always()
+        run: rm -f /tmp/release.jks
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK (debug署名)
+        run: flutter build apk --release
+
+      - name: Build AAB (debug署名)
+        run: flutter build appbundle --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukkiri-mail-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukkiri-mail-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
+
+  build-android-signed:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      # keystoreとkey.propertiesはこのステップ内でのみ生成し、ジョブ終了時に確実に削除する
+      # （Actionsのログにも値は出力しない）。
+      - name: Decode keystore and write key.properties
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "ANDROID_KEYSTORE_BASE64 が未設定のため、署名付きビルドをスキップします。"
+            echo "SKIP_SIGNED_BUILD=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.jks
+          cat > android/key.properties <<EOF
+          storeFile=release.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Build signed APK
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        run: flutter build apk --release
+
+      - name: Build signed AAB
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        run: flutter build appbundle --release
+
+      - name: Upload signed APK artifact
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukkiri-mail-apk-signed
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Upload signed AAB artifact
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukkiri-mail-aab-signed
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      # サービスアカウントのJSON鍵はこのステップ内でのみファイルに書き出し、
+      # ジョブ終了時に確実に削除する（Actionsのログにも値は出力しない）。
+      - name: Upload signed APK/AAB to Google Drive
+        if: env.SKIP_SIGNED_BUILD != 'true'
+        env:
+          GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+          GDRIVE_APK_FOLDER_ID: "1iXxOO750AyuIwXNwGF-qTJLmElIldgwD"
+        run: |
+          if [ -z "$GDRIVE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "GDRIVE_SERVICE_ACCOUNT_JSON が未設定のため、Google Driveへのアップロードをスキップします。"
+            exit 0
+          fi
+          python3 -m pip install --quiet --break-system-packages google-auth google-api-python-client
+          echo "$GDRIVE_SERVICE_ACCOUNT_JSON" > /tmp/gdrive-sa.json
+          python3 - <<'PYEOF'
+          import os
+
+          from google.oauth2 import service_account
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+
+          SCOPES = ["https://www.googleapis.com/auth/drive"]
+          creds = service_account.Credentials.from_service_account_file(
+              "/tmp/gdrive-sa.json", scopes=SCOPES
+          )
+          drive = build("drive", "v3", credentials=creds)
+          folder_id = os.environ["GDRIVE_APK_FOLDER_ID"]
+
+          def upload_or_replace(local_path, drive_name, mime_type):
+              query = (
+                  f"name='{drive_name}' and '{folder_id}' in parents and trashed=false"
+              )
+              existing = (
+                  drive.files().list(q=query, fields="files(id,name)").execute()
+              )
+              media = MediaFileUpload(local_path, mimetype=mime_type, resumable=True)
+              files = existing.get("files", [])
+              if files:
+                  file_id = files[0]["id"]
+                  drive.files().update(fileId=file_id, media_body=media).execute()
+                  print(f"Updated existing Drive file: {drive_name} (id={file_id})")
+              else:
+                  metadata = {"name": drive_name, "parents": [folder_id]}
+                  created = (
+                      drive.files()
+                      .create(body=metadata, media_body=media, fields="id")
+                      .execute()
+                  )
+                  print(f"Created new Drive file: {drive_name} (id={created['id']})")
+
+          upload_or_replace(
+              "build/app/outputs/flutter-apk/app-release.apk",
+              "sukkiri-mail-release.apk",
+              "application/vnd.android.package-archive",
+          )
+          upload_or_replace(
+              "build/app/outputs/bundle/release/app-release.aab",
+              "sukkiri-mail-release.aab",
+              "application/octet-stream",
+          )
+          PYEOF
+
+      # ランナーは実行ごとに破棄されるが、念のため鍵材料を明示的に削除しておく。
+      - name: Clean up keystore and key.properties
+        if: always()
+        run: rm -f android/app/release.jks android/key.properties /tmp/gdrive-sa.json

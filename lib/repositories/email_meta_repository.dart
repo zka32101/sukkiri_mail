@@ -1,26 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../models/category_rule.dart';
 import '../models/email_meta.dart';
+import '../services/app_firestore.dart';
 
 class EmailMetaRepository {
   final FirebaseFirestore _db;
 
-  EmailMetaRepository({FirebaseFirestore? db})
-    : _db = db ?? FirebaseFirestore.instance;
+  EmailMetaRepository({FirebaseFirestore? db}) : _db = db ?? appFirestore();
 
   CollectionReference<Map<String, dynamic>> get _col =>
       _db.collection('emailMeta');
 
-  /// firestore.rulesのemailMeta読み取り許可は resource.data.userId ==
-  /// auth.uid のみ（他人のメタデータを覗けないようにするため）。Firestoreの
-  /// セキュリティルールはコレクションクエリ全体を静的に検証するため、
-  /// クエリ自体にuserIdの等価フィルタが無いと（accountId等だけでは）
-  /// permission-deniedで弾かれる。呼び出し側は必ず現在ログイン中のuidを渡すこと。
+  /// userIdは必須。firestore.rulesのemailMeta読み取りルールは
+  /// `resource.data.userId == request.auth.uid` の一致を要求しており、
+  /// クエリ自体にuserIdの等価条件が無いと（accountIdだけで絞り込むと）
+  /// Firestoreはルールを満たすと静的に証明できずクエリ全体をpermission-deniedで
+  /// 拒否する（各ドキュメントは実際にはルールを満たしていても）。
   Stream<List<EmailMeta>> watchForAccount(
-    String accountId, {
-    required String userId,
+    String accountId,
+    String userId, {
     EmailStatus? status,
-    LocalCacheStatus? localCacheStatus,
+    MailCategory? category,
   }) {
     Query<Map<String, dynamic>> q = _col
         .where('accountId', isEqualTo: accountId)
@@ -28,11 +29,8 @@ class EmailMetaRepository {
     if (status != null) {
       q = q.where('status', isEqualTo: emailStatusToString(status));
     }
-    if (localCacheStatus != null) {
-      q = q.where(
-        'localCacheStatus',
-        isEqualTo: localCacheStatusToString(localCacheStatus),
-      );
+    if (category != null) {
+      q = q.where('category', isEqualTo: mailCategoryToString(category));
     }
     return q.snapshots().map(
       (snap) =>
@@ -40,26 +38,13 @@ class EmailMetaRepository {
     );
   }
 
-  /// メール一覧画面用：実Gmail側の状態(status)には触れず、アプリ表示からのみ
-  /// 経過日数で外された(localCacheStatus=purged)ものを除いた「今アプリに見えるべき」一覧。
-  Stream<List<EmailMeta>> watchVisibleForAccount(
-    String accountId, {
-    required String userId,
-  }) {
-    return watchForAccount(
-      accountId,
-      userId: userId,
-      status: EmailStatus.active,
-      localCacheStatus: LocalCacheStatus.cached,
-    );
-  }
-
   /// メタデータは件名・送信者・日時・カテゴリ・スニペットで常時検索可能（キャッシュ削除後も）。
+  /// userIdが必要な理由はwatchForAccount()と同じ（firestore.rulesとの整合）。
   Future<List<EmailMeta>> search(
     String accountId,
-    String query, {
-    required String userId,
-  }) async {
+    String userId,
+    String query,
+  ) async {
     // Firestoreの部分一致検索は不可のため、簡易実装としてsnippetの前方一致で絞り込む。
     // 本番ではAlgolia等の全文検索インデックスに置き換え可能な設計にしておく。
     final snap = await _col
@@ -77,19 +62,28 @@ class EmailMetaRepository {
     return _col.doc(emailId).update({'isPinned': isPinned});
   }
 
-  /// 受信箱スッキリ度ダッシュボード用：アカウント横断の保護（ピン留め）件数。
-  Future<int> countPinned(String userId) async {
-    final snap = await _col
-        .where('userId', isEqualTo: userId)
-        .where('isPinned', isEqualTo: true)
-        .count()
-        .get();
-    return snap.count ?? 0;
+  /// 既読/未読はメールプロバイダ側の実際の状態と厳密に同期させず、アプリ内の
+  /// 「見やすく管理する」ための表示用フラグとして扱う（isPinnedと同じ位置づけ）。
+  Future<void> setUnread(String emailId, bool isUnread) {
+    return _col.doc(emailId).update({'isUnread': isUnread});
   }
 
-  Future<void> setStatus(String emailId, EmailStatus status) {
-    return _col.doc(emailId).update({'status': emailStatusToString(status)});
+  /// 一覧画面での複数選択→一括既読化用。1回のバッチ書き込みでまとめて更新する。
+  Future<void> setUnreadBatch(List<String> emailIds, bool isUnread) async {
+    if (emailIds.isEmpty) return;
+    final batch = _db.batch();
+    for (final id in emailIds) {
+      batch.update(_col.doc(id), {'isUnread': isUnread});
+    }
+    await batch.commit();
   }
+
+  // statusの更新はCloud Functions（applyArchiveRules/restoreEmail、Admin SDK）側のみが
+  // 行う。クライアントがFirestore上のstatusフラグだけを直接書き換えられてしまうと、
+  // 実際のメールプロバイダ（Gmail/Outlook/IMAP）側のアーカイブ状態と食い違う
+  // （見た目はアーカイブ済みでも実メールはInboxに残ったまま、等）ため、意図的に
+  // クライアント用のメソッドは提供しない
+  // （firestore.rulesのupdate許可フィールドにもstatusは含まれていない）。
 
   Future<void> setLocalCacheStatus(String emailId, LocalCacheStatus status) {
     return _col.doc(emailId).update({
@@ -97,10 +91,28 @@ class EmailMetaRepository {
     });
   }
 
+  /// ユーザーが連携する全アカウント横断で、現在アーカイブ済みのメール件数を数える。
+  Future<int> countArchivedForUser(String userId) async {
+    final agg = await _col
+        .where('userId', isEqualTo: userId)
+        .where('status', isEqualTo: emailStatusToString(EmailStatus.archived))
+        .count()
+        .get();
+    return agg.count ?? 0;
+  }
+
+  /// ユーザーが連携する全アカウント横断で、ピン留め（保護）済みのメール件数を数える。
+  Future<int> countPinnedForUser(String userId) async {
+    final agg = await _col
+        .where('userId', isEqualTo: userId)
+        .where('isPinned', isEqualTo: true)
+        .count()
+        .get();
+    return agg.count ?? 0;
+  }
+
   /// 差出人ブロック時：既にキャッシュ済みの該当差出人メールを一覧から即座に
   /// 除外するため、localCacheStatusをまとめてblockedへ更新する。
-  /// Firestoreの一括更新に単一クエリの範囲制限は無いが、対象件数が多い場合に
-  /// 備えWriteBatchでまとめて送信する。
   Future<void> markSenderBlocked(
     String senderEmail, {
     required String userId,
@@ -123,8 +135,8 @@ class EmailMetaRepository {
     await batch.commit();
   }
 
-  /// 差出人ブロックルールの追加UI用：これまでに取り込まれた差出人アドレス一覧
-  /// （全アカウント横断、重複除去）。
+  /// 差出人ブロックルール・通知対象差出人の選択UI用：これまでに取り込まれた
+  /// 差出人アドレス一覧（全アカウント横断、重複除去）。
   Future<List<String>> distinctSenders(String userId) async {
     final snap = await _col.where('userId', isEqualTo: userId).get();
     final senders = snap.docs

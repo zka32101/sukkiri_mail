@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../services/ads_service.dart';
-import '../viewmodels/subscription_providers.dart';
+import '../viewmodels/app_user_providers.dart';
 
-/// 無料ユーザーにのみバナー広告を表示する。ad_free契約中は何も描画しない
+/// 無料ユーザーにのみバナー広告を表示する。Pro契約中は何も描画しない
 /// （SizedBox.shrinkでレイアウトの高さも消える）。
 class BannerAdSlot extends ConsumerStatefulWidget {
   const BannerAdSlot({super.key});
@@ -47,8 +47,8 @@ class _BannerAdSlotState extends ConsumerState<BannerAdSlot> {
 
   @override
   Widget build(BuildContext context) {
-    final adFree = ref.watch(adFreeProvider);
-    if (adFree) return const SizedBox.shrink();
+    final userAsync = ref.watch(currentAppUserProvider);
+    if (userAsync.valueOrNull?.isPro ?? false) return const SizedBox.shrink();
 
     _loadAd();
     if (!_isLoaded || _bannerAd == null) return const SizedBox.shrink();

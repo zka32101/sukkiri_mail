@@ -54,10 +54,45 @@ class AppLocalizationsJa extends AppLocalizations {
   String get archiveCandidatesPin => '保護する';
 
   @override
+  String get dashboardArchivedCount => '累計アーカイブ件数';
+
+  @override
+  String get dashboardFreedBytes => '解放したローカル容量';
+
+  @override
+  String get dashboardPinnedCount => '保護件数';
+
+  @override
   String get mailListTitle => 'メール一覧';
 
   @override
-  String get mailListEmpty => '表示できるメールがありません';
+  String get mailListEmpty => '表示するメールがありません';
+
+  @override
+  String get mailListSortNewest => '新着順';
+
+  @override
+  String get mailListSortUnreadFirst => '未読優先';
+
+  @override
+  String get mailListSortSender => '送信者別';
+
+  @override
+  String get mailListGroupToggle => '送信者でグループ化';
+
+  @override
+  String mailListSelectionCount(int count) {
+    return '$count件選択中';
+  }
+
+  @override
+  String get mailListBulkArchive => 'アーカイブ';
+
+  @override
+  String get mailListBulkMarkRead => '既読にする';
+
+  @override
+  String get mailListUnknownSender => '（不明な送信者）';
 
   @override
   String get mailListPinToggleOn => '保護する';
@@ -67,12 +102,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mailListBlockSender => 'この差出人を今後取り込まない';
-
-  @override
-  String get mailListSortByAccount => 'アカウント毎';
-
-  @override
-  String get mailListSortByDate => '日付順（全アカウント）';
 
   @override
   String get mailDetailTitle => 'メール詳細';
@@ -102,16 +131,19 @@ class AppLocalizationsJa extends AppLocalizations {
       'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません';
 
   @override
-  String get dashboardTitle => '受信箱スッキリ度';
+  String get categoryAll => 'すべて';
 
   @override
-  String get dashboardArchivedCount => '累計アーカイブ件数';
+  String get categoryPromotion => 'プロモーション';
 
   @override
-  String get dashboardFreedBytes => '解放したローカル容量';
+  String get categoryNotification => '通知';
 
   @override
-  String get dashboardPinnedCount => '保護件数';
+  String get categoryInvoice => '請求書';
+
+  @override
+  String get categoryOther => 'その他';
 
   @override
   String get ruleSettingsTitle => 'ルール設定';
@@ -159,6 +191,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsUsageGuide => '使い方';
 
   @override
+  String get settingsSyncInterval => '自動取り込みの間隔';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return '$hours時間ごと';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => '再連携が必要です';
+
+  @override
+  String get settingsAccountUnlink => '連携解除';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '$email の連携を解除しますか？取り込み済みのメールはアプリ上に残ります';
+  }
+
+  @override
   String get usageGuideTitle => 'スッキリメールの使い方';
 
   @override
@@ -182,6 +233,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get usageGuideClose => '閉じる';
+
+  @override
+  String get notificationSettingsTitle => '通知する差出人';
+
+  @override
+  String get notificationSettingsDescription =>
+      '選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません';
+
+  @override
+  String get notificationSettingsEmpty => 'まだ取り込まれたメールがありません';
 
   @override
   String get paywallTitle => 'スッキリメール Pro';
@@ -211,35 +272,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get paywallPurchaseFailed => '購入処理に失敗しました。時間をおいて再度お試しください';
-
-  @override
-  String get settingsSyncInterval => '自動取り込みの間隔';
-
-  @override
-  String settingsSyncIntervalHours(int hours) {
-    return '$hours時間ごと';
-  }
-
-  @override
-  String get settingsAccountReauthRequired => '再連携が必要です';
-
-  @override
-  String get settingsAccountUnlink => '連携解除';
-
-  @override
-  String settingsAccountUnlinkConfirm(String email) {
-    return '$email の連携を解除しますか？取り込み済みのメールはアプリ上に残ります';
-  }
-
-  @override
-  String get notificationSettingsTitle => '通知する差出人';
-
-  @override
-  String get notificationSettingsDescription =>
-      '選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません';
-
-  @override
-  String get notificationSettingsEmpty => 'まだ取り込まれたメールがありません';
 
   @override
   String get commonRetry => '再試行';

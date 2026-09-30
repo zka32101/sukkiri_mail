@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/linked_account.dart';
+import '../services/app_firestore.dart';
 
 class LinkedAccountRepository {
   final FirebaseFirestore _db;
 
-  LinkedAccountRepository({FirebaseFirestore? db})
-    : _db = db ?? FirebaseFirestore.instance;
+  LinkedAccountRepository({FirebaseFirestore? db}) : _db = db ?? appFirestore();
 
   CollectionReference<Map<String, dynamic>> get _col =>
       _db.collection('linkedAccounts');
@@ -36,11 +36,10 @@ class LinkedAccountRepository {
     return _col.doc(accountId).update({'colorHex': colorHex});
   }
 
-  Future<void> updateLastScanAt(String accountId, DateTime at) {
-    return _col.doc(accountId).update({
-      'lastScanAt': at.millisecondsSinceEpoch,
-    });
-  }
+  // lastScanAtの更新はCloud Functions（scanAccount、Admin SDK）側のみが行う。
+  // クライアントからの直接更新はfirestore.rulesのupdate許可フィールドにも
+  // 含まれておらず（colorHexのみ許可）、意図的に提供していない
+  // （スキャン完了状態をクライアントが自己申告できてしまうのを防ぐため）。
 
   Future<void> remove(String accountId) {
     return _col.doc(accountId).delete();

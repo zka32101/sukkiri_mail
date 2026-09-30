@@ -1,12 +1,14 @@
 import { ImapFlow } from "imapflow";
-import { db } from "../db";
 import {
   ConnectedAccountResult,
   MailProviderAdapter,
   MessageBodyResult,
   ScanResultItem,
 } from "./mailProviderInterface";
-import { categorizeMessage, pickNextAccountColor } from "../categorize";
+import { categorizeMessage } from "../categorize";
+import { db } from "../firestore";
+import { upsertLinkedAccount } from "../linkedAccountUpsert";
+import { LinkedAccountDoc } from "../types";
 
 /**
  * 標準IMAP/SMTP（Yahoo!メール・iCloud等）、アプリ専用パスワード方式。OAuth審査対象外。
@@ -16,8 +18,11 @@ import { categorizeMessage, pickNextAccountColor } from "../categorize";
 export class ImapProvider implements MailProviderAdapter {
   private async openClient(accountId: string): Promise<ImapFlow> {
     const doc = await db().collection("linkedAccounts").doc(accountId).get();
-    const data = doc.data();
+    const data = doc.data() as LinkedAccountDoc | undefined;
     if (!data) throw new Error("account not found");
+    if (!data.imapHost || !data.emailAddress || !data.appPassword) {
+      throw new Error("IMAP configuration incomplete");
+    }
     const client = new ImapFlow({
       host: data.imapHost,
       port: 993,
@@ -48,22 +53,22 @@ export class ImapProvider implements MailProviderAdapter {
     await testClient.connect();
     await testClient.logout();
 
-    const existing = await db()
-      .collection("linkedAccounts")
-      .where("userId", "==", userId)
-      .get();
-    const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
-
-    const ref = await db().collection("linkedAccounts").add({
+    // トランザクション内で「既存なら再利用・新規なら無料プラン上限チェック→
+    // カラー割当→書き込み」をアトミックに行う（詳細はlinkedAccountUpsert.ts参照）。
+    const { ref, colorHex } = await upsertLinkedAccount(
       userId,
-      provider: "imap",
-      authMethod: "app_password",
+      "imap",
       emailAddress,
-      imapHost,
-      colorHex,
-      lastScanAt: null,
-      appPassword,
-    });
+      (isNew) => ({
+        userId,
+        provider: "imap",
+        authMethod: "app_password",
+        emailAddress,
+        imapHost,
+        appPassword,
+        ...(isNew ? { lastScanAt: null } : {}),
+      })
+    );
 
     return {
       id: ref.id,
@@ -76,27 +81,53 @@ export class ImapProvider implements MailProviderAdapter {
     };
   }
 
-  async scan(accountId: string): Promise<ScanResultItem[]> {
+  async scan(accountId: string, lastScanAt?: number | null): Promise<ScanResultItem[]> {
     const client = await this.openClient(accountId);
     const items: ScanResultItem[] = [];
     try {
       const lock = await client.getMailboxLock("INBOX");
       try {
-        const messages = client.fetch({ seq: "1:50" }, { envelope: true, uid: true });
-        for await (const m of messages) {
-          const from = m.envelope?.from?.[0];
-          const senderEmail = from?.address ?? "";
-          const subject = m.envelope?.subject ?? "";
-          items.push({
-            id: String(m.uid),
-            accountId,
-            category: categorizeMessage(subject, senderEmail),
-            receivedAt: m.envelope?.date ? new Date(m.envelope.date).getTime() : Date.now(),
-            hasAttachment: false,
-            snippet: subject,
-            subject,
-            senderEmail,
-          });
+        // Build search criteria for incremental scanning
+        // SINCE parameter filters by date, allowing incremental sync
+        const searchCriteria: Record<string, unknown> = {};
+        if (lastScanAt) {
+          searchCriteria.since = new Date(lastScanAt);
+        }
+
+        // Use search to get UIDs matching criteria (or all if full scan)
+        const uids = await client.search(searchCriteria);
+
+        if (uids && uids.length > 0) {
+          // Fetch metadata for all matching messages
+          // ImapFlow expects UID array directly, not wrapped in object
+          const messages = client.fetch(uids, { envelope: true, uid: true, flags: true });
+          const messageList = [];
+          for await (const m of messages) {
+            messageList.push(m);
+          }
+
+          // Parallelize categorization for better performance
+          const fetchedItems = await Promise.all(
+            messageList.map(async (m) => {
+              const from = m.envelope?.from?.[0];
+              const senderEmail = from?.address ?? "";
+              const subject = m.envelope?.subject ?? "";
+              // IMAPの\Seenフラグが立っていなければ未読。
+              const isUnread = !m.flags?.has("\\Seen");
+              return {
+                id: String(m.uid),
+                accountId,
+                category: await categorizeMessage(subject, senderEmail),
+                receivedAt: m.envelope?.date ? new Date(m.envelope.date).getTime() : Date.now(),
+                hasAttachment: false,
+                snippet: subject.slice(0, 80),
+                subject,
+                senderEmail,
+                isUnread,
+              };
+            })
+          );
+          items.push(...fetchedItems);
         }
       } finally {
         lock.release();
@@ -113,7 +144,11 @@ export class ImapProvider implements MailProviderAdapter {
       const lock = await client.getMailboxLock("INBOX");
       try {
         // アーカイブフォルダへ移動（可逆、恒久削除ではない）。
-        await client.messageMove(emailIds.map(Number), "Archive");
+        // emailIds は scan() が返したUID（メッセージの永続的な識別子）であり、
+        // メールボックス内の一時的な並び順にすぎないシーケンス番号ではない。
+        // { uid: true } を指定しないとimapflowはこれをシーケンス番号として扱ってしまい、
+        // ユーザーが選んだメールとは全く別のメールを誤って移動してしまう。
+        await client.messageMove(emailIds.map(Number), "Archive", { uid: true });
       } finally {
         lock.release();
       }
@@ -127,7 +162,8 @@ export class ImapProvider implements MailProviderAdapter {
     try {
       const lock = await client.getMailboxLock("Archive");
       try {
-        await client.messageMove(emailIds.map(Number), "INBOX");
+        // archive()と同様、emailIdsはUIDなので{ uid: true }を明示する。
+        await client.messageMove(emailIds.map(Number), "INBOX", { uid: true });
       } finally {
         lock.release();
       }
@@ -141,7 +177,9 @@ export class ImapProvider implements MailProviderAdapter {
     try {
       const lock = await client.getMailboxLock("INBOX");
       try {
-        const msg = await client.download(messageId);
+        // messageIdはscan()が返したUIDなので{ uid: true }を明示する
+        // （省略するとシーケンス番号として解釈され、別のメールの本文を返してしまう）。
+        const msg = await client.download(messageId, undefined, { uid: true });
         const chunks: Buffer[] = [];
         for await (const chunk of msg.content) {
           chunks.push(chunk as Buffer);
