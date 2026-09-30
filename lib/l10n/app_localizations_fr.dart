@@ -189,6 +189,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get paywallTitle => 'Boîte Zen Pro';
 
   @override
+  String get paywallFeatureAdFree => 'Sans publicité';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => 'Comptes liés illimités';
 
   @override
@@ -199,6 +202,51 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get paywallCta => 'Passer à Pro';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return 'Passer à Pro pour $price/mois';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Passage à Pro réussi';
+
+  @override
+  String get paywallPurchaseFailed =>
+      'Échec de l\'achat. Veuillez réessayer plus tard';
+
+  @override
+  String get settingsSyncInterval =>
+      'Intervalle de synchronisation automatique';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'Toutes les $hours heures';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'Reconnexion nécessaire';
+
+  @override
+  String get settingsAccountUnlink => 'Dissocier';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return 'Dissocier $email ? Les e-mails déjà importés resteront dans l\'application.';
+  }
+
+  @override
+  String get notificationSettingsTitle => 'Expéditeurs à notifier';
+
+  @override
+  String get notificationSettingsDescription =>
+      'Vous ne serez notifié que des nouveaux e-mails des expéditeurs sélectionnés. Si aucun n\'est sélectionné, aucune notification ne sera envoyée.';
+
+  @override
+  String get notificationSettingsEmpty => 'Aucun e-mail importé pour le moment';
+
+  @override
+  String get commonRetry => 'Réessayer';
 
   @override
   String get commonCancel => 'Annuler';

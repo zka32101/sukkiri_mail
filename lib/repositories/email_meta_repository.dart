@@ -77,6 +77,16 @@ class EmailMetaRepository {
     return _col.doc(emailId).update({'isPinned': isPinned});
   }
 
+  /// 受信箱スッキリ度ダッシュボード用：アカウント横断の保護（ピン留め）件数。
+  Future<int> countPinned(String userId) async {
+    final snap = await _col
+        .where('userId', isEqualTo: userId)
+        .where('isPinned', isEqualTo: true)
+        .count()
+        .get();
+    return snap.count ?? 0;
+  }
+
   Future<void> setStatus(String emailId, EmailStatus status) {
     return _col.doc(emailId).update({'status': emailStatusToString(status)});
   }
@@ -85,6 +95,32 @@ class EmailMetaRepository {
     return _col.doc(emailId).update({
       'localCacheStatus': localCacheStatusToString(status),
     });
+  }
+
+  /// 差出人ブロック時：既にキャッシュ済みの該当差出人メールを一覧から即座に
+  /// 除外するため、localCacheStatusをまとめてblockedへ更新する。
+  /// Firestoreの一括更新に単一クエリの範囲制限は無いが、対象件数が多い場合に
+  /// 備えWriteBatchでまとめて送信する。
+  Future<void> markSenderBlocked(
+    String senderEmail, {
+    required String userId,
+    String? accountId,
+  }) async {
+    Query<Map<String, dynamic>> q = _col
+        .where('userId', isEqualTo: userId)
+        .where('senderEmail', isEqualTo: senderEmail);
+    if (accountId != null) {
+      q = q.where('accountId', isEqualTo: accountId);
+    }
+    final snap = await q.get();
+    if (snap.docs.isEmpty) return;
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.update(doc.reference, {
+        'localCacheStatus': localCacheStatusToString(LocalCacheStatus.blocked),
+      });
+    }
+    await batch.commit();
   }
 
   /// 差出人ブロックルールの追加UI用：これまでに取り込まれた差出人アドレス一覧

@@ -189,6 +189,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paywallTitle => 'TidyMail Pro';
 
   @override
+  String get paywallFeatureAdFree => 'Ad-free';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => 'Unlimited linked accounts';
 
   @override
@@ -199,6 +202,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallCta => 'Upgrade to Pro';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return 'Upgrade to Pro for $price/mo';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Upgraded to Pro successfully';
+
+  @override
+  String get paywallPurchaseFailed => 'Purchase failed. Please try again later';
+
+  @override
+  String get settingsSyncInterval => 'Auto-sync interval';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'Every $hours hours';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'Reconnection needed';
+
+  @override
+  String get settingsAccountUnlink => 'Unlink';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return 'Unlink $email? Already imported mail will remain in the app.';
+  }
+
+  @override
+  String get notificationSettingsTitle => 'Notify for senders';
+
+  @override
+  String get notificationSettingsDescription =>
+      'You\'ll only be notified about new mail from the senders you select. If none are selected, no notifications are sent.';
+
+  @override
+  String get notificationSettingsEmpty => 'No emails imported yet';
+
+  @override
+  String get commonRetry => 'Retry';
 
   @override
   String get commonCancel => 'Cancel';

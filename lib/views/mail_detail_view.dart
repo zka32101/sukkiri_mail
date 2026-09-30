@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
@@ -23,11 +24,18 @@ class MailDetailView extends ConsumerStatefulWidget {
 }
 
 class _MailDetailViewState extends ConsumerState<MailDetailView> {
-  String? _fullBody;
+  String? _fullBodyHtml;
   bool _loadingBody = false;
   String? _bodyError;
 
   EmailMeta get meta => widget.meta;
+
+  @override
+  void initState() {
+    super.initState();
+    // ボタン操作を待たず、詳細画面を開いた時点で自動的に全文を取得する。
+    _loadFullBody();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +57,14 @@ class _MailDetailViewState extends ConsumerState<MailDetailView> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        // HTML本文側の要素（メール内のCTAボタン等）が画面最下部ぎりぎりに来ると
+        // 端末のジェスチャーナビゲーションバーに隠れて見切れるため、下部に余裕を持たせる。
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          32 + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           Text(
             meta.subject.isEmpty ? l10n.mailDetailNoSubject : meta.subject,
@@ -69,27 +84,28 @@ class _MailDetailViewState extends ConsumerState<MailDetailView> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const Divider(height: 32),
-          Text(_fullBody ?? meta.snippet),
+          if (_fullBodyHtml != null)
+            HtmlWidget(_fullBodyHtml!)
+          else if (_loadingBody)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else
+            Text(meta.snippet),
           if (_bodyError != null) ...[
             const SizedBox(height: 8),
             Text(
               _bodyError!,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-          ],
-          const SizedBox(height: 12),
-          if (_fullBody == null)
+            const SizedBox(height: 8),
             OutlinedButton.icon(
-              icon: _loadingBody
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.article_outlined),
-              label: Text(l10n.mailDetailShowFullBody),
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.commonRetry),
               onPressed: _loadingBody ? null : _loadFullBody,
             ),
+          ],
           if (widget.account.provider == MailProviderType.gmail) ...[
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -122,10 +138,9 @@ class _MailDetailViewState extends ConsumerState<MailDetailView> {
         account: widget.account,
         messageId: meta.id,
       );
-      final text = _stripHtml(body.html);
       if (!mounted) return;
       setState(() {
-        _fullBody = text.isEmpty ? meta.snippet : text;
+        _fullBodyHtml = body.html.isEmpty ? null : body.html;
         _loadingBody = false;
       });
     } catch (e) {
@@ -170,20 +185,6 @@ class _MailDetailViewState extends ConsumerState<MailDetailView> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.mailBlockSenderDone)),
     );
-  }
-
-  static String _stripHtml(String html) {
-    if (html.isEmpty) return '';
-    var text = html
-        .replaceAll(RegExp(r'<(br|/p|/div)>', caseSensitive: false), '\n')
-        .replaceAll(RegExp(r'<[^>]*>'), '')
-        .replaceAll('&nbsp;', ' ')
-        .replaceAll('&amp;', '&')
-        .replaceAll('&lt;', '<')
-        .replaceAll('&gt;', '>')
-        .replaceAll('&quot;', '"');
-    text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
-    return text;
   }
 
   static String _twoDigits(int n) => n.toString().padLeft(2, '0');

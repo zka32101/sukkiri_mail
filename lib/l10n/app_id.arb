@@ -44,10 +44,47 @@
   "settingsPlan": "Paket",
 
   "paywallTitle": "Kotak Rapi Pro",
+  "paywallFeatureAdFree": "Bebas iklan",
   "paywallFeatureUnlimitedAccounts": "Akun terhubung tanpa batas",
   "paywallFeatureAutoRules": "Aturan pengarsipan otomatis",
   "paywallFeatureUnlimitedRestore": "Pemulihan tanpa batas",
   "paywallCta": "Upgrade ke Pro",
+  "paywallCtaWithPrice": "Upgrade ke Pro seharga {price}/bln",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "Berhasil upgrade ke Pro",
+  "paywallPurchaseFailed": "Pembelian gagal. Silakan coba lagi nanti",
+
+  "settingsSyncInterval": "Interval sinkronisasi otomatis",
+
+  "settingsSyncIntervalHours": "Setiap {hours} jam",
+
+  "@settingsSyncIntervalHours": {
+
+    "placeholders": { "hours": { "type": "int" } }
+
+  },
+
+  "settingsAccountReauthRequired": "Perlu sambungkan ulang",
+
+  "settingsAccountUnlink": "Putuskan tautan",
+
+  "settingsAccountUnlinkConfirm": "Putuskan tautan {email}? Email yang sudah diimpor akan tetap ada di aplikasi.",
+
+  "@settingsAccountUnlinkConfirm": {
+
+    "placeholders": { "email": { "type": "String" } }
+
+  },
+
+  "notificationSettingsTitle": "Pengirim untuk notifikasi",
+
+  "notificationSettingsDescription": "Anda hanya akan diberi tahu tentang email baru dari pengirim yang dipilih. Jika tidak ada yang dipilih, notifikasi tidak akan dikirim.",
+
+  "notificationSettingsEmpty": "Belum ada email yang diimpor",
+
+  "commonRetry": "Coba lagi",
 
   "commonCancel": "Batal",
   "commonConfirm": "Konfirmasi",

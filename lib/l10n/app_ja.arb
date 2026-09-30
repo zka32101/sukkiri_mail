@@ -76,11 +76,33 @@
   "usageGuideClose": "閉じる",
 
   "paywallTitle": "スッキリメール Pro",
+  "paywallFeatureAdFree": "広告非表示",
   "paywallFeatureUnlimitedAccounts": "アカウント連携無制限",
   "paywallFeatureAutoRules": "自動アーカイブルール",
   "paywallFeatureUnlimitedRestore": "復元無制限",
   "paywallCta": "Proにアップグレード",
+  "paywallCtaWithPrice": "{price}/月でProにアップグレード",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "Proへのアップグレードが完了しました",
+  "paywallPurchaseFailed": "購入処理に失敗しました。時間をおいて再度お試しください",
 
+  "settingsSyncInterval": "自動取り込みの間隔",
+  "settingsSyncIntervalHours": "{hours}時間ごと",
+  "@settingsSyncIntervalHours": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "settingsAccountReauthRequired": "再連携が必要です",
+  "settingsAccountUnlink": "連携解除",
+  "settingsAccountUnlinkConfirm": "{email} の連携を解除しますか？取り込み済みのメールはアプリ上に残ります",
+  "@settingsAccountUnlinkConfirm": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "notificationSettingsTitle": "通知する差出人",
+  "notificationSettingsDescription": "選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません",
+  "notificationSettingsEmpty": "まだ取り込まれたメールがありません",
+  "commonRetry": "再試行",
   "commonCancel": "キャンセル",
   "commonConfirm": "確認",
   "commonBack": "戻る",

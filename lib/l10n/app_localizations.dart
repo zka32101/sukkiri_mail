@@ -452,6 +452,12 @@ abstract class AppLocalizations {
   /// **'スッキリメール Pro'**
   String get paywallTitle;
 
+  /// No description provided for @paywallFeatureAdFree.
+  ///
+  /// In ja, this message translates to:
+  /// **'広告非表示'**
+  String get paywallFeatureAdFree;
+
   /// No description provided for @paywallFeatureUnlimitedAccounts.
   ///
   /// In ja, this message translates to:
@@ -475,6 +481,78 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'Proにアップグレード'**
   String get paywallCta;
+
+  /// No description provided for @paywallCtaWithPrice.
+  ///
+  /// In ja, this message translates to:
+  /// **'{price}/月でProにアップグレード'**
+  String paywallCtaWithPrice(String price);
+
+  /// No description provided for @paywallPurchaseSuccess.
+  ///
+  /// In ja, this message translates to:
+  /// **'Proへのアップグレードが完了しました'**
+  String get paywallPurchaseSuccess;
+
+  /// No description provided for @paywallPurchaseFailed.
+  ///
+  /// In ja, this message translates to:
+  /// **'購入処理に失敗しました。時間をおいて再度お試しください'**
+  String get paywallPurchaseFailed;
+
+  /// No description provided for @settingsSyncInterval.
+  ///
+  /// In ja, this message translates to:
+  /// **'自動取り込みの間隔'**
+  String get settingsSyncInterval;
+
+  /// No description provided for @settingsSyncIntervalHours.
+  ///
+  /// In ja, this message translates to:
+  /// **'{hours}時間ごと'**
+  String settingsSyncIntervalHours(int hours);
+
+  /// No description provided for @settingsAccountReauthRequired.
+  ///
+  /// In ja, this message translates to:
+  /// **'再連携が必要です'**
+  String get settingsAccountReauthRequired;
+
+  /// No description provided for @settingsAccountUnlink.
+  ///
+  /// In ja, this message translates to:
+  /// **'連携解除'**
+  String get settingsAccountUnlink;
+
+  /// No description provided for @settingsAccountUnlinkConfirm.
+  ///
+  /// In ja, this message translates to:
+  /// **'{email} の連携を解除しますか？取り込み済みのメールはアプリ上に残ります'**
+  String settingsAccountUnlinkConfirm(String email);
+
+  /// No description provided for @notificationSettingsTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'通知する差出人'**
+  String get notificationSettingsTitle;
+
+  /// No description provided for @notificationSettingsDescription.
+  ///
+  /// In ja, this message translates to:
+  /// **'選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません'**
+  String get notificationSettingsDescription;
+
+  /// No description provided for @notificationSettingsEmpty.
+  ///
+  /// In ja, this message translates to:
+  /// **'まだ取り込まれたメールがありません'**
+  String get notificationSettingsEmpty;
+
+  /// No description provided for @commonRetry.
+  ///
+  /// In ja, this message translates to:
+  /// **'再試行'**
+  String get commonRetry;
 
   /// No description provided for @commonCancel.
   ///

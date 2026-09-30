@@ -73,6 +73,7 @@ async function persistScanResults(
     });
   };
 
+  const newItems: ScanResultItem[] = [];
   const batch = firestore.batch();
   for (const item of items) {
     const ref = firestore.collection("emailMeta").doc(item.id);
@@ -90,11 +91,13 @@ async function persistScanResults(
     if (existingIds.has(item.id)) {
       batch.set(ref, base, { merge: true });
     } else {
+      const blocked = isBlocked(item.senderEmail);
       batch.set(ref, {
         ...base,
-        localCacheStatus: isBlocked(item.senderEmail) ? "blocked" : "cached",
+        localCacheStatus: blocked ? "blocked" : "cached",
         isPinned: false,
       });
+      if (!blocked) newItems.push(item);
     }
   }
   await batch.commit();
@@ -102,6 +105,46 @@ async function persistScanResults(
   await firestore.collection("linkedAccounts").doc(accountId).update({
     lastScanAt: Date.now(),
   });
+
+  if (newItems.length > 0) {
+    await notifyNewMail(uid, newItems);
+  }
+}
+
+/**
+ * 新着メールのうち、ユーザーがnotifySendersで明示的に選択した差出人からのものだけ
+ * FCM通知する（全件通知はしない設計）。fcmToken未設定、notifySenders空の場合は何もしない。
+ */
+async function notifyNewMail(uid: string, newItems: ScanResultItem[]): Promise<void> {
+  const firestore = db();
+  const userSnap = await firestore.collection("users").doc(uid).get();
+  const userData = userSnap.data();
+  const fcmToken = userData?.fcmToken as string | undefined;
+  const notifySenders = (userData?.notifySenders as string[] | undefined) ?? [];
+  if (!fcmToken || notifySenders.length === 0) return;
+
+  const lowerSet = new Set(notifySenders.map((s) => s.toLowerCase()));
+  const targets = newItems.filter((item) =>
+    lowerSet.has(item.senderEmail.toLowerCase()),
+  );
+  if (targets.length === 0) return;
+
+  const first = targets[0];
+  const title = targets.length === 1
+    ? (first.subject || first.senderEmail)
+    : `新着メール ${targets.length}件`;
+  const body = targets.length === 1
+    ? first.senderEmail
+    : targets.map((t) => t.senderEmail).slice(0, 3).join(", ");
+
+  try {
+    await admin.messaging().send({
+      token: fcmToken,
+      notification: { title, body },
+    });
+  } catch (e) {
+    console.error("notifyNewMail failed", e);
+  }
 }
 
 /**
@@ -120,23 +163,41 @@ export const scanAccount = onCall(async (request) => {
   return { items, savedCount: items.length };
 });
 
+const DEFAULT_SYNC_INTERVAL_HOURS = 1;
+
 /**
- * 全連携アカウントを毎日自動で再スキャンする。目的は2つ：
+ * 全連携アカウントを自動で再スキャンする。目的は2つ：
  * ①新着メールを継続的に取り込む（連携直後の1回だけでは新しいメールが増えないため）
  * ②スキャン仕様変更（件名/差出人の保存追加など）を、既にスキャン済みの過去メールにも
  *   merge:trueの上書きで反映させる（再連携なしで欠損データを自動補完）。
+ * 実行自体は1時間おきだが、ユーザーが設定画面で選んだ同期間隔（users/{uid}.syncIntervalHours、
+ * 未設定時は24時間）に達していないアカウントはスキップする（間隔だけをユーザー設定に委ねる）。
  */
 export const rescanAllAccounts = onSchedule(
-  { schedule: "every 24 hours", timeZone: "Asia/Tokyo" },
+  { schedule: "every 1 hours", timeZone: "Asia/Tokyo" },
   async () => {
     const firestore = db();
     const accountsSnap = await firestore.collection("linkedAccounts").get();
+    const userIntervalCache = new Map<string, number>();
 
     for (const accountDoc of accountsSnap.docs) {
       const account = accountDoc.data();
       const userId = account.userId as string | undefined;
       const providerKey = account.provider as string | undefined;
       if (!userId || !providerKey) continue;
+
+      let intervalHours = userIntervalCache.get(userId);
+      if (intervalHours === undefined) {
+        const userSnap = await firestore.collection("users").doc(userId).get();
+        intervalHours =
+          (userSnap.data()?.syncIntervalHours as number | undefined) ??
+          DEFAULT_SYNC_INTERVAL_HOURS;
+        userIntervalCache.set(userId, intervalHours);
+      }
+      const lastScanAt = account.lastScanAt as number | undefined;
+      if (lastScanAt && Date.now() - lastScanAt < intervalHours * 60 * 60 * 1000) {
+        continue;
+      }
 
       try {
         const adapter = resolveProvider(providerKey);

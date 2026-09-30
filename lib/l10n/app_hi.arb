@@ -44,10 +44,47 @@
   "settingsPlan": "प्लान",
 
   "paywallTitle": "साफ़ मेल Pro",
+  "paywallFeatureAdFree": "विज्ञापन-मुक्त",
   "paywallFeatureUnlimitedAccounts": "असीमित जुड़े खाते",
   "paywallFeatureAutoRules": "स्वचालित संग्रहण नियम",
   "paywallFeatureUnlimitedRestore": "असीमित पुनर्स्थापन",
   "paywallCta": "Pro में अपग्रेड करें",
+  "paywallCtaWithPrice": "{price}/माह में Pro में अपग्रेड करें",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "Pro में सफलतापूर्वक अपग्रेड हो गया",
+  "paywallPurchaseFailed": "खरीदारी विफल रही। कृपया बाद में पुनः प्रयास करें",
+
+  "settingsSyncInterval": "ऑटो-सिंक अंतराल",
+
+  "settingsSyncIntervalHours": "हर {hours} घंटे में",
+
+  "@settingsSyncIntervalHours": {
+
+    "placeholders": { "hours": { "type": "int" } }
+
+  },
+
+  "settingsAccountReauthRequired": "पुनः कनेक्ट करना आवश्यक है",
+
+  "settingsAccountUnlink": "लिंक हटाएं",
+
+  "settingsAccountUnlinkConfirm": "{email} को अनलिंक करें? पहले से आयातित मेल ऐप में बनी रहेगी।",
+
+  "@settingsAccountUnlinkConfirm": {
+
+    "placeholders": { "email": { "type": "String" } }
+
+  },
+
+  "notificationSettingsTitle": "सूचना के लिए प्रेषक",
+
+  "notificationSettingsDescription": "आपको केवल चुने गए प्रेषकों से नई मेल की सूचना मिलेगी। यदि कोई नहीं चुना गया है, तो कोई सूचना नहीं भेजी जाएगी।",
+
+  "notificationSettingsEmpty": "अभी तक कोई मेल आयात नहीं हुई",
+
+  "commonRetry": "पुनः प्रयास करें",
 
   "commonCancel": "रद्द करें",
   "commonConfirm": "पुष्टि करें",

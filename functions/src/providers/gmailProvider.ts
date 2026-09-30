@@ -1,4 +1,4 @@
-import { google } from "googleapis";
+import { google, gmail_v1 } from "googleapis";
 import { db } from "../db";
 import {
   ConnectedAccountResult,
@@ -8,6 +8,38 @@ import {
 } from "./mailProviderInterface";
 import { getSecret } from "../secrets";
 import { categorizeMessage, pickNextAccountColor } from "../categorize";
+
+type GmailMessagePart = gmail_v1.Schema$MessagePart;
+
+function findPartByMimeType(
+  part: GmailMessagePart | undefined,
+  mimeType: string
+): GmailMessagePart | undefined {
+  if (!part) return undefined;
+  if (part.mimeType === mimeType && part.body?.data) return part;
+  for (const child of part.parts ?? []) {
+    const found = findPartByMimeType(child, mimeType);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function collectAttachmentNames(part: GmailMessagePart | undefined): string[] {
+  if (!part) return [];
+  const names: string[] = [];
+  if (part.filename) names.push(part.filename);
+  for (const child of part.parts ?? []) {
+    names.push(...collectAttachmentNames(child));
+  }
+  return names;
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
 /**
  * gmail.modify（sensitive/Tier2） + gmail.labels（non-sensitive）のみ使用。
@@ -33,30 +65,42 @@ export class GmailProvider implements MailProviderAdapter {
     const clientId = await getSecret("gmail-oauth-client-id");
     const clientSecret = await getSecret("gmail-oauth-client-secret");
     const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+    if (!data.refreshToken) {
+      // refresh_tokenが無いと期限切れのaccess_tokenをそのまま使うことになり、
+      // 401が出続けてもoauthStatusがexpiredへ更新されずユーザーに気づかれない
+      // （実際に発生した事故）。refresh_token欠如はここで即座にexpired扱いにする。
+      await db()
+        .collection("linkedAccounts")
+        .doc(accountId)
+        .update({ oauthStatus: "expired" })
+        .catch(() => {
+          /* ignore */
+        });
+      throw new Error("oauth refresh token missing; user must re-authenticate");
+    }
+
     oauth2Client.setCredentials({
       access_token: data.accessToken,
       refresh_token: data.refreshToken,
     });
 
-    if (data.refreshToken) {
-      try {
-        const { credentials } = await oauth2Client.refreshAccessToken();
-        oauth2Client.setCredentials(credentials);
-        await db().collection("linkedAccounts").doc(accountId).update({
-          accessToken: credentials.access_token ?? data.accessToken,
-          oauthStatus: "connected",
+    try {
+      const { credentials } = await oauth2Client.refreshAccessToken();
+      oauth2Client.setCredentials(credentials);
+      await db().collection("linkedAccounts").doc(accountId).update({
+        accessToken: credentials.access_token ?? data.accessToken,
+        oauthStatus: "connected",
+      });
+    } catch (e) {
+      console.error(`Gmail token refresh failed for account ${accountId}`, e);
+      await db()
+        .collection("linkedAccounts")
+        .doc(accountId)
+        .update({ oauthStatus: "expired" })
+        .catch(() => {
+          /* ignore */
         });
-      } catch (e) {
-        console.error(`Gmail token refresh failed for account ${accountId}`, e);
-        await db()
-          .collection("linkedAccounts")
-          .doc(accountId)
-          .update({ oauthStatus: "expired" })
-          .catch(() => {
-            /* ignore */
-          });
-        throw new Error("oauth token expired; user must re-authenticate");
-      }
+      throw new Error("oauth token expired; user must re-authenticate");
     }
 
     return google.gmail({ version: "v1", auth: oauth2Client });
@@ -82,21 +126,37 @@ export class GmailProvider implements MailProviderAdapter {
       .collection("linkedAccounts")
       .where("userId", "==", userId)
       .get();
-    const colorHex = pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
+    // 同一メールアドレス・同一プロバイダの既存連携があれば新規作成せず更新する
+    // （以前は常に新規addしていたため、再連携のたびに重複ドキュメントが増え、
+    // 古い重複がrefreshToken:nullのまま残って401が直らない不具合があった）。
+    const existingDoc = existing.docs.find(
+      (d) => d.data().provider === "gmail" && d.data().emailAddress === emailAddress,
+    );
+    const colorHex =
+      existingDoc?.data().colorHex ??
+      pickNextAccountColor(existing.docs.map((d) => d.data().colorHex));
 
     // 再認可時、Googleはrefresh_tokenを再発行しないことがある（既に同意済みのため）。
-    // その場合はnullを保存し、accessToken失効時に再連携を促す。
-    const ref = await db().collection("linkedAccounts").add({
+    // その場合は既存のrefreshTokenを維持する（nullで上書きしない）。
+    const refreshToken = tokens.refresh_token ?? existingDoc?.data().refreshToken ?? null;
+    const payload = {
       userId,
       provider: "gmail",
       authMethod: "oauth",
       emailAddress,
       oauthStatus: "connected",
       colorHex,
-      lastScanAt: null,
+      lastScanAt: existingDoc?.data().lastScanAt ?? null,
       accessToken: tokens.access_token ?? null,
-      refreshToken: tokens.refresh_token ?? null,
-    });
+      refreshToken,
+    };
+
+    const ref = existingDoc
+      ? existingDoc.ref
+      : await db().collection("linkedAccounts").add(payload);
+    if (existingDoc) {
+      await existingDoc.ref.set(payload, { merge: true });
+    }
 
     return {
       id: ref.id,
@@ -189,11 +249,17 @@ export class GmailProvider implements MailProviderAdapter {
       format: "full",
     });
     const part = full.data.payload;
-    const htmlPart = part?.parts?.find((p) => p.mimeType === "text/html") ?? part;
-    const data = htmlPart?.body?.data ?? "";
-    const html = Buffer.from(data, "base64").toString("utf-8");
-    const attachmentNames =
-      part?.parts?.filter((p) => p.filename).map((p) => p.filename as string) ?? [];
+    const htmlPart = findPartByMimeType(part, "text/html");
+    const plainPart = findPartByMimeType(part, "text/plain");
+    const chosen = htmlPart ?? plainPart;
+    const decoded = Buffer.from(chosen?.body?.data ?? "", "base64").toString("utf-8");
+    const html = htmlPart
+      ? decoded
+      : decoded
+          .split("\n")
+          .map((line) => escapeHtml(line))
+          .join("<br>");
+    const attachmentNames = collectAttachmentNames(part);
     return { html, attachmentNames };
   }
 }

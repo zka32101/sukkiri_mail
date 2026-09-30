@@ -187,6 +187,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get paywallTitle => '상쾌메일 Pro';
 
   @override
+  String get paywallFeatureAdFree => '광고 없음';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => '계정 연결 무제한';
 
   @override
@@ -197,6 +200,49 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get paywallCta => 'Pro로 업그레이드';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return '$price/월로 Pro 업그레이드';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Pro로 업그레이드가 완료되었습니다';
+
+  @override
+  String get paywallPurchaseFailed => '구매에 실패했습니다. 나중에 다시 시도해주세요';
+
+  @override
+  String get settingsSyncInterval => '자동 동기화 간격';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return '$hours시간마다';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => '재연결이 필요합니다';
+
+  @override
+  String get settingsAccountUnlink => '연결 해제';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '$email 연결을 해제하시겠습니까? 이미 가져온 메일은 앱에 남아 있습니다.';
+  }
+
+  @override
+  String get notificationSettingsTitle => '알림 받을 발신자';
+
+  @override
+  String get notificationSettingsDescription =>
+      '선택한 발신자의 새 메일에 대해서만 알림을 받습니다. 선택하지 않으면 알림이 전송되지 않습니다.';
+
+  @override
+  String get notificationSettingsEmpty => '아직 가져온 메일이 없습니다';
+
+  @override
+  String get commonRetry => '다시 시도';
 
   @override
   String get commonCancel => '취소';

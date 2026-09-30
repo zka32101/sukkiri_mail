@@ -44,10 +44,47 @@
   "settingsPlan": "Plan",
 
   "paywallTitle": "Bandeja Ligera Pro",
+  "paywallFeatureAdFree": "Sin anuncios",
   "paywallFeatureUnlimitedAccounts": "Cuentas vinculadas ilimitadas",
   "paywallFeatureAutoRules": "Reglas de archivado automático",
   "paywallFeatureUnlimitedRestore": "Restauración ilimitada",
   "paywallCta": "Mejorar a Pro",
+  "paywallCtaWithPrice": "Mejorar a Pro por {price}/mes",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "Actualizado a Pro correctamente",
+  "paywallPurchaseFailed": "Error en la compra. Inténtalo de nuevo más tarde",
+
+  "settingsSyncInterval": "Intervalo de sincronización automática",
+
+  "settingsSyncIntervalHours": "Cada {hours} horas",
+
+  "@settingsSyncIntervalHours": {
+
+    "placeholders": { "hours": { "type": "int" } }
+
+  },
+
+  "settingsAccountReauthRequired": "Se requiere reconexión",
+
+  "settingsAccountUnlink": "Desvincular",
+
+  "settingsAccountUnlinkConfirm": "¿Desvincular {email}? El correo ya importado permanecerá en la app.",
+
+  "@settingsAccountUnlinkConfirm": {
+
+    "placeholders": { "email": { "type": "String" } }
+
+  },
+
+  "notificationSettingsTitle": "Remitentes para notificar",
+
+  "notificationSettingsDescription": "Solo se te notificará sobre correos nuevos de los remitentes seleccionados. Si no seleccionas ninguno, no se enviarán notificaciones.",
+
+  "notificationSettingsEmpty": "Aún no se han importado correos",
+
+  "commonRetry": "Reintentar",
 
   "commonCancel": "Cancelar",
   "commonConfirm": "Confirmar",

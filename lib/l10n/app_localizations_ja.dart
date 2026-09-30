@@ -187,6 +187,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get paywallTitle => 'スッキリメール Pro';
 
   @override
+  String get paywallFeatureAdFree => '広告非表示';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => 'アカウント連携無制限';
 
   @override
@@ -197,6 +200,49 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get paywallCta => 'Proにアップグレード';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return '$price/月でProにアップグレード';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Proへのアップグレードが完了しました';
+
+  @override
+  String get paywallPurchaseFailed => '購入処理に失敗しました。時間をおいて再度お試しください';
+
+  @override
+  String get settingsSyncInterval => '自動取り込みの間隔';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return '$hours時間ごと';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => '再連携が必要です';
+
+  @override
+  String get settingsAccountUnlink => '連携解除';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '$email の連携を解除しますか？取り込み済みのメールはアプリ上に残ります';
+  }
+
+  @override
+  String get notificationSettingsTitle => '通知する差出人';
+
+  @override
+  String get notificationSettingsDescription =>
+      '選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません';
+
+  @override
+  String get notificationSettingsEmpty => 'まだ取り込まれたメールがありません';
+
+  @override
+  String get commonRetry => '再試行';
 
   @override
   String get commonCancel => 'キャンセル';

@@ -188,6 +188,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get paywallTitle => 'साफ़ मेल Pro';
 
   @override
+  String get paywallFeatureAdFree => 'विज्ञापन-मुक्त';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => 'असीमित जुड़े खाते';
 
   @override
@@ -198,6 +201,50 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get paywallCta => 'Pro में अपग्रेड करें';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return '$price/माह में Pro में अपग्रेड करें';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Pro में सफलतापूर्वक अपग्रेड हो गया';
+
+  @override
+  String get paywallPurchaseFailed =>
+      'खरीदारी विफल रही। कृपया बाद में पुनः प्रयास करें';
+
+  @override
+  String get settingsSyncInterval => 'ऑटो-सिंक अंतराल';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'हर $hours घंटे में';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'पुनः कनेक्ट करना आवश्यक है';
+
+  @override
+  String get settingsAccountUnlink => 'लिंक हटाएं';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '$email को अनलिंक करें? पहले से आयातित मेल ऐप में बनी रहेगी।';
+  }
+
+  @override
+  String get notificationSettingsTitle => 'सूचना के लिए प्रेषक';
+
+  @override
+  String get notificationSettingsDescription =>
+      'आपको केवल चुने गए प्रेषकों से नई मेल की सूचना मिलेगी। यदि कोई नहीं चुना गया है, तो कोई सूचना नहीं भेजी जाएगी।';
+
+  @override
+  String get notificationSettingsEmpty => 'अभी तक कोई मेल आयात नहीं हुई';
+
+  @override
+  String get commonRetry => 'पुनः प्रयास करें';
 
   @override
   String get commonCancel => 'रद्द करें';

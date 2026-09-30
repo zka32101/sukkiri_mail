@@ -11,6 +11,7 @@ import '../repositories/sender_block_rule_repository.dart';
 import '../repositories/user_repository.dart';
 import '../services/auth_service.dart';
 import '../services/local_cache_service.dart';
+import '../services/notification_service.dart';
 
 /// app1-6c108 プロジェクトは複数アプリ共存のため、Firestoreは名前付きデータベース
 /// `sukkirimail`（(default)ではない）を使用する。Cloud Functions側もこのDBを参照する。
@@ -53,4 +54,8 @@ final cacheEvictionLogRepositoryProvider = Provider<CacheEvictionLogRepository>(
 
 final localCacheServiceProvider = Provider<LocalCacheService>(
   (ref) => LocalCacheService(),
+);
+
+final notificationServiceProvider = Provider<NotificationService>(
+  (ref) => NotificationService(userRepository: ref.watch(userRepositoryProvider)),
 );

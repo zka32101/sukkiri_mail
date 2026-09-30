@@ -4,12 +4,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'l10n/app_localizations.dart';
+import 'services/ads_service.dart';
 import 'theme/app_theme.dart';
 import 'views/root_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  // RevenueCatの設定（configure）はadFreeProvider初期化時（AdFreeNotifier._init）
+  // で行われるため、ここではAdMob SDKのみ初期化する。
+  await AdsService().initialize();
   runApp(const ProviderScope(child: SukkiriMailApp()));
 }
 

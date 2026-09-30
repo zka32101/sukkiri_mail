@@ -44,10 +44,47 @@
   "settingsPlan": "方案",
 
   "paywallTitle": "清爽信箱 Pro",
+  "paywallFeatureAdFree": "无广告",
   "paywallFeatureUnlimitedAccounts": "無限連結帳號",
   "paywallFeatureAutoRules": "自動封存規則",
   "paywallFeatureUnlimitedRestore": "無限次還原",
   "paywallCta": "升級為 Pro",
+  "paywallCtaWithPrice": "以 {price}/月 升级为 Pro",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "已成功升级为 Pro",
+  "paywallPurchaseFailed": "购买失败，请稍后重试",
+
+  "settingsSyncInterval": "自动同步间隔",
+
+  "settingsSyncIntervalHours": "每 {hours} 小时",
+
+  "@settingsSyncIntervalHours": {
+
+    "placeholders": { "hours": { "type": "int" } }
+
+  },
+
+  "settingsAccountReauthRequired": "需要重新连接",
+
+  "settingsAccountUnlink": "解除关联",
+
+  "settingsAccountUnlinkConfirm": "要解除 {email} 的关联吗？已导入的邮件仍会保留在应用中。",
+
+  "@settingsAccountUnlinkConfirm": {
+
+    "placeholders": { "email": { "type": "String" } }
+
+  },
+
+  "notificationSettingsTitle": "通知的发件人",
+
+  "notificationSettingsDescription": "仅当所选发件人有新邮件时才会通知您。如果未选择任何发件人，将不会发送通知。",
+
+  "notificationSettingsEmpty": "尚未导入任何邮件",
+
+  "commonRetry": "重试",
 
   "commonCancel": "取消",
   "commonConfirm": "確認",

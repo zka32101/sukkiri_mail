@@ -188,6 +188,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get paywallTitle => 'Klarpost Pro';
 
   @override
+  String get paywallFeatureAdFree => 'Werbefrei';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => 'Unbegrenzt verknüpfte Konten';
 
   @override
@@ -198,6 +201,50 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get paywallCta => 'Auf Pro upgraden';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return 'Für $price/Monat auf Pro upgraden';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Erfolgreich auf Pro aktualisiert';
+
+  @override
+  String get paywallPurchaseFailed =>
+      'Kauf fehlgeschlagen. Bitte versuchen Sie es später erneut';
+
+  @override
+  String get settingsSyncInterval => 'Intervall für automatischen Abruf';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'Alle $hours Stunden';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'Erneute Verbindung erforderlich';
+
+  @override
+  String get settingsAccountUnlink => 'Verknüpfung aufheben';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return 'Verbindung zu $email aufheben? Bereits importierte E-Mails bleiben in der App erhalten.';
+  }
+
+  @override
+  String get notificationSettingsTitle => 'Absender für Benachrichtigungen';
+
+  @override
+  String get notificationSettingsDescription =>
+      'Du wirst nur über neue E-Mails der ausgewählten Absender benachrichtigt. Ist keiner ausgewählt, werden keine Benachrichtigungen gesendet.';
+
+  @override
+  String get notificationSettingsEmpty => 'Noch keine E-Mails importiert';
+
+  @override
+  String get commonRetry => 'Wiederholen';
 
   @override
   String get commonCancel => 'Abbrechen';

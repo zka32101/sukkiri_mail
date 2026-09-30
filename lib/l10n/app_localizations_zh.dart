@@ -186,6 +186,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paywallTitle => '清爽信箱 Pro';
 
   @override
+  String get paywallFeatureAdFree => '无广告';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => '無限連結帳號';
 
   @override
@@ -196,6 +199,49 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get paywallCta => '升級為 Pro';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return '以 $price/月 升级为 Pro';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => '已成功升级为 Pro';
+
+  @override
+  String get paywallPurchaseFailed => '购买失败，请稍后重试';
+
+  @override
+  String get settingsSyncInterval => '自动同步间隔';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return '每 $hours 小时';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => '需要重新连接';
+
+  @override
+  String get settingsAccountUnlink => '解除关联';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '要解除 $email 的关联吗？已导入的邮件仍会保留在应用中。';
+  }
+
+  @override
+  String get notificationSettingsTitle => '通知的发件人';
+
+  @override
+  String get notificationSettingsDescription =>
+      '仅当所选发件人有新邮件时才会通知您。如果未选择任何发件人，将不会发送通知。';
+
+  @override
+  String get notificationSettingsEmpty => '尚未导入任何邮件';
+
+  @override
+  String get commonRetry => '重试';
 
   @override
   String get commonCancel => '取消';
@@ -313,6 +359,9 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String get paywallTitle => '清爽信箱 Pro';
 
   @override
+  String get paywallFeatureAdFree => '無廣告';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => '無限連結帳號';
 
   @override
@@ -323,6 +372,49 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get paywallCta => '升級為 Pro';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return '以 $price/月 升級為 Pro';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => '已成功升級為 Pro';
+
+  @override
+  String get paywallPurchaseFailed => '購買失敗，請稍後再試';
+
+  @override
+  String get settingsSyncInterval => '自動同步間隔';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return '每 $hours 小時';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => '需要重新連接';
+
+  @override
+  String get settingsAccountUnlink => '解除關聯';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '要解除 $email 的關聯嗎？已匯入的郵件仍會保留在應用程式中。';
+  }
+
+  @override
+  String get notificationSettingsTitle => '通知的寄件者';
+
+  @override
+  String get notificationSettingsDescription =>
+      '僅當所選寄件者有新郵件時才會通知您。如果未選擇任何寄件者，將不會傳送通知。';
+
+  @override
+  String get notificationSettingsEmpty => '尚未匯入任何郵件';
+
+  @override
+  String get commonRetry => '重試';
 
   @override
   String get commonCancel => '取消';

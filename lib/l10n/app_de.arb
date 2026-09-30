@@ -44,10 +44,47 @@
   "settingsPlan": "Tarif",
 
   "paywallTitle": "Klarpost Pro",
+  "paywallFeatureAdFree": "Werbefrei",
   "paywallFeatureUnlimitedAccounts": "Unbegrenzt verknüpfte Konten",
   "paywallFeatureAutoRules": "Automatische Archivierungsregeln",
   "paywallFeatureUnlimitedRestore": "Unbegrenztes Wiederherstellen",
   "paywallCta": "Auf Pro upgraden",
+  "paywallCtaWithPrice": "Für {price}/Monat auf Pro upgraden",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "Erfolgreich auf Pro aktualisiert",
+  "paywallPurchaseFailed": "Kauf fehlgeschlagen. Bitte versuchen Sie es später erneut",
+
+  "settingsSyncInterval": "Intervall für automatischen Abruf",
+
+  "settingsSyncIntervalHours": "Alle {hours} Stunden",
+
+  "@settingsSyncIntervalHours": {
+
+    "placeholders": { "hours": { "type": "int" } }
+
+  },
+
+  "settingsAccountReauthRequired": "Erneute Verbindung erforderlich",
+
+  "settingsAccountUnlink": "Verknüpfung aufheben",
+
+  "settingsAccountUnlinkConfirm": "Verbindung zu {email} aufheben? Bereits importierte E-Mails bleiben in der App erhalten.",
+
+  "@settingsAccountUnlinkConfirm": {
+
+    "placeholders": { "email": { "type": "String" } }
+
+  },
+
+  "notificationSettingsTitle": "Absender für Benachrichtigungen",
+
+  "notificationSettingsDescription": "Du wirst nur über neue E-Mails der ausgewählten Absender benachrichtigt. Ist keiner ausgewählt, werden keine Benachrichtigungen gesendet.",
+
+  "notificationSettingsEmpty": "Noch keine E-Mails importiert",
+
+  "commonRetry": "Wiederholen",
 
   "commonCancel": "Abbrechen",
   "commonConfirm": "Bestätigen",

@@ -188,6 +188,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get paywallTitle => 'Caixa Leve Pro';
 
   @override
+  String get paywallFeatureAdFree => 'Sem anúncios';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => 'Contas vinculadas ilimitadas';
 
   @override
@@ -198,6 +201,51 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get paywallCta => 'Assinar o Pro';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return 'Assinar o Pro por $price/mês';
+  }
+
+  @override
+  String get paywallPurchaseSuccess =>
+      'Atualização para Pro concluída com sucesso';
+
+  @override
+  String get paywallPurchaseFailed =>
+      'Falha na compra. Tente novamente mais tarde';
+
+  @override
+  String get settingsSyncInterval => 'Intervalo de sincronização automática';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'A cada $hours horas';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'É necessário reconectar';
+
+  @override
+  String get settingsAccountUnlink => 'Desvincular';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return 'Desvincular $email? Os e-mails já importados permanecerão na aplicação.';
+  }
+
+  @override
+  String get notificationSettingsTitle => 'Remetentes para notificar';
+
+  @override
+  String get notificationSettingsDescription =>
+      'Só será notificado sobre novos e-mails dos remetentes selecionados. Se nenhum for selecionado, nenhuma notificação será enviada.';
+
+  @override
+  String get notificationSettingsEmpty => 'Ainda não há e-mails importados';
+
+  @override
+  String get commonRetry => 'Tentar novamente';
 
   @override
   String get commonCancel => 'Cancelar';
@@ -317,6 +365,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get paywallTitle => 'Caixa Leve Pro';
 
   @override
+  String get paywallFeatureAdFree => 'Sem anúncios';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => 'Contas vinculadas ilimitadas';
 
   @override
@@ -327,6 +378,50 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get paywallCta => 'Assinar o Pro';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return 'Assinar o Pro por $price/mês';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Upgrade para Pro concluído com sucesso';
+
+  @override
+  String get paywallPurchaseFailed =>
+      'Falha na compra. Tente novamente mais tarde';
+
+  @override
+  String get settingsSyncInterval => 'Intervalo de sincronização automática';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'A cada $hours horas';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'É necessário reconectar';
+
+  @override
+  String get settingsAccountUnlink => 'Desvincular';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return 'Desvincular $email? Os e-mails já importados permanecerão no aplicativo.';
+  }
+
+  @override
+  String get notificationSettingsTitle => 'Remetentes para notificar';
+
+  @override
+  String get notificationSettingsDescription =>
+      'Você só será notificado sobre novos e-mails dos remetentes selecionados. Se nenhum for selecionado, nenhuma notificação será enviada.';
+
+  @override
+  String get notificationSettingsEmpty => 'Ainda não há e-mails importados';
+
+  @override
+  String get commonRetry => 'Tentar novamente';
 
   @override
   String get commonCancel => 'Cancelar';

@@ -76,10 +76,47 @@
   "usageGuideClose": "Close",
 
   "paywallTitle": "TidyMail Pro",
+  "paywallFeatureAdFree": "Ad-free",
   "paywallFeatureUnlimitedAccounts": "Unlimited linked accounts",
   "paywallFeatureAutoRules": "Automatic archive rules",
   "paywallFeatureUnlimitedRestore": "Unlimited restore",
   "paywallCta": "Upgrade to Pro",
+  "paywallCtaWithPrice": "Upgrade to Pro for {price}/mo",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "Upgraded to Pro successfully",
+  "paywallPurchaseFailed": "Purchase failed. Please try again later",
+
+  "settingsSyncInterval": "Auto-sync interval",
+
+  "settingsSyncIntervalHours": "Every {hours} hours",
+
+  "@settingsSyncIntervalHours": {
+
+    "placeholders": { "hours": { "type": "int" } }
+
+  },
+
+  "settingsAccountReauthRequired": "Reconnection needed",
+
+  "settingsAccountUnlink": "Unlink",
+
+  "settingsAccountUnlinkConfirm": "Unlink {email}? Already imported mail will remain in the app.",
+
+  "@settingsAccountUnlinkConfirm": {
+
+    "placeholders": { "email": { "type": "String" } }
+
+  },
+
+  "notificationSettingsTitle": "Notify for senders",
+
+  "notificationSettingsDescription": "You'll only be notified about new mail from the senders you select. If none are selected, no notifications are sent.",
+
+  "notificationSettingsEmpty": "No emails imported yet",
+
+  "commonRetry": "Retry",
 
   "commonCancel": "Cancel",
   "commonConfirm": "Confirm",

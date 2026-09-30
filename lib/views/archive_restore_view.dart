@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
-import '../models/linked_account.dart';
 import '../viewmodels/email_search_providers.dart';
 import '../viewmodels/linked_account_providers.dart';
 
@@ -15,7 +14,7 @@ class ArchiveRestoreView extends ConsumerStatefulWidget {
 }
 
 class _ArchiveRestoreViewState extends ConsumerState<ArchiveRestoreView> {
-  LinkedAccount? _selectedAccount;
+  String? _selectedAccountId;
 
   @override
   Widget build(BuildContext context) {
@@ -29,27 +28,32 @@ class _ArchiveRestoreViewState extends ConsumerState<ArchiveRestoreView> {
         error: (e, _) => Center(child: Text('$e')),
         data: (accounts) {
           if (accounts.isEmpty) return const SizedBox.shrink();
-          _selectedAccount ??= accounts.first;
+          // 再連携でアカウントIDが変わる（解除→再連携で新規ドキュメントになる）ことがあるため、
+          // 選択中のIDが現在のリストに無ければ先頭へフォールバックする。
+          if (_selectedAccountId == null ||
+              !accounts.any((a) => a.id == _selectedAccountId)) {
+            _selectedAccountId = accounts.first.id;
+          }
           final archivedAsync = ref.watch(
-            archivedEmailsProvider(_selectedAccount!.id),
+            archivedEmailsProvider(_selectedAccountId!),
           );
           return Column(
             children: [
               if (accounts.length > 1)
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: DropdownButton<LinkedAccount>(
+                  child: DropdownButton<String>(
                     isExpanded: true,
-                    value: _selectedAccount,
+                    value: _selectedAccountId,
                     items: accounts
                         .map(
                           (a) => DropdownMenuItem(
-                            value: a,
+                            value: a.id,
                             child: Text(a.emailAddress),
                           ),
                         )
                         .toList(),
-                    onChanged: (v) => setState(() => _selectedAccount = v),
+                    onChanged: (v) => setState(() => _selectedAccountId = v),
                   ),
                 ),
               Expanded(

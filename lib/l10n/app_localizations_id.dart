@@ -187,6 +187,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get paywallTitle => 'Kotak Rapi Pro';
 
   @override
+  String get paywallFeatureAdFree => 'Bebas iklan';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => 'Akun terhubung tanpa batas';
 
   @override
@@ -197,6 +200,50 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get paywallCta => 'Upgrade ke Pro';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return 'Upgrade ke Pro seharga $price/bln';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Berhasil upgrade ke Pro';
+
+  @override
+  String get paywallPurchaseFailed =>
+      'Pembelian gagal. Silakan coba lagi nanti';
+
+  @override
+  String get settingsSyncInterval => 'Interval sinkronisasi otomatis';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'Setiap $hours jam';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'Perlu sambungkan ulang';
+
+  @override
+  String get settingsAccountUnlink => 'Putuskan tautan';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return 'Putuskan tautan $email? Email yang sudah diimpor akan tetap ada di aplikasi.';
+  }
+
+  @override
+  String get notificationSettingsTitle => 'Pengirim untuk notifikasi';
+
+  @override
+  String get notificationSettingsDescription =>
+      'Anda hanya akan diberi tahu tentang email baru dari pengirim yang dipilih. Jika tidak ada yang dipilih, notifikasi tidak akan dikirim.';
+
+  @override
+  String get notificationSettingsEmpty => 'Belum ada email yang diimpor';
+
+  @override
+  String get commonRetry => 'Coba lagi';
 
   @override
   String get commonCancel => 'Batal';

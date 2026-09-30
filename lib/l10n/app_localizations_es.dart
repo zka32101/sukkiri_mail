@@ -188,6 +188,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get paywallTitle => 'Bandeja Ligera Pro';
 
   @override
+  String get paywallFeatureAdFree => 'Sin anuncios';
+
+  @override
   String get paywallFeatureUnlimitedAccounts => 'Cuentas vinculadas ilimitadas';
 
   @override
@@ -198,6 +201,50 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get paywallCta => 'Mejorar a Pro';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return 'Mejorar a Pro por $price/mes';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Actualizado a Pro correctamente';
+
+  @override
+  String get paywallPurchaseFailed =>
+      'Error en la compra. Inténtalo de nuevo más tarde';
+
+  @override
+  String get settingsSyncInterval => 'Intervalo de sincronización automática';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return 'Cada $hours horas';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => 'Se requiere reconexión';
+
+  @override
+  String get settingsAccountUnlink => 'Desvincular';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '¿Desvincular $email? El correo ya importado permanecerá en la app.';
+  }
+
+  @override
+  String get notificationSettingsTitle => 'Remitentes para notificar';
+
+  @override
+  String get notificationSettingsDescription =>
+      'Solo se te notificará sobre correos nuevos de los remitentes seleccionados. Si no seleccionas ninguno, no se enviarán notificaciones.';
+
+  @override
+  String get notificationSettingsEmpty => 'Aún no se han importado correos';
+
+  @override
+  String get commonRetry => 'Reintentar';
 
   @override
   String get commonCancel => 'Cancelar';

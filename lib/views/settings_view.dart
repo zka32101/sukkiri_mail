@@ -10,6 +10,7 @@ import '../viewmodels/auth_provider.dart';
 import '../viewmodels/core_providers.dart';
 import '../viewmodels/linked_account_providers.dart';
 import 'account_link_view.dart';
+import 'notification_settings_view.dart';
 import 'paywall_view.dart';
 import 'usage_guide_view.dart';
 
@@ -95,9 +96,75 @@ class SettingsView extends ConsumerWidget {
       ),
     );
     if (picked == null) return;
-    await ref
-        .read(linkedAccountRepositoryProvider)
-        .updateColor(account.id, picked);
+    try {
+      await ref
+          .read(linkedAccountRepositoryProvider)
+          .updateColor(account.id, picked);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _confirmUnlink(
+    BuildContext context,
+    WidgetRef ref,
+    LinkedAccount account,
+  ) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: Text(l10n.settingsAccountUnlinkConfirm(account.emailAddress)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.commonConfirm),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(linkedAccountRepositoryProvider).remove(account.id);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+
+  Future<void> _changeSyncInterval(
+    BuildContext context,
+    WidgetRef ref,
+    int current,
+  ) async {
+    const options = [1, 3, 6, 12, 24];
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(AppLocalizations.of(context)!.settingsSyncInterval),
+        children: options
+            .map(
+              (h) => RadioListTile<int>(
+                value: h,
+                groupValue: current,
+                title: Text(
+                  AppLocalizations.of(context)!.settingsSyncIntervalHours(h),
+                ),
+                onChanged: (v) => Navigator.pop(context, v),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (picked == null) return;
+    final userId = await ref.read(currentUserIdProvider.future);
+    await ref.read(userRepositoryProvider).setSyncIntervalHours(userId, picked);
+    ref.invalidate(currentAppUserProvider);
   }
 
   @override
@@ -120,18 +187,54 @@ class SettingsView extends ConsumerWidget {
             data: (accounts) => Column(
               children: [
                 ...accounts.map(
-                  (a) => ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: AppTheme.accountColorFor(
-                        a.colorHex,
-                        brightness,
-                      ),
+                  (a) => Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
                     ),
-                    title: Text(a.emailAddress),
-                    subtitle: Text(a.provider.name),
-                    trailing: TextButton(
-                      onPressed: () => _changeColor(context, ref, a),
-                      child: Text(l10n.settingsAccountColor),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: AppTheme.accountColorFor(
+                            a.colorHex,
+                            brightness,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                a.emailAddress,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                a.oauthStatus == 'expired'
+                                    ? l10n.settingsAccountReauthRequired
+                                    : a.provider.name,
+                                style: a.oauthStatus == 'expired'
+                                    ? TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.error,
+                                      )
+                                    : Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.palette_outlined),
+                          tooltip: l10n.settingsAccountColor,
+                          onPressed: () => _changeColor(context, ref, a),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.link_off),
+                          tooltip: l10n.settingsAccountUnlink,
+                          onPressed: () => _confirmUnlink(context, ref, a),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -162,6 +265,20 @@ class SettingsView extends ConsumerWidget {
             },
           ),
           const Divider(),
+          Consumer(
+            builder: (context, ref, _) {
+              final userAsync = ref.watch(currentAppUserProvider);
+              final hours =
+                  userAsync.valueOrNull?.syncIntervalHours ??
+                      kDefaultSyncIntervalHours;
+              return ListTile(
+                title: Text(l10n.settingsSyncInterval),
+                subtitle: Text(l10n.settingsSyncIntervalHours(hours)),
+                onTap: () => _changeSyncInterval(context, ref, hours),
+              );
+            },
+          ),
+          const Divider(),
           ListTile(
             title: Text(l10n.settingsPlan),
             trailing: FilledButton(
@@ -169,6 +286,16 @@ class SettingsView extends ConsumerWidget {
                 context,
               ).push(MaterialPageRoute(builder: (_) => const PaywallView())),
               child: Text(l10n.paywallCta),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.notifications_outlined),
+            title: Text(l10n.notificationSettingsTitle),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const NotificationSettingsView(),
+              ),
             ),
           ),
           const Divider(),

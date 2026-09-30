@@ -256,6 +256,9 @@ class _EmailTile extends StatelessWidget {
               : (meta.snippet.isEmpty ? l10n.mailDetailNoSubject : meta.snippet),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontSize: 15),
         ),
         subtitle: Text(
           meta.senderEmail.isEmpty
