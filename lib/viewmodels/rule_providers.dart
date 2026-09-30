@@ -18,3 +18,9 @@ final senderBlockRulesProvider = StreamProvider<List<SenderBlockRule>>((
   final userId = await ref.watch(currentUserIdProvider.future);
   yield* ref.watch(senderBlockRuleRepositoryProvider).watchForUser(userId);
 });
+
+/// 差出人ブロックルール追加画面で「取り込み済みの差出人から選ぶ」ために使う。
+final knownSendersProvider = FutureProvider<List<String>>((ref) async {
+  final userId = await ref.watch(currentUserIdProvider.future);
+  return ref.watch(emailMetaRepositoryProvider).distinctSenders(userId);
+});

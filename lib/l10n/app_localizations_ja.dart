@@ -95,6 +95,42 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mailListUnknownSender => '（不明な送信者）';
 
   @override
+  String get mailListPinToggleOn => '保護する';
+
+  @override
+  String get mailListPinToggleOff => '保護を解除';
+
+  @override
+  String get mailListBlockSender => 'この差出人を今後取り込まない';
+
+  @override
+  String get mailDetailTitle => 'メール詳細';
+
+  @override
+  String get mailDetailNoSubject => '(件名なし)';
+
+  @override
+  String get mailDetailShowFullBody => '本文を全文表示';
+
+  @override
+  String get mailDetailOpenInMailApp => 'Gmailで開く';
+
+  @override
+  String mailBlockSenderConfirm(String sender) {
+    return '$sender を今後取り込まないようにしますか？';
+  }
+
+  @override
+  String get mailBlockSenderDone => '差出人をブロックしました';
+
+  @override
+  String get settingsLocalCacheRetention => 'アプリでの自動非表示までの日数';
+
+  @override
+  String get settingsLocalCacheRetentionDescription =>
+      'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません';
+
+  @override
   String get categoryAll => 'すべて';
 
   @override
@@ -122,6 +158,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get ruleSettingsAddRule => 'ルールを追加';
 
   @override
+  String get ruleSettingsSenderBlockPickSender => '取り込み済みの差出人から選択';
+
+  @override
+  String get ruleSettingsSenderBlockNoSenders => '取り込み済みの差出人がありません';
+
+  @override
   String get archiveRestoreTitle => 'アーカイブ済み一覧';
 
   @override
@@ -146,7 +188,67 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsPlan => 'プラン';
 
   @override
+  String get settingsUsageGuide => '使い方';
+
+  @override
+  String get settingsSyncInterval => '自動取り込みの間隔';
+
+  @override
+  String settingsSyncIntervalHours(int hours) {
+    return '$hours時間ごと';
+  }
+
+  @override
+  String get settingsAccountReauthRequired => '再連携が必要です';
+
+  @override
+  String get settingsAccountUnlink => '連携解除';
+
+  @override
+  String settingsAccountUnlinkConfirm(String email) {
+    return '$email の連携を解除しますか？取り込み済みのメールはアプリ上に残ります';
+  }
+
+  @override
+  String get usageGuideTitle => 'スッキリメールの使い方';
+
+  @override
+  String get usageGuideIntro =>
+      '見なくていいメールを、見ないで済むようにするアプリです。実際のメールボックスは一切変更しません。';
+
+  @override
+  String get usageGuideBulletAutoHide =>
+      'アプリの表示だけを自動整理：設定した日数が経つと、このアプリの一覧からだけ非表示にします（実メールは消えません）';
+
+  @override
+  String get usageGuideBulletDetail => 'メールをタップすると詳細画面が開き、本文の全文表示や差出人ブロックができます';
+
+  @override
+  String get usageGuideBulletBlock =>
+      '「この差出人を今後取り込まない」で、迷惑な送信元からのメールを次回以降取り込まないようにできます';
+
+  @override
+  String get usageGuideBulletMultiAccount =>
+      '複数アカウントはアカウントカラーで区別。メール一覧の並び替えでアカウント毎/日付順を切り替えられます';
+
+  @override
+  String get usageGuideClose => '閉じる';
+
+  @override
+  String get notificationSettingsTitle => '通知する差出人';
+
+  @override
+  String get notificationSettingsDescription =>
+      '選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません';
+
+  @override
+  String get notificationSettingsEmpty => 'まだ取り込まれたメールがありません';
+
+  @override
   String get paywallTitle => 'スッキリメール Pro';
+
+  @override
+  String get paywallFeatureAdFree => '広告非表示';
 
   @override
   String get paywallFeatureUnlimitedAccounts => 'アカウント連携無制限';
@@ -159,6 +261,20 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get paywallCta => 'Proにアップグレード';
+
+  @override
+  String paywallCtaWithPrice(String price) {
+    return '$price/月でProにアップグレード';
+  }
+
+  @override
+  String get paywallPurchaseSuccess => 'Proへのアップグレードが完了しました';
+
+  @override
+  String get paywallPurchaseFailed => '購入処理に失敗しました。時間をおいて再度お試しください';
+
+  @override
+  String get commonRetry => '再試行';
 
   @override
   String get commonCancel => 'キャンセル';

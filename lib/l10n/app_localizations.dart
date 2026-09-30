@@ -278,6 +278,72 @@ abstract class AppLocalizations {
   /// **'（不明な送信者）'**
   String get mailListUnknownSender;
 
+  /// No description provided for @mailListPinToggleOn.
+  ///
+  /// In ja, this message translates to:
+  /// **'保護する'**
+  String get mailListPinToggleOn;
+
+  /// No description provided for @mailListPinToggleOff.
+  ///
+  /// In ja, this message translates to:
+  /// **'保護を解除'**
+  String get mailListPinToggleOff;
+
+  /// No description provided for @mailListBlockSender.
+  ///
+  /// In ja, this message translates to:
+  /// **'この差出人を今後取り込まない'**
+  String get mailListBlockSender;
+
+  /// No description provided for @mailDetailTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'メール詳細'**
+  String get mailDetailTitle;
+
+  /// No description provided for @mailDetailNoSubject.
+  ///
+  /// In ja, this message translates to:
+  /// **'(件名なし)'**
+  String get mailDetailNoSubject;
+
+  /// No description provided for @mailDetailShowFullBody.
+  ///
+  /// In ja, this message translates to:
+  /// **'本文を全文表示'**
+  String get mailDetailShowFullBody;
+
+  /// No description provided for @mailDetailOpenInMailApp.
+  ///
+  /// In ja, this message translates to:
+  /// **'Gmailで開く'**
+  String get mailDetailOpenInMailApp;
+
+  /// No description provided for @mailBlockSenderConfirm.
+  ///
+  /// In ja, this message translates to:
+  /// **'{sender} を今後取り込まないようにしますか？'**
+  String mailBlockSenderConfirm(String sender);
+
+  /// No description provided for @mailBlockSenderDone.
+  ///
+  /// In ja, this message translates to:
+  /// **'差出人をブロックしました'**
+  String get mailBlockSenderDone;
+
+  /// No description provided for @settingsLocalCacheRetention.
+  ///
+  /// In ja, this message translates to:
+  /// **'アプリでの自動非表示までの日数'**
+  String get settingsLocalCacheRetention;
+
+  /// No description provided for @settingsLocalCacheRetentionDescription.
+  ///
+  /// In ja, this message translates to:
+  /// **'アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません'**
+  String get settingsLocalCacheRetentionDescription;
+
   /// No description provided for @categoryAll.
   ///
   /// In ja, this message translates to:
@@ -332,6 +398,18 @@ abstract class AppLocalizations {
   /// **'ルールを追加'**
   String get ruleSettingsAddRule;
 
+  /// No description provided for @ruleSettingsSenderBlockPickSender.
+  ///
+  /// In ja, this message translates to:
+  /// **'取り込み済みの差出人から選択'**
+  String get ruleSettingsSenderBlockPickSender;
+
+  /// No description provided for @ruleSettingsSenderBlockNoSenders.
+  ///
+  /// In ja, this message translates to:
+  /// **'取り込み済みの差出人がありません'**
+  String get ruleSettingsSenderBlockNoSenders;
+
   /// No description provided for @archiveRestoreTitle.
   ///
   /// In ja, this message translates to:
@@ -380,11 +458,113 @@ abstract class AppLocalizations {
   /// **'プラン'**
   String get settingsPlan;
 
+  /// No description provided for @settingsUsageGuide.
+  ///
+  /// In ja, this message translates to:
+  /// **'使い方'**
+  String get settingsUsageGuide;
+
+  /// No description provided for @settingsSyncInterval.
+  ///
+  /// In ja, this message translates to:
+  /// **'自動取り込みの間隔'**
+  String get settingsSyncInterval;
+
+  /// No description provided for @settingsSyncIntervalHours.
+  ///
+  /// In ja, this message translates to:
+  /// **'{hours}時間ごと'**
+  String settingsSyncIntervalHours(int hours);
+
+  /// No description provided for @settingsAccountReauthRequired.
+  ///
+  /// In ja, this message translates to:
+  /// **'再連携が必要です'**
+  String get settingsAccountReauthRequired;
+
+  /// No description provided for @settingsAccountUnlink.
+  ///
+  /// In ja, this message translates to:
+  /// **'連携解除'**
+  String get settingsAccountUnlink;
+
+  /// No description provided for @settingsAccountUnlinkConfirm.
+  ///
+  /// In ja, this message translates to:
+  /// **'{email} の連携を解除しますか？取り込み済みのメールはアプリ上に残ります'**
+  String settingsAccountUnlinkConfirm(String email);
+
+  /// No description provided for @usageGuideTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'スッキリメールの使い方'**
+  String get usageGuideTitle;
+
+  /// No description provided for @usageGuideIntro.
+  ///
+  /// In ja, this message translates to:
+  /// **'見なくていいメールを、見ないで済むようにするアプリです。実際のメールボックスは一切変更しません。'**
+  String get usageGuideIntro;
+
+  /// No description provided for @usageGuideBulletAutoHide.
+  ///
+  /// In ja, this message translates to:
+  /// **'アプリの表示だけを自動整理：設定した日数が経つと、このアプリの一覧からだけ非表示にします（実メールは消えません）'**
+  String get usageGuideBulletAutoHide;
+
+  /// No description provided for @usageGuideBulletDetail.
+  ///
+  /// In ja, this message translates to:
+  /// **'メールをタップすると詳細画面が開き、本文の全文表示や差出人ブロックができます'**
+  String get usageGuideBulletDetail;
+
+  /// No description provided for @usageGuideBulletBlock.
+  ///
+  /// In ja, this message translates to:
+  /// **'「この差出人を今後取り込まない」で、迷惑な送信元からのメールを次回以降取り込まないようにできます'**
+  String get usageGuideBulletBlock;
+
+  /// No description provided for @usageGuideBulletMultiAccount.
+  ///
+  /// In ja, this message translates to:
+  /// **'複数アカウントはアカウントカラーで区別。メール一覧の並び替えでアカウント毎/日付順を切り替えられます'**
+  String get usageGuideBulletMultiAccount;
+
+  /// No description provided for @usageGuideClose.
+  ///
+  /// In ja, this message translates to:
+  /// **'閉じる'**
+  String get usageGuideClose;
+
+  /// No description provided for @notificationSettingsTitle.
+  ///
+  /// In ja, this message translates to:
+  /// **'通知する差出人'**
+  String get notificationSettingsTitle;
+
+  /// No description provided for @notificationSettingsDescription.
+  ///
+  /// In ja, this message translates to:
+  /// **'選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません'**
+  String get notificationSettingsDescription;
+
+  /// No description provided for @notificationSettingsEmpty.
+  ///
+  /// In ja, this message translates to:
+  /// **'まだ取り込まれたメールがありません'**
+  String get notificationSettingsEmpty;
+
   /// No description provided for @paywallTitle.
   ///
   /// In ja, this message translates to:
   /// **'スッキリメール Pro'**
   String get paywallTitle;
+
+  /// No description provided for @paywallFeatureAdFree.
+  ///
+  /// In ja, this message translates to:
+  /// **'広告非表示'**
+  String get paywallFeatureAdFree;
 
   /// No description provided for @paywallFeatureUnlimitedAccounts.
   ///
@@ -409,6 +589,30 @@ abstract class AppLocalizations {
   /// In ja, this message translates to:
   /// **'Proにアップグレード'**
   String get paywallCta;
+
+  /// No description provided for @paywallCtaWithPrice.
+  ///
+  /// In ja, this message translates to:
+  /// **'{price}/月でProにアップグレード'**
+  String paywallCtaWithPrice(String price);
+
+  /// No description provided for @paywallPurchaseSuccess.
+  ///
+  /// In ja, this message translates to:
+  /// **'Proへのアップグレードが完了しました'**
+  String get paywallPurchaseSuccess;
+
+  /// No description provided for @paywallPurchaseFailed.
+  ///
+  /// In ja, this message translates to:
+  /// **'購入処理に失敗しました。時間をおいて再度お試しください'**
+  String get paywallPurchaseFailed;
+
+  /// No description provided for @commonRetry.
+  ///
+  /// In ja, this message translates to:
+  /// **'再試行'**
+  String get commonRetry;
 
   /// No description provided for @commonCancel.
   ///

@@ -8,6 +8,7 @@ import '../viewmodels/core_providers.dart';
 import '../viewmodels/linked_account_providers.dart';
 import 'account_link_view.dart';
 import 'paywall_view.dart';
+import 'usage_guide_view.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -17,22 +18,19 @@ class SettingsView extends ConsumerWidget {
     WidgetRef ref,
     LinkedAccount account,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('連携を解除しますか？'),
-        content: Text(
-          '${account.emailAddress} との連携を解除します。取得済みのメールデータは残りますが、'
-          'スキャンやアーカイブ操作はできなくなります。',
-        ),
+        content: Text(l10n.settingsAccountUnlinkConfirm(account.emailAddress)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('解除する'),
+            child: Text(l10n.commonConfirm),
           ),
         ],
       ),
@@ -117,7 +115,14 @@ class SettingsView extends ConsumerWidget {
                       ),
                     ),
                     title: Text(a.emailAddress),
-                    subtitle: Text(a.provider.name),
+                    subtitle: Text(
+                      a.oauthStatus == 'expired'
+                          ? l10n.settingsAccountReauthRequired
+                          : a.provider.name,
+                      style: a.oauthStatus == 'expired'
+                          ? TextStyle(color: Theme.of(context).colorScheme.error)
+                          : null,
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -127,7 +132,7 @@ class SettingsView extends ConsumerWidget {
                         ),
                         IconButton(
                           icon: const Icon(Icons.link_off),
-                          tooltip: '連携を解除',
+                          tooltip: l10n.settingsAccountUnlink,
                           onPressed: () => _unlinkAccount(context, ref, a),
                         ),
                       ],
@@ -152,6 +157,14 @@ class SettingsView extends ConsumerWidget {
                 context,
               ).push(MaterialPageRoute(builder: (_) => const PaywallView())),
               child: Text(l10n.paywallCta),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: Text(l10n.settingsUsageGuide),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const UsageGuideView()),
             ),
           ),
         ],

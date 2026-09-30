@@ -63,10 +63,47 @@
   "settingsPlan": "Formule",
 
   "paywallTitle": "Boîte Zen Pro",
+  "paywallFeatureAdFree": "Sans publicité",
   "paywallFeatureUnlimitedAccounts": "Comptes liés illimités",
   "paywallFeatureAutoRules": "Règles d'archivage automatique",
   "paywallFeatureUnlimitedRestore": "Restauration illimitée",
   "paywallCta": "Passer à Pro",
+  "paywallCtaWithPrice": "Passer à Pro pour {price}/mois",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "Passage à Pro réussi",
+  "paywallPurchaseFailed": "Échec de l'achat. Veuillez réessayer plus tard",
+
+  "settingsSyncInterval": "Intervalle de synchronisation automatique",
+
+  "settingsSyncIntervalHours": "Toutes les {hours} heures",
+
+  "@settingsSyncIntervalHours": {
+
+    "placeholders": { "hours": { "type": "int" } }
+
+  },
+
+  "settingsAccountReauthRequired": "Reconnexion nécessaire",
+
+  "settingsAccountUnlink": "Dissocier",
+
+  "settingsAccountUnlinkConfirm": "Dissocier {email} ? Les e-mails déjà importés resteront dans l'application.",
+
+  "@settingsAccountUnlinkConfirm": {
+
+    "placeholders": { "email": { "type": "String" } }
+
+  },
+
+  "notificationSettingsTitle": "Expéditeurs à notifier",
+
+  "notificationSettingsDescription": "Vous ne serez notifié que des nouveaux e-mails des expéditeurs sélectionnés. Si aucun n'est sélectionné, aucune notification ne sera envoyée.",
+
+  "notificationSettingsEmpty": "Aucun e-mail importé pour le moment",
+
+  "commonRetry": "Réessayer",
 
   "commonCancel": "Annuler",
   "commonConfirm": "Confirmer",

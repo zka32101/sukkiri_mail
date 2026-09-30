@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
 import '../viewmodels/linked_account_providers.dart';
 import '../viewmodels/local_cache_eviction_providers.dart';
+import '../widgets/banner_ad_slot.dart';
 import 'archive_restore_view.dart';
 import 'mail_list_view.dart';
 import 'mail_search_view.dart';
@@ -60,29 +61,35 @@ class _MainShellState extends ConsumerState<_MainShell> {
 
     return Scaffold(
       body: IndexedStack(index: _index, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.mail_outline),
-            label: l10n.mailListTitle,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.rule_outlined),
-            label: l10n.ruleSettingsTitle,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.archive_outlined),
-            label: l10n.archiveRestoreTitle,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.search_outlined),
-            label: l10n.mailSearchTitle,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            label: l10n.settingsTitle,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const BannerAdSlot(),
+          NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (i) => setState(() => _index = i),
+            destinations: [
+              NavigationDestination(
+                icon: const Icon(Icons.mail_outline),
+                label: l10n.mailListTitle,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.rule_outlined),
+                label: l10n.ruleSettingsTitle,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.archive_outlined),
+                label: l10n.archiveRestoreTitle,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.search_outlined),
+                label: l10n.mailSearchTitle,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.settings_outlined),
+                label: l10n.settingsTitle,
+              ),
+            ],
           ),
         ],
       ),

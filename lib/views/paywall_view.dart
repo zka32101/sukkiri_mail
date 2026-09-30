@@ -126,6 +126,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _FeatureRow(text: l10n.paywallFeatureAdFree),
             _FeatureRow(text: l10n.paywallFeatureUnlimitedAccounts),
             _FeatureRow(text: l10n.paywallFeatureAutoRules),
             _FeatureRow(text: l10n.paywallFeatureUnlimitedRestore),

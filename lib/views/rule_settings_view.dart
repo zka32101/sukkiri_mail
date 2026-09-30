@@ -145,6 +145,8 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
     final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController();
     SenderMatchType matchType = SenderMatchType.domain;
+    final knownSenders = await ref.read(knownSendersProvider.future);
+    if (!mounted) return;
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -153,6 +155,24 @@ class _RuleSettingsViewState extends ConsumerState<RuleSettingsView>
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (matchType == SenderMatchType.sender && knownSenders.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  hint: Text(l10n.ruleSettingsSenderBlockPickSender),
+                  initialValue: knownSenders.contains(controller.text)
+                      ? controller.text
+                      : null,
+                  items: knownSenders
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
+                  onChanged: (v) =>
+                      setDialogState(() => controller.text = v ?? ''),
+                )
+              else if (matchType == SenderMatchType.sender)
+                Text(
+                  l10n.ruleSettingsSenderBlockNoSenders,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               TextField(
                 controller: controller,
                 decoration: const InputDecoration(hintText: '@example.com'),

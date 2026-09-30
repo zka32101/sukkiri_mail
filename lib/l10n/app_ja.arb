@@ -39,6 +39,22 @@
   "mailListBulkArchive": "アーカイブ",
   "mailListBulkMarkRead": "既読にする",
   "mailListUnknownSender": "（不明な送信者）",
+  "mailListPinToggleOn": "保護する",
+  "mailListPinToggleOff": "保護を解除",
+  "mailListBlockSender": "この差出人を今後取り込まない",
+
+  "mailDetailTitle": "メール詳細",
+  "mailDetailNoSubject": "(件名なし)",
+  "mailDetailShowFullBody": "本文を全文表示",
+  "mailDetailOpenInMailApp": "Gmailで開く",
+  "mailBlockSenderConfirm": "{sender} を今後取り込まないようにしますか？",
+  "@mailBlockSenderConfirm": {
+    "placeholders": { "sender": { "type": "String" } }
+  },
+  "mailBlockSenderDone": "差出人をブロックしました",
+
+  "settingsLocalCacheRetention": "アプリでの自動非表示までの日数",
+  "settingsLocalCacheRetentionDescription": "アプリの一覧表示だけに反映されます。実際のメールボックスは変更されません",
 
   "categoryAll": "すべて",
   "categoryPromotion": "プロモーション",
@@ -50,6 +66,8 @@
   "ruleSettingsCategoryTab": "カテゴリルール",
   "ruleSettingsSenderBlockTab": "差出人ブロック",
   "ruleSettingsAddRule": "ルールを追加",
+  "ruleSettingsSenderBlockPickSender": "取り込み済みの差出人から選択",
+  "ruleSettingsSenderBlockNoSenders": "取り込み済みの差出人がありません",
 
   "archiveRestoreTitle": "アーカイブ済み一覧",
   "archiveRestoreRestore": "復元する",
@@ -61,13 +79,45 @@
   "settingsAccountColor": "アカウントカラー",
   "settingsLinkedAccounts": "連携アカウント",
   "settingsPlan": "プラン",
+  "settingsUsageGuide": "使い方",
+  "settingsSyncInterval": "自動取り込みの間隔",
+  "settingsSyncIntervalHours": "{hours}時間ごと",
+  "@settingsSyncIntervalHours": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "settingsAccountReauthRequired": "再連携が必要です",
+  "settingsAccountUnlink": "連携解除",
+  "settingsAccountUnlinkConfirm": "{email} の連携を解除しますか？取り込み済みのメールはアプリ上に残ります",
+  "@settingsAccountUnlinkConfirm": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+
+  "usageGuideTitle": "スッキリメールの使い方",
+  "usageGuideIntro": "見なくていいメールを、見ないで済むようにするアプリです。実際のメールボックスは一切変更しません。",
+  "usageGuideBulletAutoHide": "アプリの表示だけを自動整理：設定した日数が経つと、このアプリの一覧からだけ非表示にします（実メールは消えません）",
+  "usageGuideBulletDetail": "メールをタップすると詳細画面が開き、本文の全文表示や差出人ブロックができます",
+  "usageGuideBulletBlock": "「この差出人を今後取り込まない」で、迷惑な送信元からのメールを次回以降取り込まないようにできます",
+  "usageGuideBulletMultiAccount": "複数アカウントはアカウントカラーで区別。メール一覧の並び替えでアカウント毎/日付順を切り替えられます",
+  "usageGuideClose": "閉じる",
+
+  "notificationSettingsTitle": "通知する差出人",
+  "notificationSettingsDescription": "選択した差出人からの新着メールのみ通知します。未選択の場合、通知は送信されません",
+  "notificationSettingsEmpty": "まだ取り込まれたメールがありません",
 
   "paywallTitle": "スッキリメール Pro",
+  "paywallFeatureAdFree": "広告非表示",
   "paywallFeatureUnlimitedAccounts": "アカウント連携無制限",
   "paywallFeatureAutoRules": "自動アーカイブルール",
   "paywallFeatureUnlimitedRestore": "復元無制限",
   "paywallCta": "Proにアップグレード",
+  "paywallCtaWithPrice": "{price}/月でProにアップグレード",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "Proへのアップグレードが完了しました",
+  "paywallPurchaseFailed": "購入処理に失敗しました。時間をおいて再度お試しください",
 
+  "commonRetry": "再試行",
   "commonCancel": "キャンセル",
   "commonConfirm": "確認",
   "commonBack": "戻る",

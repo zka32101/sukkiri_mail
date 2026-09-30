@@ -63,10 +63,47 @@
   "settingsPlan": "요금제",
 
   "paywallTitle": "상쾌메일 Pro",
+  "paywallFeatureAdFree": "광고 없음",
   "paywallFeatureUnlimitedAccounts": "계정 연결 무제한",
   "paywallFeatureAutoRules": "자동 보관 규칙",
   "paywallFeatureUnlimitedRestore": "복원 무제한",
   "paywallCta": "Pro로 업그레이드",
+  "paywallCtaWithPrice": "{price}/월로 Pro 업그레이드",
+  "@paywallCtaWithPrice": {
+    "placeholders": { "price": { "type": "String" } }
+  },
+  "paywallPurchaseSuccess": "Pro로 업그레이드가 완료되었습니다",
+  "paywallPurchaseFailed": "구매에 실패했습니다. 나중에 다시 시도해주세요",
+
+  "settingsSyncInterval": "자동 동기화 간격",
+
+  "settingsSyncIntervalHours": "{hours}시간마다",
+
+  "@settingsSyncIntervalHours": {
+
+    "placeholders": { "hours": { "type": "int" } }
+
+  },
+
+  "settingsAccountReauthRequired": "재연결이 필요합니다",
+
+  "settingsAccountUnlink": "연결 해제",
+
+  "settingsAccountUnlinkConfirm": "{email} 연결을 해제하시겠습니까? 이미 가져온 메일은 앱에 남아 있습니다.",
+
+  "@settingsAccountUnlinkConfirm": {
+
+    "placeholders": { "email": { "type": "String" } }
+
+  },
+
+  "notificationSettingsTitle": "알림 받을 발신자",
+
+  "notificationSettingsDescription": "선택한 발신자의 새 메일에 대해서만 알림을 받습니다. 선택하지 않으면 알림이 전송되지 않습니다.",
+
+  "notificationSettingsEmpty": "아직 가져온 메일이 없습니다",
+
+  "commonRetry": "다시 시도",
 
   "commonCancel": "취소",
   "commonConfirm": "확인",

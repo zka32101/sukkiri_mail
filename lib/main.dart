@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'l10n/app_localizations.dart';
+import 'services/ads_service.dart';
 import 'theme/app_theme.dart';
 import 'views/root_shell.dart';
 
@@ -16,6 +17,7 @@ void main() async {
   Object? initError;
   try {
     await Firebase.initializeApp();
+    await AdsService().initialize();
   } catch (e) {
     initError = e;
   }

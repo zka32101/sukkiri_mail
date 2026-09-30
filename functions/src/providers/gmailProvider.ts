@@ -1,4 +1,4 @@
-import { google } from "googleapis";
+import { google, gmail_v1 } from "googleapis";
 import {
   ConnectedAccountResult,
   MailProviderAdapter,
@@ -10,6 +10,38 @@ import { categorizeMessage } from "../categorize";
 import { db } from "../firestore";
 import { upsertLinkedAccount } from "../linkedAccountUpsert";
 import { LinkedAccountDoc } from "../types";
+
+type GmailMessagePart = gmail_v1.Schema$MessagePart;
+
+function findPartByMimeType(
+  part: GmailMessagePart | undefined,
+  mimeType: string
+): GmailMessagePart | undefined {
+  if (!part) return undefined;
+  if (part.mimeType === mimeType && part.body?.data) return part;
+  for (const child of part.parts ?? []) {
+    const found = findPartByMimeType(child, mimeType);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function collectAttachmentNames(part: GmailMessagePart | undefined): string[] {
+  if (!part) return [];
+  const names: string[] = [];
+  if (part.filename) names.push(part.filename);
+  for (const child of part.parts ?? []) {
+    names.push(...collectAttachmentNames(child));
+  }
+  return names;
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
 /**
  * gmail.modify（sensitive/Tier2） + gmail.labels（non-sensitive）のみ使用。
@@ -241,11 +273,17 @@ export class GmailProvider implements MailProviderAdapter {
       format: "full",
     });
     const part = full.data.payload;
-    const htmlPart = part?.parts?.find((p) => p.mimeType === "text/html") ?? part;
-    const data = htmlPart?.body?.data ?? "";
-    const html = Buffer.from(data, "base64").toString("utf-8");
-    const attachmentNames =
-      part?.parts?.filter((p) => p.filename).map((p) => p.filename as string) ?? [];
+    const htmlPart = findPartByMimeType(part, "text/html");
+    const plainPart = findPartByMimeType(part, "text/plain");
+    const chosen = htmlPart ?? plainPart;
+    const decoded = Buffer.from(chosen?.body?.data ?? "", "base64").toString("utf-8");
+    const html = htmlPart
+      ? decoded
+      : decoded
+          .split("\n")
+          .map((line) => escapeHtml(line))
+          .join("<br>");
+    const attachmentNames = collectAttachmentNames(part);
     return { html, attachmentNames };
   }
 }

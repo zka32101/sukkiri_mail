@@ -27,4 +27,31 @@ class UserRepository {
   Future<void> setPlan(String userId, UserPlan plan) {
     return _col.doc(userId).update({'plan': userPlanToString(plan)});
   }
+
+  Future<void> setLocalCacheRetentionDays(String userId, int days) {
+    return _col.doc(userId).update({'localCacheRetentionDays': days});
+  }
+
+  Future<void> setSyncIntervalHours(String userId, int hours) {
+    return _col.doc(userId).set(
+      {'syncIntervalHours': hours},
+      SetOptions(merge: true),
+    );
+  }
+
+  Future<void> setFcmToken(String userId, String? token) {
+    return _col.doc(userId).set({'fcmToken': token}, SetOptions(merge: true));
+  }
+
+  Future<void> setNotifySenders(String userId, List<String> senders) {
+    return _col
+        .doc(userId)
+        .set({'notifySenders': senders}, SetOptions(merge: true));
+  }
+
+  Stream<AppUser?> watch(String userId) {
+    return _col.doc(userId).snapshots().map(
+          (doc) => doc.exists ? AppUser.fromMap(doc.id, doc.data()!) : null,
+        );
+  }
 }

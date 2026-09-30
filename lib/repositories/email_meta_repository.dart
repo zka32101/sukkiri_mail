@@ -110,4 +110,41 @@ class EmailMetaRepository {
         .get();
     return agg.count ?? 0;
   }
+
+  /// 差出人ブロック時：既にキャッシュ済みの該当差出人メールを一覧から即座に
+  /// 除外するため、localCacheStatusをまとめてblockedへ更新する。
+  Future<void> markSenderBlocked(
+    String senderEmail, {
+    required String userId,
+    String? accountId,
+  }) async {
+    Query<Map<String, dynamic>> q = _col
+        .where('userId', isEqualTo: userId)
+        .where('senderEmail', isEqualTo: senderEmail);
+    if (accountId != null) {
+      q = q.where('accountId', isEqualTo: accountId);
+    }
+    final snap = await q.get();
+    if (snap.docs.isEmpty) return;
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.update(doc.reference, {
+        'localCacheStatus': localCacheStatusToString(LocalCacheStatus.blocked),
+      });
+    }
+    await batch.commit();
+  }
+
+  /// 差出人ブロックルール・通知対象差出人の選択UI用：これまでに取り込まれた
+  /// 差出人アドレス一覧（全アカウント横断、重複除去）。
+  Future<List<String>> distinctSenders(String userId) async {
+    final snap = await _col.where('userId', isEqualTo: userId).get();
+    final senders = snap.docs
+        .map((d) => d.data()['senderEmail'] as String? ?? '')
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList();
+    senders.sort();
+    return senders;
+  }
 }
